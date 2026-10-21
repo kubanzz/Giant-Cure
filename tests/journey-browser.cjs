@@ -30,8 +30,9 @@ async function exitAndSuppress(page) {
   browser = await chromium.launch(launch);
   const context = await browser.newContext({ viewport: { width: 1366, height: 768 }, deviceScaleFactor: 1 });
   page = await setup(context, errors, requests);
-  await mark('single offline chapter preloads and opens directly into a 1280×720 world', async () => {
-    await click(page, '#begin'); assert.deepEqual(await page.locator('[data-case]').evaluateAll(items => items.map(item => item.dataset.case)), ['heartJourney']);
+  await mark('offline diagnosis and explicit treatment open an unscanned 1280×720 chapter', async () => {
+    await click(page, '#begin'); assert.deepEqual((await snapshot(page)).diagnosis, { phase: 'idle', caseId: null });
+    await click(page, '#case-archive'); assert.deepEqual(await page.locator('[data-case]').evaluateAll(items => items.map(item => item.dataset.case)), ['heartJourney']); await primary(page);
     await start(page); await inspectFit(page); const s = await snapshot(page);
     assert.deepEqual(s.logicalSize, { width: 1280, height: 720 }); assert.deepEqual(s.view.viewport, { x: 24, y: 84, w: 1232, h: 552 }); assert.equal(s.remaining, null);
     const images = await page.evaluate(() => Object.entries(window.GiantCureAssets.images).map(([name, image]) => ({ name, loaded: image.complete && image.naturalWidth > 0 })));
@@ -91,11 +92,14 @@ async function exitAndSuppress(page) {
     await tick(page, 2500); assert.equal((await game(page)).endingScene, 'exterior'); await capture(page, 'giant-exterior'); await tick(page, 4000);
     const result = await snapshot(page); assert.equal(result.screen, 'result'); assert.equal(result.result.won, true); assert.equal(result.game.retries, 1); assert.equal(result.progress, 1); console.log('INFO browser completion: ' + result.result.seconds + ' active seconds including one deliberate failure'); await capture(page, 'result');
     await tick(page, 10000); assert.equal((await snapshot(page)).result.seconds, result.result.seconds, 'result cannot be recorded repeatedly');
-    await click(page, '#result-next'); assert.equal((await snapshot(page)).screen, 'cases'); assert.match(await page.locator('#record-summary').textContent(), /1\s*\/\s*1/);
+    await click(page, '#result-next'); assert.equal((await snapshot(page)).screen, 'cases'); assert.deepEqual((await snapshot(page)).diagnosis, { phase: 'idle', caseId: null });
+    await click(page, '#case-archive'); assert.match(await page.locator('#record-summary').textContent(), /1\s*\/\s*1/);
     assert.match(await page.locator('[data-case="heartJourney"] .case-mechanic').textContent(), new RegExp(`最佳.*${result.result.seconds}.*秒`));
+    assert.equal(await page.locator('[data-case="heartJourney"] .option-state').innerText(), '再次巡诊'); await primary(page);
   });
   await mark('refresh preserves the completion record and opens a fresh entry checkpoint', async () => {
-    await page.reload(); await h.ready(page); assert.equal((await snapshot(page)).screen, 'home'); await click(page, '#begin'); assert.match(await page.locator('#record-summary').textContent(), /1\s*\/\s*1/);
+    await page.reload(); await h.ready(page); assert.equal((await snapshot(page)).screen, 'home'); await click(page, '#begin');
+    await click(page, '#case-archive'); assert.match(await page.locator('#record-summary').textContent(), /1\s*\/\s*1/); await primary(page);
     await start(page); const s = await game(page); assert.equal(s.checkpoint, 'entry'); assert.equal(s.retries, 0); assert.equal(s.health, 100); assert(!s.bypassA);
   });
   for (const size of [{ width: 1366, height: 768, dpr: 2 }, { width: 1920, height: 1080, dpr: 1 }, { width: 1920, height: 1080, dpr: 2 }, { width: 800, height: 900, dpr: 1 }]) {

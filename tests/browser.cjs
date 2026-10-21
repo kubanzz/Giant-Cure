@@ -1,6 +1,5 @@
 'use strict';
-// Multi-play catalog, random selection and navigation QA through offline browser input.
-// Optional tooling: npm install --no-save --package-lock=false playwright
+// Diagnosis room and case archive QA through real offline browser input.
 // PLAYWRIGHT_PATH and CHROME_PATH can point to existing installations.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -11,39 +10,37 @@ const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
 const url = pathToFileURL(path.join(__dirname, '..', 'index.html')).href;
 const errors = [], remoteRequests = [], checks = [];
 const entryHash = () => crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname, '..', 'index.html'))).digest('hex');
-const testedEntry = entryHash();
-const card = '[data-case="heartJourney"]';
+const testedEntry = entryHash(), card = '[data-case="heartJourney"]';
 const previews = { blood: ['血河淤堵', '拖拽'], spore: ['孢子侵染', '点击'], heart: ['心跳失序', '节奏'] };
-let browser;
+let browser, page;
 const snapshot = page => page.evaluate(() => window.GiantCure.snapshot());
 const tick = (page, ms) => page.clock.runFor(ms);
-async function click(page, selector, ms = 32) {
-  await page.locator(selector).click();
-  if (ms) await tick(page, ms);
-}
+async function click(page, selector, ms = 32) { await page.locator(selector).click(); if (ms) await tick(page, ms); }
 const primary = page => click(page, '#dialog-actions .primary-button');
-async function setup(context, seed) {
+async function ready(page) {
+  await page.evaluate(async () => { if (window.GiantCureAssets) await window.GiantCureAssets.ready; }); await tick(page, 32);
+}
+async function setup(context, seed, storage = {}) {
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(error.stack || error.message));
   page.on('request', request => { if (!/^(file|data):/.test(request.url())) remoteRequests.push(request.url()); });
   const epoch = Date.parse('2026-10-21T05:00:00Z');
-  await page.clock.install({ time: new Date(epoch) });
-  await page.clock.pauseAt(new Date(epoch + 1000));
-  if (seed) await page.addInitScript(values => {
-    for (const [key, value] of Object.entries(values)) localStorage.setItem(key, JSON.stringify(value));
-  }, seed);
-  await page.goto(url); await page.evaluate(async () => { if (window.GiantCureAssets) await window.GiantCureAssets.ready; }); await tick(page, 32);
-  await page.waitForFunction(() => !!window.GiantCure && !!document.querySelector('[data-case="heartJourney"]'));
-  return page;
+  await page.clock.install({ time: new Date(epoch) }); await page.clock.pauseAt(new Date(epoch + 1000));
+  if (seed || storage.raw || storage.unavailable) await page.addInitScript(({ values, raw, unavailable }) => {
+    for (const [key, value] of Object.entries(values || {})) localStorage.setItem(key, JSON.stringify(value));
+    for (const [key, value] of Object.entries(raw || {})) localStorage.setItem(key, value);
+    if (unavailable) for (const method of ['getItem', 'setItem']) Object.defineProperty(Storage.prototype, method, { configurable: true, value() { throw new DOMException('Storage unavailable', 'SecurityError'); } });
+  }, { values: seed, ...storage });
+  await page.goto(url); await ready(page);
+  assert(await page.evaluate(() => !!window.GiantCure && !!document.querySelector('#diagnosis-panel'))); return page;
 }
 async function mark(name, action) {
-  await action(); checks.push(name); console.log('PASS ' + name);
-  assert.deepEqual(errors, [], 'no browser runtime errors');
+  await action(); checks.push(name); console.log('PASS ' + name); assert.deepEqual(errors, [], 'no browser runtime errors');
 }
-async function capture(page, name, settle = 2300) {
-  if (settle) await tick(page, settle); // Catalog screenshots should not include temporary setting toasts.
+async function capture(page, name, settle = 0) {
+  if (settle) await tick(page, settle);
   const folder = path.join(__dirname, 'screenshots'); fs.mkdirSync(folder, { recursive: true });
-  await page.screenshot({ path: path.join(folder, 'catalog-' + name + '.png'), animations: settle ? 'disabled' : 'allow' });
+  await page.screenshot({ path: path.join(folder, 'diagnosis-' + name + '.png'), animations: 'allow' });
 }
 async function expectState(page, screen, phase) {
   const state = await snapshot(page); assert.equal(state.screen, screen); assert.equal(state.phase, phase); return state;
@@ -52,11 +49,9 @@ async function inspectFit(page) {
   const fit = await page.evaluate(() => {
     const app = document.querySelector('#app').getBoundingClientRect();
     const visibleButtons = [...document.querySelectorAll('button')].filter(el => {
-      const r = el.getBoundingClientRect();
-      return r.width > 0 && r.height > 0 && !el.closest('[hidden]') && !el.closest('[inert]');
+      const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !el.closest('[hidden]') && !el.closest('[inert]');
     });
-    return { width: innerWidth, height: innerHeight,
-      app: { x: app.x, y: app.y, right: app.right, bottom: app.bottom },
+    return { width: innerWidth, height: innerHeight, app: { x: app.x, y: app.y, right: app.right, bottom: app.bottom },
       scrollWidth: document.documentElement.scrollWidth,
       buttons: visibleButtons.map(el => { const r = el.getBoundingClientRect(); return { id: el.id || el.textContent.trim(), x: r.x, y: r.y, right: r.right, bottom: r.bottom }; }) };
   });
@@ -64,116 +59,133 @@ async function inspectFit(page) {
   assert(fit.scrollWidth <= fit.width, 'no horizontal document overflow');
   for (const b of fit.buttons) assert(b.x >= -.5 && b.y >= -.5 && b.right <= fit.width + .5 && b.bottom <= fit.height + .5, 'visible button fits viewport: ' + b.id);
 }
-async function assertCatalog(page, cured) {
-  await expectState(page, 'cases', 'idle');
+async function resizeViewport(page, size) {
+  await page.setViewportSize(size);
+  // Native resize and visualViewport events may arrive after the mocked clock's first frame.
+  for (let attempt = 0; attempt < 10; attempt++) {
+    await tick(page, 32);
+    if (await page.evaluate(() => { const r = document.querySelector('#app').getBoundingClientRect(); return r.x >= -.5 && r.y >= -.5 && r.right <= innerWidth + .5 && r.bottom <= innerHeight + .5; })) return;
+  }
+  await inspectFit(page);
+}
+async function painted(page, selector) {
+  return page.locator(selector).evaluate(el => {
+    if (!el.getClientRects().length) return false;
+    for (let p = el; p; p = p.parentElement) {
+      const s = getComputedStyle(p);
+      if (p.hidden || s.display === 'none' || s.visibility === 'hidden' || Number(s.opacity) === 0) return false;
+    }
+    return true;
+  });
+}
+async function assertDiagnosis(page, phase = 'idle') {
+  const s = await expectState(page, 'cases', 'idle');
+  assert.equal('selector' in s, false, 'random selector diagnostics are retired');
+  assert.deepEqual(s.diagnosis, { phase, caseId: phase === 'ready' ? 'heartJourney' : null });
+  assert.equal(s.game, null, 'diagnosis presentation does not instantiate a game');
+  assert.equal(await page.locator('#diagnosis-panel').getAttribute('data-diagnosis-phase'), phase);
+  assert.equal(await page.locator('#diagnosis-panel').getAttribute('aria-busy'), String(phase === 'scanning'));
+  assert.equal(await page.locator('#diagnosis-action').isDisabled(), phase === 'scanning');
+  assert.equal(await page.locator('#case-archive').isDisabled(), phase === 'scanning');
+  assert.equal(await page.locator('#diagnosis-action-label').innerText(), { idle: '开始检查', scanning: '检查中…', ready: '前往治疗' }[phase]);
+  assert.equal(await page.locator('#diagnosis-report').isVisible(), phase === 'ready');
+  assert.equal(await painted(page, '#diagnosis-target'), phase === 'ready');
+  assert.equal(await page.locator('#random-case, #case-reel-window, #selected-case-start, #tab-quick').count(), 0);
+  const mainCopy = await page.locator('#cases').innerText();
+  assert.doesNotMatch(mainCopy, /随机|再抽|血栓|传导|A\s*(?:→|->)\s*B|孢子侵染|心跳失序|血河淤堵/, 'diagnosis does not reveal exact causes, routes or archive previews');
+  if (phase === 'idle') assert.match(await page.locator('#diagnosis-status').innerText(), /生命信号待采集/);
+  await inspectFit(page); return s;
+}
+async function assertReady(page) {
+  await assertDiagnosis(page, 'ready');
+  assert.equal(await page.locator('#diagnosis-finding').innerText(), '心区血流信号减弱');
+  assert.equal(await page.locator('#diagnosis-detail').innerText(), '具体病因待近距离确认');
+  const a = await page.locator('#diagnosis-heart-anchor').boundingBox(), b = await page.locator('#diagnosis-target > circle:first-child').boundingBox();
+  assert(a && b); assert(Math.abs(a.x + a.width / 2 - b.x - b.width / 2) <= 1 && Math.abs(a.y + a.height / 2 - b.y - b.height / 2) <= 1, 'amber target stays centered on the heart anchor within one pixel');
+}
+async function openArchive(page, cured = 0) {
+  await click(page, '#case-archive');
+  assert.equal(await page.locator('#modal').isVisible(), true);
+  assert.equal(await page.locator('#case-records').isVisible(), true);
   assert.deepEqual(await page.locator('[data-case]').evaluateAll(cards => cards.map(el => el.dataset.case)), ['heartJourney']);
-  assert.match(await page.locator('#record-summary').textContent(), new RegExp(cured + '\\s*\\/\\s*1'));
+  assert.match(await page.locator('#record-summary').innerText(), new RegExp(cured + '\\s*\\/\\s*1'));
   assert.equal(await page.locator(card + ' .case-complete').isVisible(), !!cured);
-  assert.equal(await page.locator('#tab-journey, #tab-quick, #journey-start, [data-case="blood"], [data-case="spore"], [data-case="heart"]').count(), 0);
-  assert.doesNotMatch(await page.locator('#cases').innerText(), /快捷治疗|90\s*秒/);
-  assert.match(await page.locator('#case-pool-count').innerText(), /当前可抽取\s*1\s*种玩法/);
-  assert.equal(await page.locator(card).getAttribute('class').then(value => value.split(/\s+/).includes('case-option')), true);
+  assert.match(await page.locator(card + ' strong').innerText(), /心脏巡诊/);
   assert.deepEqual(await page.locator('[data-preview-case]').evaluateAll(cards => cards.map(el => el.dataset.previewCase)), Object.keys(previews));
   for (const [id, [title, mechanic]] of Object.entries(previews)) {
-    const preview = page.locator(`[data-preview-case="${id}"]`);
-    assert.match(await preview.innerText(), new RegExp(title));
-    assert.match(await preview.innerText(), /待开放/); assert.match(await preview.innerText(), new RegExp(mechanic));
+    const preview = page.locator('[data-preview-case="' + id + '"]');
+    assert.match(await preview.innerText(), new RegExp(title)); assert.match(await preview.innerText(), /待开放/); assert.match(await preview.innerText(), new RegExp(mechanic));
     assert.equal(await preview.evaluate(el => el.tagName), 'DIV');
     assert.equal(await preview.locator('button, a, [tabindex="0"]').count(), 0, 'previews have no live start or keyboard target');
     assert(await preview.locator('svg').count(), 'each preview includes its mechanic icon');
   }
-  const reel = page.locator('#case-reel-window');
-  assert.equal(await reel.getAttribute('aria-hidden'), 'true'); assert.equal(await reel.evaluate(el => el.inert), true);
-  assert.equal(await reel.locator('button, a, [data-case], [tabindex="0"]').count(), 0, 'all reel copies are display only');
-  assert((await reel.locator('[data-reel-case]').count()) > 4, 'reel repeats the four catalog cards');
-  assert.deepEqual(await reel.locator('[data-reel-case]').evaluateAll(cards => [...new Set(cards.map(el => el.dataset.reelCase))]), ['heartJourney', ...Object.keys(previews)]);
-  assert.equal(await page.locator('#case-draw-status').getAttribute('role'), 'status');
-  await assertSelector(page, 'idle');
-  assert.equal(await page.locator('#selected-case-start').isHidden(), true);
-  assert.equal(await page.locator('#selected-case-start').isDisabled(), true);
-  assert.equal(await page.locator('#random-label').innerText(), '随机抽取');
-  assert.equal(await page.locator('#random-case').isEnabled(), true);
+  if (cured) assert.equal(await page.locator(card + ' .option-state').innerText(), '再次巡诊');
   await inspectFit(page);
 }
-async function assertSelector(page, phase, selectedId = phase === 'selected' ? 'heartJourney' : null) {
-  const s = await snapshot(page);
-  assert.deepEqual(s.selector, { phase, selectedId, playableIds: ['heartJourney'] });
-  assert.equal(await page.locator('#case-selector').getAttribute('data-draw-phase'), phase);
-  assert.equal(await page.locator('#case-selector').getAttribute('aria-busy'), String(phase === 'drawing'));
-  return s;
-}
-const reelOffset = page => page.locator('#case-reel-track').evaluate(el => new DOMMatrixReadOnly(getComputedStyle(el).transform).m41);
-async function assertCenteredResult(page) {
-  await expectState(page, 'cases', 'idle'); await assertSelector(page, 'selected');
-  assert.equal(await page.locator('#random-label').innerText(), '再抽一次');
-  assert.equal(await page.locator('#random-case').isEnabled(), true);
-  assert.equal(await page.locator('#selected-case-start').isVisible(), true);
-  assert.equal(await page.locator('#selected-case-start').isEnabled(), true);
-  assert.match(await page.locator('#case-draw-status').innerText(), /心脏巡诊/);
-  const selected = page.locator('#case-reel-track .reel-card.is-selected');
-  assert.equal(await selected.count(), 1); assert.equal(await selected.getAttribute('data-reel-case'), 'heartJourney');
-  const frame = await page.locator('#case-reel-window').boundingBox(), result = await selected.boundingBox();
-  assert(frame && result); assert(Math.abs(result.x + result.width / 2 - frame.x - frame.width / 2) <= 1, 'result card stops in the center within one screen pixel');
-  const visibleCards = await page.locator('#case-reel-track .reel-card').evaluateAll(cards => {
-    const frame = document.querySelector('#case-reel-window').getBoundingClientRect();
-    return cards.filter(el => { const r = el.getBoundingClientRect(); return r.right > frame.left && r.left < frame.right; }).length;
-  });
-  assert(visibleCards >= 3, 'neighboring cards remain partly visible beside the selected card');
-  await inspectFit(page);
+async function assertFreshChapter(page) {
+  await ready(page); await tick(page, 16);
+  const s = await expectState(page, 'treatment', 'playing');
+  assert.equal(s.id, 'heartJourney'); assert.equal(s.remaining, null);
+  assert.equal(s.game.stage, 'diagnosis'); assert.equal(s.game.checkpoint, 'entry'); assert.deepEqual(s.game.scanned, {});
+  assert.equal(s.game.health, 100); assert.equal(s.game.retries, 0); assert.equal(s.game.scanner, false);
+  assert.equal(await page.locator('#modal').isHidden(), true, 'treatment opens without a preparation dialog'); await inspectFit(page);
 }
 async function mouseClick(page, selector, count = 1) {
   const box = await page.locator(selector).boundingBox(); assert(box);
   for (let i = 0; i < count; i++) await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 }
+async function scanToReady(page) {
+  await click(page, '#diagnosis-action'); await assertDiagnosis(page, 'scanning'); await tick(page, 3000); await assertReady(page);
+}
 async function returnFromChapter(page) {
-  await click(page, '#pause'); await click(page, '#dialog-actions button:last-child'); await assertCatalog(page, 0);
-}
-async function resizeViewport(page, size) {
-  await page.setViewportSize(size);
-  // Native resize and visualViewport events can arrive after the mocked clock's first frame.
-  for (let attempt = 0; attempt < 10; attempt++) {
-    await tick(page, 32);
-    const fitted = await page.evaluate(() => {
-      const r = document.querySelector('#app').getBoundingClientRect();
-      return r.x >= -.5 && r.y >= -.5 && r.right <= innerWidth + .5 && r.bottom <= innerHeight + .5;
-    });
-    if (fitted) return;
-  }
-  await inspectFit(page);
-}
-async function assertDirectEntry(page) {
-  await page.evaluate(async () => { if (window.GiantCureAssets) await window.GiantCureAssets.ready; }); await tick(page, 16);
-  const state = await expectState(page, 'treatment', 'playing');
-  assert.equal(state.id, 'heartJourney'); assert.equal(state.remaining, null);
-  assert.equal(state.game.stage, 'diagnosis'); assert.equal(state.game.checkpoint, 'entry');
-  assert.equal(state.game.health, 100); assert.equal(state.game.retries, 0);
-  assert.equal(await page.locator('#modal').isHidden(), true, 'clicking a case needs no preparation dialog');
+  await click(page, '#pause'); await click(page, '#dialog-actions button:last-child'); await assertDiagnosis(page);
 }
 
 (async () => {
   console.log('INFO offline entry SHA-256: ' + testedEntry);
   const options = { headless: true }; if (process.env.CHROME_PATH) options.executablePath = process.env.CHROME_PATH;
   browser = await chromium.launch(options);
-  const context = await browser.newContext({ viewport: { width: 1100, height: 1000 } });
-  const page = await setup(context);
+  const context = await browser.newContext({ viewport: { width: 1100, height: 1000 } }); page = await setup(context);
 
-  await mark('file startup, help and sound remain usable with only the heart chapter registered', async () => {
+  await mark('offline startup keeps chapter registration, help and sound usable', async () => {
     await expectState(page, 'home', 'idle'); await inspectFit(page);
     assert.deepEqual(await page.evaluate(() => Object.keys(window.GiantCureGames)), ['heartJourney']);
     await click(page, '#help'); assert(await page.locator('#dialog-title').isVisible()); await inspectFit(page);
-    assert.doesNotMatch(await page.locator('#dialog-body').innerText(), /快捷治疗|血河淤堵|孢子侵染|心跳失序|90\s*秒/);
+    assert.doesNotMatch(await page.locator('#dialog-body').innerText(), /随机|再抽|血栓|传导|90\s*秒/);
     await primary(page); await expectState(page, 'home', 'idle');
     await click(page, '#sound'); assert.equal(await page.locator('#sound').getAttribute('aria-pressed'), 'true');
-    await click(page, '#sound'); assert.equal(await page.locator('#sound').getAttribute('aria-pressed'), 'false');
+    await click(page, '#sound'); assert.equal(await page.locator('#sound').getAttribute('aria-pressed'), 'false'); await tick(page, 2300);
   });
 
-  await mark('four-play catalog shows three inert previews and the available case opens directly', async () => {
-    await click(page, '#begin'); await assertCatalog(page, 0); await capture(page, 'desktop');
-    assert.match(await page.locator(card).innerText(), /心脏巡诊/);
-    await click(page, card + ' strong'); await assertDirectEntry(page); await inspectFit(page);
+  await mark('cover opens a quiet diagnosis room with a body monitor and no case spoilers', async () => {
+    await click(page, '#begin'); await assertDiagnosis(page);
+    assert.equal(await page.locator('#diagnosis-body').isVisible(), true);
+    assert.equal(await page.locator('#case-records').isVisible(), false);
+    await capture(page, 'idle');
   });
 
-  await mark('help and pause freeze active time; returning to the case list starts a fresh chapter', async () => {
+  await mark('a 2.8 second inspection collects signals, checks circulation and locates the heart before explicit treatment', async () => {
+    const before = await snapshot(page);
+    await click(page, '#diagnosis-action'); await assertDiagnosis(page, 'scanning');
+    assert.match(await page.locator('#diagnosis-status').innerText(), /采集生命信号/);
+    assert.notEqual(await page.locator('#diagnosis-wave .wave-trace').evaluate(el => getComputedStyle(el).animationName), 'none');
+    assert.equal(await page.locator('#case-back').isEnabled(), true);
+    const startY = (await page.locator('#diagnosis-scan-line').boundingBox()).y;
+    await mouseClick(page, '#diagnosis-action', 4); await mouseClick(page, '#case-archive', 3);
+    await tick(page, 1000); await assertDiagnosis(page, 'scanning');
+    assert.match(await page.locator('#diagnosis-status').innerText(), /检查循环状态/);
+    assert((await page.locator('#diagnosis-scan-line').boundingBox()).y > startY + 5, 'scan line moves from head toward feet');
+    await capture(page, 'scanning');
+    await tick(page, 1100); await assertDiagnosis(page, 'scanning');
+    assert.match(await page.locator('#diagnosis-status').innerText(), /定位异常/);
+    await tick(page, 400); await assertDiagnosis(page, 'scanning');
+    assert.equal((await snapshot(page)).elapsed, before.elapsed, 'inspection cannot advance chapter time');
+    await tick(page, 500); await assertReady(page); await capture(page, 'ready');
+    await page.locator('#diagnosis-action').focus(); await page.keyboard.press('Enter'); await tick(page, 32); await assertFreshChapter(page);
+    assert((await snapshot(page)).elapsed < .15, 'inspection does not carry time into the chapter');
+  });
+
+  await mark('treatment help and pause freeze active time; returning opens a fresh diagnosis room', async () => {
     await page.keyboard.down('KeyD'); await tick(page, 500); await page.keyboard.up('KeyD');
     await click(page, '#help'); const helpTime = (await snapshot(page)).elapsed;
     await tick(page, 4000); assert.equal((await snapshot(page)).elapsed, helpTime); await primary(page);
@@ -181,152 +193,144 @@ async function assertDirectEntry(page) {
     await click(page, '#pause'); const pauseTime = (await snapshot(page)).elapsed;
     await tick(page, 4000); assert.equal((await snapshot(page)).elapsed, pauseTime);
     assert.equal(await page.locator('#dialog-actions button').count(), 3);
-    assert.match(await page.locator('#dialog-actions button:last-child').innerText(), /返回病历簿/);
-    await click(page, '#dialog-actions button:last-child'); await assertCatalog(page, 0);
-    await page.locator(card).focus(); await page.keyboard.press('Enter'); await tick(page, 32); await assertDirectEntry(page);
-    assert((await snapshot(page)).elapsed < .1);
+    await click(page, '#dialog-actions button:last-child'); await assertDiagnosis(page);
+    await openArchive(page); await click(page, card + ' strong'); await assertFreshChapter(page);
   });
 
-  await mark('cover navigation can resume safely or leave the chapter and reopen the catalog', async () => {
-    await click(page, '#brand'); await expectState(page, 'treatment', 'paused');
-    await primary(page); await expectState(page, 'treatment', 'playing');
+  await mark('brand can resume or leave treatment and both cover routes reopen idle diagnosis', async () => {
+    await click(page, '#brand'); await expectState(page, 'treatment', 'paused'); await primary(page); await expectState(page, 'treatment', 'playing');
     await click(page, '#brand'); await click(page, '#dialog-actions .secondary-button');
-    await expectState(page, 'home', 'idle'); await click(page, '#begin'); await assertCatalog(page, 0);
+    await expectState(page, 'home', 'idle'); await click(page, '#begin'); await assertDiagnosis(page);
     await click(page, '#case-back'); await expectState(page, 'home', 'idle');
-    await page.reload(); await tick(page, 32); await expectState(page, 'home', 'idle');
-    await click(page, '#begin'); await assertCatalog(page, 0);
+    await page.reload(); await ready(page); await expectState(page, 'home', 'idle'); await click(page, '#begin'); await assertDiagnosis(page);
   });
 
-  await mark('random draw scrolls left for about 2.8 seconds, ignores rapid input and confirms only the playable chapter', async () => {
-    const before = await snapshot(page), origin = await reelOffset(page);
-    await click(page, '#random-case'); await assertSelector(page, 'drawing');
-    assert.equal(await page.locator('#random-case').isDisabled(), true);
-    assert.equal(await page.locator(card).isDisabled(), true);
-    assert.equal(await page.locator('#selected-case-start').isDisabled(), true);
-    assert.equal(await page.locator('#case-back').isEnabled(), true);
-    await mouseClick(page, '#random-case', 4); await mouseClick(page, card, 3);
-    await tick(page, 1000); await assertSelector(page, 'drawing');
-    assert((await reelOffset(page)) < origin - 50, 'the track moves left during the draw');
-    await capture(page, 'drawing', 0);
-    await tick(page, 1400); await assertSelector(page, 'drawing');
-    assert.equal((await snapshot(page)).phase, 'idle', 'drawing does not enter the chapter');
-    assert.equal((await snapshot(page)).elapsed, before.elapsed, 'drawing does not advance active chapter time');
-    await tick(page, 600); await assertCenteredResult(page); await capture(page, 'selected');
-    await page.locator('#random-case').focus(); await page.keyboard.press('Enter'); await tick(page, 32);
-    await assertSelector(page, 'drawing'); await tick(page, 3000); await assertCenteredResult(page);
-    await page.locator('#selected-case-start').focus(); await page.keyboard.press('Enter'); await tick(page, 32);
-    await assertDirectEntry(page); assert((await snapshot(page)).elapsed < .1, 'confirm starts exactly one fresh chapter');
+  await mark('archive previews are read only; keyboard focus includes case and close buttons and Escape restores focus', async () => {
+    await openArchive(page); await capture(page, 'archive');
+    for (const id of Object.keys(previews)) { await mouseClick(page, '[data-preview-case="' + id + '"]'); await tick(page, 32); await expectState(page, 'cases', 'idle'); }
+    const buttons = page.locator('#dialog-body button, #dialog-actions button'), count = await buttons.count(); assert(count >= 2);
+    // Clicking read-only preview text can blur a button; the next Tab must recover into the dialog.
+    await page.keyboard.press('Tab');
+    const visited = new Set();
+    for (let i = 0; i <= count; i++) {
+      assert(await page.evaluate(() => !!document.activeElement.closest('#modal')), 'Tab stays inside archive dialog');
+      visited.add(await buttons.evaluateAll(items => items.indexOf(document.activeElement))); await page.keyboard.press('Tab');
+    }
+    assert.equal(visited.size, count, 'Tab reaches both archive entries and dialog actions'); assert(!visited.has(-1));
+    for (let i = 0; i <= count; i++) {
+      await page.keyboard.press('Shift+Tab');
+      assert(await page.evaluate(() => !!document.activeElement.closest('#modal')), 'Shift+Tab stays inside archive dialog');
+    }
+    await page.keyboard.press('Escape'); await tick(page, 32); assert.equal(await page.locator('#modal').isHidden(), true);
+    assert.equal(await page.locator('#case-archive').evaluate(el => document.activeElement === el), true); await assertDiagnosis(page);
+  });
+
+  await mark('closing the archive preserves idle or ready diagnosis and a direct archived case starts unscanned', async () => {
+    await openArchive(page); await primary(page); await assertDiagnosis(page);
+    await scanToReady(page); await openArchive(page); await primary(page); await assertReady(page);
+    await openArchive(page); await page.locator(card).focus(); await page.keyboard.press('Enter'); await tick(page, 32); await assertFreshChapter(page);
     await returnFromChapter(page);
   });
 
-  await mark('preview pointer input cannot start gameplay or change the playable pool', async () => {
-    for (const id of Object.keys(previews)) {
-      await mouseClick(page, `[data-preview-case="${id}"]`); await tick(page, 32); await expectState(page, 'cases', 'idle'); await assertSelector(page, 'idle');
-    }
-    await assertCatalog(page, 0);
-  });
-
-  await mark('leaving by cover or brand cancels drawing and discards stale completion callbacks', async () => {
+  await mark('cover and brand cancel an inspection and discard stale completion callbacks', async () => {
     for (const exit of ['#case-back', '#brand']) {
-      await click(page, '#random-case'); await tick(page, 600); await assertSelector(page, 'drawing');
-      await click(page, exit); await expectState(page, 'home', 'idle'); await assertSelector(page, 'idle');
-      await tick(page, 4000); await expectState(page, 'home', 'idle'); await assertSelector(page, 'idle');
-      await click(page, '#begin'); await assertCatalog(page, 0);
-      await click(page, '#random-case'); await tick(page, 3000); await assertCenteredResult(page);
-      await click(page, '#case-back'); await click(page, '#begin'); await assertCatalog(page, 0);
+      await click(page, '#diagnosis-action'); await tick(page, 600); await assertDiagnosis(page, 'scanning');
+      await click(page, exit); await expectState(page, 'home', 'idle');
+      assert.deepEqual((await snapshot(page)).diagnosis, { phase: 'idle', caseId: null });
+      await tick(page, 4000); await expectState(page, 'home', 'idle');
+      assert.deepEqual((await snapshot(page)).diagnosis, { phase: 'idle', caseId: null });
+      await click(page, '#begin'); await assertDiagnosis(page); await scanToReady(page);
+      await click(page, '#case-back'); await click(page, '#begin'); await assertDiagnosis(page);
     }
   });
 
-  await mark('catalog help cancels drawing, explains selection and does not reveal a late result', async () => {
-    await click(page, '#random-case'); await tick(page, 500); await click(page, '#help');
-    await expectState(page, 'cases', 'idle'); await assertSelector(page, 'idle');
+  await mark('diagnosis help cancels scanning without revealing an exact cause or late report', async () => {
+    await click(page, '#diagnosis-action'); await tick(page, 500); await click(page, '#help');
     assert.equal(await page.locator('#modal').isVisible(), true);
-    assert.match(await page.locator('#dialog-body').innerText(), /抽取/); assert.match(await page.locator('#dialog-body').innerText(), /待开放/);
-    await inspectFit(page); await tick(page, 4000); await assertSelector(page, 'idle');
-    await primary(page); await assertCatalog(page, 0);
+    assert.deepEqual((await snapshot(page)).diagnosis, { phase: 'idle', caseId: null });
+    assert.match(await page.locator('#dialog-body').innerText(), /检查|诊断/);
+    assert.doesNotMatch(await page.locator('#dialog-body').innerText(), /血栓|传导|A\s*→\s*B|随机/);
+    await inspectFit(page); await tick(page, 4000); await primary(page); await assertDiagnosis(page);
   });
 
-  await mark('browser visibility loss cancels the draw and returning permits a fresh selection', async () => {
-    await click(page, '#random-case'); await tick(page, 500);
-    // Emulate the browser visibility signal; game diagnostics and internal state remain read-only.
-    await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
-    await assertSelector(page, 'idle'); await tick(page, 4000); await assertSelector(page, 'idle');
-    await page.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); });
-    await assertCatalog(page, 0); await click(page, '#random-case'); await tick(page, 3000); await assertCenteredResult(page);
-    await click(page, '#case-back'); await click(page, '#begin'); await assertCatalog(page, 0);
+  await mark('browser visibility and focus loss cancel scanning while allowing a fresh check afterward', async () => {
+    for (const reason of ['visibility', 'blur']) {
+      await click(page, '#diagnosis-action'); await tick(page, 500);
+      // Simulate browser environment signals without writing game or diagnosis state.
+      if (reason === 'visibility') await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
+      else await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+      await assertDiagnosis(page); await tick(page, 4000); await assertDiagnosis(page);
+      if (reason === 'visibility') await page.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); });
+      await scanToReady(page); await click(page, '#case-back'); await click(page, '#begin'); await assertDiagnosis(page);
+    }
   });
 
-  await mark('window focus loss cancels drawing even while the page remains visible', async () => {
-    await click(page, '#random-case'); await tick(page, 500);
-    assert.equal(await page.evaluate(() => document.hidden), false);
-    await page.evaluate(() => window.dispatchEvent(new Event('blur')));
-    await assertSelector(page, 'idle'); await tick(page, 4000); await assertCatalog(page, 0);
-    await click(page, '#random-case'); await tick(page, 3000); await assertCenteredResult(page);
-    await click(page, '#case-back'); await click(page, '#begin'); await assertCatalog(page, 0);
+  await mark('resizing during and after inspection keeps the report target on the heart and never starts gameplay', async () => {
+    await click(page, '#diagnosis-action'); await tick(page, 700);
+    await resizeViewport(page, { width: 680, height: 840 }); await assertDiagnosis(page, 'scanning');
+    await tick(page, 2400); await assertReady(page);
+    await resizeViewport(page, { width: 1100, height: 1000 }); await assertReady(page);
+    await click(page, '#brand'); await click(page, '#begin'); await assertDiagnosis(page);
   });
 
-  await mark('resizing during and after drawing retains an exact centered result without starting gameplay', async () => {
-    await click(page, '#random-case'); await tick(page, 700);
-    await resizeViewport(page, { width: 680, height: 840 }); await assertSelector(page, 'drawing'); await inspectFit(page);
-    await tick(page, 2400); await assertCenteredResult(page);
-    await resizeViewport(page, { width: 1100, height: 1000 }); await assertCenteredResult(page);
-    assert.equal((await snapshot(page)).game, null);
-    await click(page, '#brand'); await click(page, '#begin'); await assertCatalog(page, 0);
-  });
-
-  await mark('reduced motion uses a short fade with no long-distance scrolling and keeps confirmation explicit', async () => {
+  await mark('reduced motion uses a short inspection fade without a traveling line or looping waveform', async () => {
     const reducedContext = await browser.newContext({ viewport: { width: 1100, height: 1000 }, reducedMotion: 'reduce' });
-    const reduced = await setup(reducedContext); await click(reduced, '#begin'); await assertCatalog(reduced, 0);
+    const reduced = await setup(reducedContext); await click(reduced, '#begin'); await assertDiagnosis(reduced);
     assert.equal((await snapshot(reduced)).reducedMotion, true);
-    await click(reduced, '#random-case'); await assertSelector(reduced, 'drawing'); const origin = await reelOffset(reduced);
-    await tick(reduced, 64); await assertSelector(reduced, 'drawing');
-    assert(Math.abs((await reelOffset(reduced)) - origin) <= 1, 'reduced motion avoids a moving reel');
-    await tick(reduced, 160); await assertCenteredResult(reduced);
-    await capture(reduced, 'reduced-motion'); await click(reduced, '#selected-case-start'); await assertDirectEntry(reduced);
-    await reducedContext.close();
+    assert.equal(await painted(reduced, '#diagnosis-scan-line'), false);
+    assert.equal(await reduced.locator('#diagnosis-wave .wave-trace').evaluate(el => getComputedStyle(el).animationName), 'none');
+    await click(reduced, '#diagnosis-action'); await assertDiagnosis(reduced, 'scanning');
+    assert.equal(await reduced.locator('#diagnosis-wave .wave-trace').evaluate(el => getComputedStyle(el).animationName), 'none');
+    await tick(reduced, 64); await assertDiagnosis(reduced, 'scanning'); await tick(reduced, 160); await assertReady(reduced);
+    await capture(reduced, 'reduced-motion'); await click(reduced, '#diagnosis-action'); await assertFreshChapter(reduced); await reducedContext.close();
   });
 
-  await mark('old quick-game wins cannot complete the heart chapter or inflate its catalog count', async () => {
+  await mark('old quick-game wins cannot complete the chapter or inflate archive totals', async () => {
     const legacyContext = await browser.newContext({ viewport: { width: 1100, height: 1000 } });
-    const legacy = await setup(legacyContext, { 'giant-cure-records-v1': {
-      blood: { wins: 3, best: 1500, stars: 3 }, spore: { wins: 2, best: 1400, stars: 3 }, heart: { wins: 1, best: 1300, stars: 3 }
-    } });
-    await click(legacy, '#begin'); await assertCatalog(legacy, 0);
+    const legacy = await setup(legacyContext, { 'giant-cure-records-v1': { blood: { wins: 3, best: 1500, stars: 3 }, spore: { wins: 2, best: 1400, stars: 3 }, heart: { wins: 1, best: 1300, stars: 3 } } });
+    await click(legacy, '#begin'); await assertDiagnosis(legacy); await openArchive(legacy);
     assert.doesNotMatch(await legacy.locator(card + ' .case-mechanic').innerText(), /最佳/);
-    await click(legacy, card); await assertDirectEntry(legacy); await legacyContext.close();
+    await click(legacy, card); await assertFreshChapter(legacy); await legacyContext.close();
   });
 
-  await mark('real heart records show one completed case, its completion badge and best time after refresh', async () => {
+  await mark('real heart records preserve completion, best time and an explicit revisit action after refresh', async () => {
     const recordedContext = await browser.newContext({ viewport: { width: 1100, height: 1000 } });
     const recorded = await setup(recordedContext, { 'giant-cure-journey-v1': { wins: 2, bestSeconds: 198 } });
-    await click(recorded, '#begin'); await assertCatalog(recorded, 1);
-    assert.match(await recorded.locator(card + ' .case-mechanic').innerText(), /最佳.*198.*秒/);
-    await capture(recorded, 'completed');
-    await recorded.reload(); await tick(recorded, 32); await expectState(recorded, 'home', 'idle');
-    await click(recorded, '#begin'); await assertCatalog(recorded, 1);
-    await click(recorded, card); await assertDirectEntry(recorded); await recordedContext.close();
+    await click(recorded, '#begin'); await assertDiagnosis(recorded); await openArchive(recorded, 1);
+    assert.match(await recorded.locator(card + ' .case-mechanic').innerText(), /最佳.*198.*秒/); await capture(recorded, 'completed');
+    await recorded.reload(); await ready(recorded); await expectState(recorded, 'home', 'idle');
+    await click(recorded, '#begin'); await openArchive(recorded, 1); await click(recorded, card); await assertFreshChapter(recorded); await recordedContext.close();
+  });
+
+  await mark('malformed or unavailable local storage cannot prevent diagnosis, archive access or treatment', async () => {
+    for (const storage of [{ raw: { 'giant-cure-journey-v1': '{broken json' } }, { unavailable: true }]) {
+      const storageContext = await browser.newContext({ viewport: { width: 1100, height: 1000 } });
+      const safe = await setup(storageContext, undefined, storage); await click(safe, '#begin'); await assertDiagnosis(safe); await openArchive(safe);
+      await primary(safe); await scanToReady(safe); await click(safe, '#diagnosis-action'); await assertFreshChapter(safe); await storageContext.close();
+    }
   });
 
   for (const size of [{ width: 360, height: 800 }, { width: 390, height: 844 }]) {
-    await mark(`mobile ${size.width}×${size.height}: reel and controls fit; touch supports random confirmation and direct choice`, async () => {
+    await mark('mobile ' + size.width + '×' + size.height + ': monitor, report and archive fit; touch supports inspection and direct cases', async () => {
       const mobileContext = await browser.newContext({ viewport: size, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
       const mobile = await setup(mobileContext); await inspectFit(mobile);
-      await mobile.locator('#begin').tap(); await tick(mobile, 32); await assertCatalog(mobile, 0);
-      await capture(mobile, `${size.width}x${size.height}`);
-      await mobile.locator('#random-case').tap(); await tick(mobile, 32); await assertSelector(mobile, 'drawing'); await inspectFit(mobile);
-      await tick(mobile, 3000); await assertCenteredResult(mobile); await capture(mobile, `${size.width}x${size.height}-selected`);
-      await mobile.locator('#selected-case-start').tap(); await tick(mobile, 32); await assertDirectEntry(mobile); await inspectFit(mobile);
-      await mobile.locator('#pause').tap(); await tick(mobile, 32); await inspectFit(mobile);
-      await mobile.locator('#dialog-actions button:last-child').tap(); await tick(mobile, 32); await assertCatalog(mobile, 0);
-      await mobile.locator(card).tap(); await tick(mobile, 32); await assertDirectEntry(mobile); await inspectFit(mobile);
-      await mobile.locator('#pause').tap(); await tick(mobile, 32); await inspectFit(mobile);
-      await mobile.locator('#dialog-actions button:last-child').tap(); await tick(mobile, 32); await assertCatalog(mobile, 0);
+      await mobile.locator('#begin').tap(); await tick(mobile, 32); await assertDiagnosis(mobile); await capture(mobile, size.width + 'x' + size.height + '-idle');
+      await mobile.locator('#diagnosis-action').tap(); await tick(mobile, 32); await assertDiagnosis(mobile, 'scanning'); await tick(mobile, 3000); await assertReady(mobile);
+      await capture(mobile, size.width + 'x' + size.height + '-ready');
+      await mobile.locator('#case-archive').tap(); await tick(mobile, 32); assert.equal(await mobile.locator('#case-records').isVisible(), true); await inspectFit(mobile);
+      await capture(mobile, size.width + 'x' + size.height + '-archive'); await primary(mobile); await assertReady(mobile);
+      await mobile.locator('#diagnosis-action').tap(); await tick(mobile, 32); await assertFreshChapter(mobile); await returnFromChapter(mobile);
+      await mobile.locator('#case-archive').tap(); await tick(mobile, 32); await mobile.locator(card).tap(); await tick(mobile, 32); await assertFreshChapter(mobile); await returnFromChapter(mobile);
       await mobile.locator('#help').tap(); await tick(mobile, 32); await inspectFit(mobile); await primary(mobile);
       await click(mobile, '#case-back'); await expectState(mobile, 'home', 'idle'); await mobileContext.close();
     });
   }
-  assert.deepEqual(errors, [], 'no browser runtime errors'); assert.deepEqual(remoteRequests, [], 'no external resource requests'); assert.equal(entryHash(), testedEntry, 'offline entry remains identical throughout the suite');
-  console.log(`\n${checks.length} case-catalog browser checks passed; no errors or external requests.`);
-})().catch(error => {
-  console.error(error.stack || error); if (errors.length) console.error('Page errors:', errors); if (remoteRequests.length) console.error('External requests:', remoteRequests); process.exitCode = 1;
+
+  assert.deepEqual(errors, [], 'no browser runtime errors'); assert.deepEqual(remoteRequests, [], 'no external resource requests');
+  assert.equal(entryHash(), testedEntry, 'offline entry remains identical throughout the suite');
+  console.log('\n' + checks.length + ' diagnosis-room browser checks passed; no errors or external requests.');
+})().catch(async error => {
+  console.error(error.stack || error);
+  if (page && !page.isClosed()) { console.error('Last snapshot:', JSON.stringify(await snapshot(page)).slice(0, 12000)); await capture(page, 'failure'); }
+  if (errors.length) console.error('Page errors:', errors); if (remoteRequests.length) console.error('External requests:', remoteRequests); process.exitCode = 1;
 }).finally(async () => { if (browser) await browser.close(); });

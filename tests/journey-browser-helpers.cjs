@@ -21,17 +21,28 @@ async function setup(context, errors, requests, frameGap = 0) {
   const epoch = Date.parse('2026-10-21T05:00:00Z');
   await page.clock.install({ time: new Date(epoch) }); await page.clock.pauseAt(new Date(epoch + 1000));
   if (frameGap) await page.addInitScript(gap => {
-    const nativeFrame = requestAnimationFrame.bind(window); let last = -Infinity;
-    window.requestAnimationFrame = callback => nativeFrame(function deliver(time) { if (time - last >= gap) { last = time; callback(time); } else nativeFrame(deliver); });
+    const nativeFrame = requestAnimationFrame.bind(window);
+    // Each pending callback shares the slow display cadence; one animation must not starve another.
+    window.requestAnimationFrame = callback => {
+      const requestedAt = performance.now();
+      return nativeFrame(function deliver(time) { if (time - requestedAt >= gap) callback(time); else nativeFrame(deliver); });
+    };
   }, frameGap);
   await page.goto(url); await ready(page);
   assert(await page.evaluate(() => !!window.GiantCure)); return page;
 }
 async function start(page) {
   if ((await snapshot(page)).screen === 'home') await click(page, '#begin');
-  await click(page, '[data-case="heartJourney"]'); await ready(page);
+  let diagnosis = (await snapshot(page)).diagnosis;
+  if (diagnosis.phase === 'idle') await click(page, '#diagnosis-action');
+  if ((await snapshot(page)).diagnosis.phase === 'scanning') await tick(page, 3000);
+  diagnosis = (await snapshot(page)).diagnosis;
+  assert.deepEqual(diagnosis, { phase: 'ready', caseId: 'heartJourney' });
+  await click(page, '#diagnosis-action'); await ready(page);
   const s = await snapshot(page); assert.equal(s.id, 'heartJourney'); assert.equal(s.phase, 'playing');
-  assert.equal(await page.locator('#modal').isHidden(), true, 'preloading enters directly without a second start button');
+  assert.deepEqual(s.game.scanned, {}, 'room inspection does not write near-field chapter scan discoveries');
+  assert.equal(s.game.stage, 'diagnosis'); assert.equal(s.game.checkpoint, 'entry');
+  assert.equal(await page.locator('#modal').isHidden(), true, 'inspection confirmation enters directly without a preparation dialog');
 }
 function project(s, world) {
   const { viewport: v, camera: c } = s.view;

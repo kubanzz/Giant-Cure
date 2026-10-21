@@ -23,19 +23,27 @@
         <div class="home-heading"><p class="eyebrow"><span></span> 一份关于生命的奇幻病历 <span></span></p><h1 id="home-title">万物生<span class="title-spark">✧</span></h1><p class="home-subtitle">巨人的病历簿</p><p class="home-en">THE GIANT’S LITTLE BOOK OF CURES</p></div>
         <div class="world-caption caption-one"><span class="caption-dot"></span>他的身体，是我们的世界</div>
         <div class="world-caption caption-two">每一次治愈<br><span>都有万物回应</span><i></i></div>
-        <div class="home-bottom"><button id="begin" class="primary-button"><span>翻开病历簿</span><span class="button-arrow">↗</span></button><p class="journey-note"><span class="tiny-leaf">❧</span> 一场约 3–5 分钟的微观疗愈之旅</p><div class="home-footer"><span>心脏巡诊 · 唤醒生命之城</span><span>VOL. 01 / 2026</span></div></div>
+        <div class="home-bottom"><button id="begin" class="primary-button"><span>进入诊断室</span><span class="button-arrow">↗</span></button><p class="journey-note"><span class="tiny-leaf">❧</span> 一场约 3–5 分钟的微观疗愈之旅</p><div class="home-footer"><span>心脏巡诊 · 唤醒生命之城</span><span>VOL. 01 / 2026</span></div></div>
       </section>
       <section id="cases" class="screen" hidden aria-labelledby="cases-title">
-        <div class="page-heading"><p class="eyebrow">THE CASEBOOK <span id="case-count" class="heading-number">/ 01</span></p><h2 id="cases-title">今天，治愈哪里？</h2><p>走进巨人的身体，倾听世界的求救。</p></div>
-        <div class="case-summary"><span><i class="status-dot"></i> 生态巡诊中</span><span id="record-summary">已治愈 0 / 1 个病例</span></div>
-        <div id="case-selector" class="case-selector" data-draw-phase="idle" aria-busy="false">
-          <p id="case-pool-count" class="case-pool-count">当前可抽取 1 种玩法</p>
-          <div id="case-reel-window" class="case-reel-window" inert aria-hidden="true"><div id="case-reel-track" class="case-reel-track"></div><div class="case-reel-frame"><i></i><i></i></div></div>
-          <p id="case-draw-status" class="case-draw-status" role="status" aria-live="polite">让心跳，指引下一站。</p>
-          <div class="case-draw-actions"><button id="selected-case-start" class="primary-button" hidden disabled><span>进入玩法</span><span aria-hidden="true">↗</span></button><button id="random-case" class="primary-button"><span id="random-label">随机抽取</span><span class="button-arrow" aria-hidden="true">↗</span></button></div>
+        <div class="page-heading diagnosis-heading"><p class="eyebrow">LIFE DIAGNOSTICS <span class="heading-number">/ 01</span></p><h2 id="cases-title">生命诊断</h2></div>
+        <div id="diagnosis-panel" class="diagnosis-panel" data-diagnosis-phase="idle" aria-busy="false">
+          <div id="diagnosis-monitor" class="diagnosis-monitor">
+            <div class="monitor-caption" aria-hidden="true"><span>GIANT / 001</span><span><i></i> BIO SIGNAL</span></div>
+            <svg id="diagnosis-body" class="diagnosis-body" viewBox="0 0 624 500" fill="none" role="img" aria-label="巨人全身生命信号监测轮廓">
+              <g class="body-reference" aria-hidden="true"><path d="M312 18v448M160 177h304M188 286h248"/><circle cx="312" cy="177" r="132"/><path d="M192 40h-22v22m262-22h22v22M192 447h-22v-22m262 22h22v-22"/></g>
+              <g class="giant-outline"><ellipse cx="312" cy="66" rx="31" ry="40"/><path d="M292 105v18l-26 9c-10 4-15 10-19 22l-28 85c-4 12-1 19 8 21 9 3 15-3 19-14l22-63 5 82-4 25 6 126c0 11 6 17 16 17 11 0 16-6 17-18l4-101 4 101c1 12 6 18 17 18 10 0 16-6 16-17l6-126-4-25 5-82 22 63c4 11 10 17 19 14 9-2 12-9 8-21l-28-85c-4-12-9-18-19-22l-26-9v-18"/><path class="body-detail" d="M286 143c15 8 37 8 52 0m-26 9v131m-34-20c23 11 45 11 68 0m-61-80c15-10 39-10 54 0m-27 12c-14 13-19 31-16 48m16-48c14 13 19 31 16 48"/><path class="body-flow" d="M312 157c-1 21 7 25 15 33s10 28 9 43m-24-63c-19 4-28 13-30 27m30 44v40m-11 31-8 72m30-72 8 72"/></g>
+              <circle id="diagnosis-heart-anchor" cx="338" cy="177" r="1" fill="transparent" aria-hidden="true"/>
+              <g id="diagnosis-target" transform="translate(338 177)" aria-hidden="true"><circle r="22"/><circle r="6"/><path d="M-31 0h12m38 0h12M0-31v12m0 38v12"/><path class="target-leader" d="m23-23 32-25h60"/><text x="63" y="-58">心区</text></g>
+            </svg>
+            <div id="diagnosis-scan-line" class="diagnosis-scan-line" aria-hidden="true"></div>
+            <div id="diagnosis-wave" class="diagnosis-wave" aria-hidden="true"><span>ECG</span><svg viewBox="0 0 500 44" preserveAspectRatio="none"><path class="wave-baseline" d="M0 25h500"/><path class="wave-trace" d="M0 25h40l10-4 10 4h26l8-10 9 24 11-37 12 23h28l9-4 11 4h38l10-4 10 4h26l8-10 9 24 11-37 12 23h28l9-4 11 4h38l10-4 10 4h26l8-10 9 24 11-37 12 23h42"/></svg><span class="signal-dot"></span></div>
+          </div>
+          <p id="diagnosis-status" class="diagnosis-status" role="status" aria-live="polite">生命信号待采集</p>
+          <div class="diagnosis-report-space"><p class="diagnosis-placeholder">等待初筛记录</p><div id="diagnosis-report" class="diagnosis-report" hidden><h3>医生初筛报告</h3><p id="diagnosis-finding">心区血流信号减弱</p><p id="diagnosis-detail">具体病因待近距离确认</p></div></div>
+          <button id="diagnosis-action" class="primary-button diagnosis-action"><span id="diagnosis-action-label">开始检查</span><span class="button-arrow" aria-hidden="true">↗</span></button>
         </div>
-        <div class="case-choice"><div class="case-choice-heading"><h3>自己选</h3><span aria-hidden="true">YOUR NEXT LITTLE CURE</span></div><div id="case-options" class="case-options"></div></div>
-        <p class="case-footnote">每个世界，都值得被温柔以待。</p><button id="case-back" class="text-button case-back">← 返回封面</button>
+        <button id="case-archive" class="text-button case-archive">病例档案 <span aria-hidden="true">↗</span></button><button id="case-back" class="text-button case-back">← 返回封面</button>
       </section>
       <section id="treatment" class="screen" hidden aria-labelledby="treatment-title">
         <div class="treatment-heading"><button id="pause" class="small-back">Ⅱ <span>暂停</span></button><p id="case-number" class="eyebrow">CASE 01 / HEART</p><h2 id="treatment-title">心脏巡诊</h2><p id="treatment-subtitle">循着心跳，找到病因</p></div>
@@ -51,7 +59,7 @@
         <div class="result-medallion"><span id="result-emblem"></span><span class="medallion-orbit orbit-one"></span><span class="medallion-orbit orbit-two"></span><i>✧</i><i>✦</i></div>
         <div class="result-heading"><div id="result-stars" class="result-stars journey-status">HEART RESTORED</div><h2 id="result-title">心脏，重新苏醒。</h2><p id="result-description">血流再次奔涌，生命之城亮起新的光。</p></div>
         <div class="result-note"><div class="result-note-label"><span>本次巡诊记录</span><span id="result-stamp">CURED ✓</span></div><div class="result-numbers"><div><strong id="result-score">100</strong><span id="metric-score-label">设备耐久</span></div><div><strong id="result-time">00:00</strong><span>巡诊用时</span></div><div><strong id="result-restored">0</strong><span id="metric-restored-label">重启次数</span></div></div><p id="result-message">一颗心重新跳动，一座世界重生。</p></div>
-        <div class="result-actions"><button id="result-next" class="primary-button"><span>返回病历簿</span><span>↗</span></button><div><button id="retry" class="text-button">↻ 重新巡诊</button><button id="result-cases" class="text-button">返回病历簿 →</button></div></div><p class="result-footnote">愿每一份微小的关怀，都有回声。</p>
+        <div class="result-actions"><button id="result-next" class="primary-button"><span>返回诊断室</span><span>↗</span></button><div><button id="retry" class="text-button">↻ 重新巡诊</button><button id="result-cases" class="text-button">返回诊断室 →</button></div></div><p class="result-footnote">愿每一份微小的关怀，都有回声。</p>
       </section>
       <div id="modal" class="modal-layer" hidden><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><p id="dialog-kicker" class="eyebrow">A MOMENT OF CARE</p><h2 id="dialog-title">让世界歇一会儿</h2><div id="dialog-body"></div><div id="dialog-actions"></div></section></div>
       <div id="toast" role="status" hidden></div>

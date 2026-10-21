@@ -1,4 +1,4 @@
-// Casebook shell: catalog, chapter input, active time, checkpoints and presentation.
+// Diagnosis room, case archives, chapter input, checkpoints and presentation.
 (() => {
   'use strict';
   let W = 720, H = 1280;
@@ -28,7 +28,11 @@
   ];
   const playableCaseIds = () => entryCatalog.filter(entry => entry.status === 'available'
     && cases[entry.id] && typeof window.GiantCureGames[entry.id] === 'function').map(entry => entry.id);
-  const selector = { phase: 'idle', selectedId: null, token: 0, frame: null, reelIndex: entryCatalog.length };
+  // This is an initial screening, not the chapter's own close-range diagnosis.
+  const screeningCase = Object.freeze({
+    caseId: 'heartJourney', finding: '心区血流信号减弱', detail: '具体病因待近距离确认'
+  });
+  const diagnosis = { phase: 'idle', caseId: null, token: 0, frame: null };
   function readRecord(key) {
     try {
       const record = JSON.parse(localStorage.getItem(key) || '{}') || {};
@@ -49,81 +53,68 @@
   let pointerScreen = null, pointerClient = null;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  function renderEntrySelector() {
+  function openCaseArchive() {
+    if (state.screen !== 'cases' || state.modal || diagnosis.phase === 'scanning') return;
     const playable = playableCaseIds();
-    $('case-options').innerHTML = entryCatalog.map(entry => {
+    const completed = caseIds.filter(id => records[id].wins > 0).length;
+    const cards = entryCatalog.map(entry => {
       const available = playable.includes(entry.id);
-      const content = `<span class="option-art">${entryIcon(entry.icon)}</span><span class="case-copy"><strong>${entry.title}</strong><span class="case-mechanic">${available ? cases[entry.id].mechanic : operationIcon(entry.icon) + entry.operation}</span>${available ? '<span class="case-complete" hidden>已治愈 ✓</span>' : ''}</span><span class="option-state">${available ? '↗' : '待开放'}</span>`;
+      const record = available ? records[entry.id] : null;
+      const mechanic = available ? record.wins && record.bestSeconds ? `键盘与鼠标 · 最佳 ${record.bestSeconds} 秒` : cases[entry.id].mechanic : operationIcon(entry.icon) + entry.operation;
+      const content = `<span class="option-art">${entryIcon(entry.icon)}</span><span class="case-copy"><strong>${entry.title}</strong><span class="case-mechanic">${mechanic}</span>${available ? `<span class="case-complete"${record.wins ? '' : ' hidden'}>已治愈 ✓</span>` : ''}</span><span class="option-state">${available ? record.wins ? '再次巡诊' : '前往巡诊 ↗' : '待开放'}</span>`;
       return available
         ? `<button type="button" class="case-option" data-case="${entry.id}">${content}</button>`
         : `<div class="case-option is-coming-soon" data-preview-case="${entry.id}" role="group" aria-label="${entry.title}，待开放">${content}</div>`;
     }).join('');
-    // Decorative copies never share the playable cards' event or record attributes.
-    $('case-reel-track').innerHTML = Array.from({ length: 6 }, () => entryCatalog.map((entry, index) =>
-      `<div class="reel-card" data-reel-case="${entry.id}"><span class="reel-kicker">CASE ${String(index + 1).padStart(2, '0')}</span><span class="reel-art">${entryIcon(entry.icon)}</span><strong>${entry.title}</strong><span class="reel-mechanic">${operationIcon(entry.icon)}${entry.operation}</span><span class="reel-badge">${playable.includes(entry.id) ? '可游玩' : '待开放'}</span></div>`
-    ).join('')).join('');
-    updateSelectorControls();
+    openDialog('病例档案', `<div id="case-records" class="case-summary"><span id="record-summary">已治愈 ${completed} / ${caseIds.length} 个病例</span><span id="case-count">${playable.length} 项可出诊</span></div><div id="case-options" class="case-options">${cards}</div>`, [
+      { label: '返回诊断室', primary: true, action: closeModal }
+    ], 'CASE ARCHIVE / FIELD NOTES', 'archive');
   }
-  function updateSelectorControls() {
-    const playable = playableCaseIds(), drawing = selector.phase === 'drawing', selected = selector.phase === 'selected';
-    $('case-selector').dataset.drawPhase = selector.phase;
-    $('case-selector').setAttribute('aria-busy', String(drawing));
-    $('case-pool-count').textContent = `当前可抽取 ${playable.length} 种玩法`;
-    $('random-case').disabled = drawing || !playable.length;
-    $('random-label').textContent = drawing ? '抽取中…' : selected ? '再抽一次' : '随机抽取';
-    $('selected-case-start').hidden = !selected;
-    $('selected-case-start').disabled = !selected || !playable.includes(selector.selectedId);
-    for (const button of $('case-options').querySelectorAll('[data-case]')) button.disabled = drawing || !playable.includes(button.dataset.case);
+  function updateDiagnosisControls() {
+    const scanning = diagnosis.phase === 'scanning', ready = diagnosis.phase === 'ready';
+    $('diagnosis-panel').dataset.diagnosisPhase = diagnosis.phase;
+    $('diagnosis-panel').setAttribute('aria-busy', String(scanning));
+    $('diagnosis-action').disabled = scanning || !playableCaseIds().includes(screeningCase.caseId);
+    $('diagnosis-action-label').textContent = scanning ? '检查中…' : ready ? '前往治疗' : '开始检查';
+    $('case-archive').disabled = scanning;
+    $('diagnosis-report').hidden = !ready;
   }
-  function reelOffset(index) {
-    const card = $('case-reel-track').children[index];
-    return $('case-reel-window').clientWidth / 2 - card.offsetLeft - card.offsetWidth / 2;
+  function resetDiagnosis() {
+    diagnosis.token++;
+    if (diagnosis.frame !== null) cancelAnimationFrame(diagnosis.frame);
+    Object.assign(diagnosis, { phase: 'idle', caseId: null, frame: null });
+    $('diagnosis-panel').style.setProperty('--scan-progress', '0');
+    $('diagnosis-monitor').style.opacity = '';
+    $('diagnosis-status').textContent = '生命信号待采集';
+    updateDiagnosisControls();
   }
-  function positionReel(index) {
-    if ($('case-reel-window').clientWidth) $('case-reel-track').style.transform = `translateX(${reelOffset(index)}px)`;
-  }
-  function resetSelector() {
-    selector.token++;
-    if (selector.frame !== null) cancelAnimationFrame(selector.frame);
-    Object.assign(selector, { phase: 'idle', selectedId: null, frame: null, reelIndex: entryCatalog.length });
-    $('case-reel-track').style.opacity = '';
-    for (const card of $('case-reel-track').children) card.classList.remove('is-selected');
-    $('case-draw-status').textContent = playableCaseIds().length ? '让心跳，指引下一站。' : '玩法正在准备中';
-    positionReel(selector.reelIndex); updateSelectorControls();
-  }
-  function drawCase() {
-    if (state.screen !== 'cases' || state.modal || selector.phase === 'drawing') return;
-    const playable = playableCaseIds();
-    if (!playable.length) return;
-    const chosenId = playable[Math.floor(Math.random() * playable.length)];
-    resetSelector();
-    const startIndex = entryCatalog.length;
-    const targetIndex = entryCatalog.length * 4 + entryCatalog.findIndex(entry => entry.id === chosenId);
-    const token = ++selector.token, startedAt = performance.now(), duration = reducedMotion ? 160 : 2800;
-    selector.phase = 'drawing';
-    $('case-draw-status').textContent = '正在寻找下一份求救…';
-    updateSelectorControls();
-    if (reducedMotion) { positionReel(targetIndex); $('case-reel-track').style.opacity = '.35'; }
+  function beginScreening() {
+    if (state.screen !== 'cases' || state.modal || diagnosis.phase !== 'idle' || !playableCaseIds().includes(screeningCase.caseId)) return;
+    const token = ++diagnosis.token, startedAt = performance.now(), duration = reducedMotion ? 160 : 2800;
+    diagnosis.phase = 'scanning';
+    $('diagnosis-status').textContent = '采集生命信号';
+    updateDiagnosisControls();
+    if (reducedMotion) $('diagnosis-monitor').style.opacity = '.35';
     function animate(now) {
-      if (selector.token !== token || selector.phase !== 'drawing' || state.screen !== 'cases') return;
+      if (diagnosis.token !== token || diagnosis.phase !== 'scanning' || state.screen !== 'cases') return;
+      if (document.hidden) { resetDiagnosis(); return; }
       const progress = Math.min(1, Math.max(0, (now - startedAt) / duration));
-      if (reducedMotion) $('case-reel-track').style.opacity = String(.35 + .65 * progress);
-      else {
-        const eased = 1 - Math.pow(1 - progress, 4), from = reelOffset(startIndex), to = reelOffset(targetIndex);
-        $('case-reel-track').style.transform = `translateX(${from + (to - from) * eased}px)`;
-      }
-      if (progress < 1) { selector.frame = requestAnimationFrame(animate); return; }
-      if (!playableCaseIds().includes(chosenId)) { resetSelector(); return; }
-      Object.assign(selector, { phase: 'selected', selectedId: chosenId, frame: null, reelIndex: targetIndex });
-      positionReel(targetIndex); $('case-reel-track').style.opacity = '';
-      $('case-reel-track').children[targetIndex].classList.add('is-selected');
-      $('case-draw-status').textContent = `已抽中 · ${cases[chosenId].title}`;
-      updateSelectorControls();
-      $('selected-case-start').focus({ preventScroll: true });
+      $('diagnosis-panel').style.setProperty('--scan-progress', String(progress));
+      const status = progress < .35 ? '采集生命信号' : progress < .73 ? '检查循环状态' : '定位异常';
+      if ($('diagnosis-status').textContent !== status) $('diagnosis-status').textContent = status;
+      if (reducedMotion) $('diagnosis-monitor').style.opacity = String(.35 + .65 * progress);
+      if (progress < 1) { diagnosis.frame = requestAnimationFrame(animate); return; }
+      if (!playableCaseIds().includes(screeningCase.caseId)) { resetDiagnosis(); return; }
+      Object.assign(diagnosis, { phase: 'ready', caseId: screeningCase.caseId, frame: null });
+      $('diagnosis-monitor').style.opacity = '';
+      $('diagnosis-finding').textContent = screeningCase.finding;
+      $('diagnosis-detail').textContent = screeningCase.detail;
+      $('diagnosis-status').textContent = '异常已定位';
+      updateDiagnosisControls();
+      $('diagnosis-action').focus({ preventScroll: true });
     }
-    selector.frame = requestAnimationFrame(animate);
+    diagnosis.frame = requestAnimationFrame(animate);
   }
-  renderEntrySelector();
 
   function resize() {
     const vw = document.documentElement.clientWidth;
@@ -141,7 +132,6 @@
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     }
     if (pointerClient) pointerScreen = toPoint(pointerClient);
-    if (state.screen === 'cases' && selector.phase !== 'drawing') positionReel(selector.reelIndex);
   }
   window.addEventListener('resize', resize);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
@@ -149,7 +139,7 @@
 
   function clearInput() { if (state.game) state.game.clearInput(); }
   function showScreen(name) {
-    if (state.screen === 'cases' || name === 'cases') resetSelector();
+    if (state.screen === 'cases' || name === 'cases') resetDiagnosis();
     clearInput(); state.screen = name;
     for (const id of screens) $(id).hidden = id !== name;
     $('folio-page').textContent = { home: '001', cases: '002', treatment: '003', result: '004' }[name];
@@ -157,18 +147,6 @@
     document.body.classList.toggle('landscape-treatment', name === 'treatment');
     W = name === 'treatment' ? 1280 : 720; H = name === 'treatment' ? 720 : 1280;
     resize();
-    if (name === 'cases') updateRecords();
-  }
-  function updateRecords() {
-    const completed = caseIds.filter(id => records[id].wins > 0).length;
-    $('record-summary').textContent = `已治愈 ${completed} / ${caseIds.length} 个病例`;
-    $('case-count').textContent = `/ ${String(caseIds.length).padStart(2, '0')}`;
-    for (const card of document.querySelectorAll('[data-case]')) {
-      const id = card.dataset.case, record = records[id], info = cases[id];
-      card.querySelector('.case-complete').hidden = !record.wins;
-      card.querySelector('.case-mechanic').textContent = record.wins && record.bestSeconds
-        ? `键盘与鼠标 · 最佳 ${record.bestSeconds} 秒` : info.mechanic;
-    }
   }
   function goHome() { loadToken++; closeModal(); clearInput(); state.phase = 'idle'; state.game = null; particles = []; showScreen('home'); }
   function goCases() { loadToken++; closeModal(); clearInput(); state.phase = 'idle'; state.game = null; particles = []; showScreen('cases'); }
@@ -184,7 +162,7 @@
 
   async function startGame(id) {
     const info = cases[id], factory = window.GiantCureGames[id];
-    if (!info || !factory || selector.phase === 'drawing' || !playableCaseIds().includes(id)) return;
+    if (!info || !factory || diagnosis.phase === 'scanning' || !playableCaseIds().includes(id)) return;
     closeModal(); clearInput();
     const token = ++loadToken;
     Object.assign(state, { id, game: null, progress: 0, elapsed: 0, activeTime: 0, result: null, finishWait: 0, feedbackTime: 0, phase: 'loading', hud: {}, cameraRoom: null });
@@ -202,9 +180,9 @@
     catch {
       if (token !== loadToken) return;
       state.phase = 'load-error';
-      openDialog('心河还没有展开', '<p>场景插画未能载入，请重试或回到病历簿。</p>', [
+      openDialog('心河还没有展开', '<p>场景插画未能载入，请重试或返回诊断室。</p>', [
         { label: '重新载入', primary: true, action: () => { if (window.GiantCureAssets?.retry) window.GiantCureAssets.retry(); startGame(id); } },
-        { label: '返回病历簿', action: goCases }
+        { label: '返回诊断室', action: goCases }
       ]);
       return;
     }
@@ -288,7 +266,7 @@
     $('metric-restored-label').textContent = '重启次数';
     $('result-message').textContent = r.won ? info.poem : '每次尝试，都是对生命的一次靠近。';
     $('retry').textContent = r.won ? '↻ 重新巡诊' : '↻ 从安全节点重启';
-    $('result-next').firstElementChild.textContent = r.won ? '完成巡诊 · 回到病历簿' : '从最近安全节点重启';
+    $('result-next').firstElementChild.textContent = r.won ? '完成巡诊 · 返回诊断室' : '从最近安全节点重启';
     $('result-next').onclick = r.won ? goCases : retryCheckpoint;
     showScreen('result');
   }
@@ -296,19 +274,19 @@
   function showPause() {
     if (!['playing', 'paused'].includes(state.phase)) return;
     pauseGame();
-    openDialog('让世界歇一会儿', '<p>风停在树梢，河流等你回来。<br>巡诊已暂停，时间不会流逝。<br>返回病历簿会结束本次巡诊。</p>', [
+    openDialog('让世界歇一会儿', '<p>风停在树梢，河流等你回来。<br>巡诊已暂停，时间不会流逝。<br>返回诊断室会结束本次巡诊。</p>', [
       { label: '继续巡诊 ↗', primary: true, action: resumeGame },
       { label: '从头重新巡诊', action: () => startGame(state.id) },
-      { label: '返回病历簿', action: goCases }
+      { label: '返回诊断室', action: goCases }
     ]);
   }
   function resumeGame() { closeModal(); if (state.phase === 'paused') { state.phase = 'playing'; lastFrame = null; } }
   function showHelp() {
     if (state.phase === 'finishing') return;
     if (state.screen === 'cases') {
-      openDialog('让心跳，指引下一站', '<p>点击“随机抽取”，等卡片停稳后选择“进入玩法”，也可以再抽一次。</p><p>想自己挑选？点击下方可玩的卡片，即可开始巡诊。</p><p class="dialog-tip">标注“待开放”的玩法仅作预告，不参与抽取。</p>', [
+      openDialog('听见生命的求救', '<p>点击“开始检查”，等待监测屏定位异常，再选择“前往治疗”。</p><p class="dialog-tip">初筛只定位异常区域。进入身体后，再近距离检查具体病因。</p><p>病例档案可查看巡诊记录和后续病例。标注“待开放”的内容暂不可出诊。</p>', [
         { label: '明白了 ↗', primary: true, action: closeModal }
-      ], 'THE CASEBOOK / FIELD GUIDE');
+      ], 'LIFE DIAGNOSTICS / FIELD GUIDE');
       return;
     }
     const wasPlaying = ['playing', 'paused'].includes(state.phase);
@@ -326,14 +304,20 @@
       growth: '扫描出口处异常组织，持续照射直至暂时压制，再观察它的变化。',
       ending: '这片异常组织在被压制后重新生长。心脏已恢复，但巨人的其他部位仍需要你。'
     };
-    const hint = chapter ? chapter.stage === 'escape' && chapter.crossedBarrier ? hints.growth : hints[chapter.stage] || (chapter.room === 'entry' ? hints.diagnosis : chapter.room === 'heart' ? hints.conduction : hints.bypass) : '在病历簿中点击「心脏巡诊」卡片，即可进入巨人的心脏世界。';
+    const hint = chapter ? chapter.stage === 'escape' && chapter.crossedBarrier ? hints.growth : hints[chapter.stage] || (chapter.room === 'entry' ? hints.diagnosis : chapter.room === 'heart' ? hints.conduction : hints.bypass) : '进入诊断室，检查生命信号并定位异常，再前往巨人的身体开展巡诊。';
     openDialog('带着好奇，进入心河', `<p class="dialog-tip">${hint}</p><div class="help-item"><strong>移动与观察</strong><p>WASD 移动，Shift 疾行，鼠标瞄准。Q 开关扫描：读取附近的流量、压力、组织和节点状态。扫描不耗能，世界仍在运转。</p></div><div class="help-item"><strong>治疗与连接</strong><p>接近节点后按 E 交互，依次选择节点建立连接。左键持续治疗或射击，右键精瞄。R 装填，备弹无限。</p></div><div class="help-item"><strong>安全与恢复</strong><p>避开扑击预警。设备耐久归零后，从最近安全节点重启。心脏恢复后，Space 使用循环冲刺。不限时，退出或刷新会清除本次检查点。</p></div><p>本章使用键盘与鼠标。声音默认关闭，可点击右上角音符开启。</p>`, [
       { label: wasPlaying ? '继续巡诊 ↗' : '明白了 ↗', primary: true, action: wasPlaying ? resumeGame : closeModal }
     ], 'HEART JOURNEY / FIELD GUIDE');
   }
-  function openDialog(title, body, buttons, kicker = 'A MOMENT OF CARE') {
-    if (selector.phase === 'drawing') resetSelector();
+  function dialogControls() {
+    return [...$('modal').querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+      .filter(element => !element.disabled && !element.closest('[hidden], [inert]') && element.getClientRects().length);
+  }
+  function openDialog(title, body, buttons, kicker = 'A MOMENT OF CARE', variant = '') {
+    if (diagnosis.phase === 'scanning') resetDiagnosis();
     if ($('modal').hidden) previousFocus = document.activeElement;
+    const dialog = $('modal').querySelector('.dialog');
+    dialog.classList.toggle('archive-dialog', variant === 'archive');
     state.modal = true; $('dialog-title').textContent = title; $('dialog-kicker').textContent = kicker;
     $('dialog-body').innerHTML = body; $('dialog-actions').replaceChildren();
     buttons.forEach((item, index) => {
@@ -344,13 +328,16 @@
     $('modal').hidden = false;
     for (const id of screens) $(id).inert = true;
     document.querySelector('.app-header').inert = true;
-    $('dialog-actions').firstElementChild.focus({ preventScroll: true });
+    dialog.scrollTop = 0;
+    dialogControls()[0]?.focus({ preventScroll: true });
   }
   function closeModal() {
     $('modal').hidden = true; state.modal = false;
     for (const id of screens) $(id).inert = false;
     document.querySelector('.app-header').inert = false;
-    if (previousFocus && previousFocus.isConnected && !previousFocus.closest('[hidden]')) previousFocus.focus({ preventScroll: true });
+    $('modal').querySelector('.dialog').classList.remove('archive-dialog');
+    $('dialog-body').replaceChildren(); $('dialog-actions').replaceChildren();
+    if (previousFocus && previousFocus.isConnected && !previousFocus.disabled && !previousFocus.closest('[hidden], [inert]') && previousFocus.getClientRects().length) previousFocus.focus({ preventScroll: true });
     previousFocus = null;
   }
 
@@ -377,22 +364,24 @@
     if (event.code === 'Escape') {
       event.preventDefault();
       if (state.phase === 'playing') showPause(); else if (state.phase === 'paused') resumeGame(); else if (state.modal) closeModal();
+      return;
     }
     if (acceptsInput() && gameKeys.has(event.code)) { event.preventDefault(); state.game.keyDown(event.code, event.repeat); }
     if (event.key === 'Tab' && state.modal) {
-      const buttons = [...$('dialog-actions').querySelectorAll('button')], first = buttons[0], last = buttons[buttons.length - 1];
+      const controls = dialogControls(), first = controls[0], last = controls[controls.length - 1];
+      if (!first) { event.preventDefault(); return; }
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      else if ((!event.shiftKey && document.activeElement === last) || !controls.includes(document.activeElement)) { event.preventDefault(); first.focus(); }
     }
   });
   document.addEventListener('keyup', event => { if (state.game) state.game.keyUp(event.code); });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) return;
-    if (selector.phase === 'drawing') resetSelector();
+    if (diagnosis.phase === 'scanning') resetDiagnosis();
     if (state.phase === 'playing') showPause();
   });
   window.addEventListener('blur', () => {
-    if (selector.phase === 'drawing') resetSelector();
+    if (diagnosis.phase === 'scanning') resetDiagnosis();
     if (state.phase === 'playing') showPause(); else clearInput();
   });
   $('brand').onclick = requestHome;
@@ -400,11 +389,19 @@
   $('help').onclick = showHelp; $('pause').onclick = showPause;
   $('retry').onclick = () => state.result && !state.result.won ? retryCheckpoint() : startGame(state.id);
   $('result-cases').onclick = goCases;
-  $('random-case').onclick = drawCase;
-  $('selected-case-start').onclick = () => {
-    if (state.screen === 'cases' && !state.modal && selector.phase === 'selected' && playableCaseIds().includes(selector.selectedId)) startGame(selector.selectedId);
+  $('diagnosis-action').onclick = () => {
+    if (state.screen !== 'cases' || state.modal) return;
+    if (diagnosis.phase === 'ready' && playableCaseIds().includes(diagnosis.caseId)) startGame(diagnosis.caseId);
+    else beginScreening();
   };
-  document.querySelectorAll('[data-case]').forEach(card => { card.onclick = () => startGame(card.dataset.case); });
+  $('diagnosis-action').addEventListener('keydown', event => {
+    if (event.repeat && ['Enter', 'Space'].includes(event.code)) event.preventDefault();
+  });
+  $('case-archive').onclick = openCaseArchive;
+  $('dialog-body').addEventListener('click', event => {
+    const card = event.target.closest('button[data-case]');
+    if (card && state.modal && $('modal').querySelector('.dialog').classList.contains('archive-dialog')) startGame(card.dataset.case);
+  });
   for (const [id, key] of [['journey-scan', 'KeyQ'], ['journey-interact', 'KeyE'], ['journey-reload-button', 'KeyR']]) $(id).onclick = () => {
     if (acceptsInput()) { state.game.keyDown(key, false); state.game.keyUp(key); }
   };
@@ -567,11 +564,11 @@
     screen: state.screen, phase: state.phase, id: state.id, progress: state.progress,
     remaining: null, elapsed: state.elapsed, modal: state.modal,
     result: state.result ? { ...state.result } : null,
-    selector: { phase: selector.phase, selectedId: selector.selectedId, playableIds: playableCaseIds() },
+    diagnosis: { phase: diagnosis.phase, caseId: diagnosis.caseId },
     game: state.game ? state.game.getDebugState() : null,
     view: { viewport: { ...view.viewport }, camera: { ...view.camera } },
     logicalSize: { width: W, height: H }, reducedMotion,
     particles: particles.map(p => ({ ...p })), activeTime: state.activeTime
   }) });
-  updateRecords(); requestAnimationFrame(frame);
+  resetDiagnosis(); requestAnimationFrame(frame);
 })();

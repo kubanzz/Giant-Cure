@@ -65,59 +65,75 @@ button:active{transform:translateY(2px)}
 .heading-number{float:right;color:#9ba98f;letter-spacing:2px}
 .page-heading h2{font:42px var(--serif);font-weight:500;margin-top:20px}
 .page-heading>p:last-child{font-size:19px;color:#8b9986;margin-top:17px;letter-spacing:1px}
-.case-summary{position:absolute;top:305px;left:48px;right:48px;display:flex;align-items:center;justify-content:space-between;font-size:14px;color:#83927d;letter-spacing:1px}
-.status-dot{display:inline-block;width:6px;height:6px;background:#8ba66c;border-radius:50%;margin-right:8px;vertical-align:middle}
-.case-selector{position:absolute;top:350px;left:0;right:0;height:470px}
-.case-pool-count{position:absolute;top:0;left:48px;font-size:15px;color:#8d9c80;letter-spacing:1px}
-.case-reel-window{position:absolute;top:32px;left:0;width:100%;height:304px;overflow:hidden;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
-.case-reel-track{position:relative;top:12px;left:0;display:flex;gap:20px;width:max-content;height:280px;will-change:transform}
-.reel-card{position:relative;flex:none;width:360px;height:280px;border:1px solid #d6dfcd;border-radius:16px;background:#fafbf3d9;text-align:center;color:var(--ink);box-shadow:0 4px 18px #5c775008;opacity:.8;transition:background .3s,border-color .3s,opacity .3s}
-.reel-art{position:absolute;top:19px;left:calc(50% - 58px);width:116px;height:116px;display:block}
-.reel-art svg{display:block;width:100%;height:100%}
-.reel-kicker{position:absolute;top:144px;left:16px;right:16px;font-size:11px;letter-spacing:2px;color:#b79b63}
-.reel-card strong{position:absolute;top:166px;left:16px;right:16px;font:30px var(--serif);font-weight:500;letter-spacing:4px}
-.reel-mechanic{position:absolute;top:211px;left:16px;right:16px;font-size:16px;letter-spacing:1px;color:#87997d;display:flex;align-items:center;justify-content:center;gap:6px}
-.reel-mechanic svg{width:21px;height:21px;flex:none}
-.reel-badge{position:absolute;top:246px;left:16px;right:16px;font-size:12px;letter-spacing:2px;color:#95a086}
-.reel-card.is-selected{border-color:#8ea782;background:#edf3e4;opacity:1}
-.reel-card.is-selected .reel-badge{color:#537e5b}
-.case-reel-frame{position:absolute;top:6px;left:calc(50% - 186px);width:372px;height:292px;border:1px solid #b1c0a1;border-radius:20px;pointer-events:none}
-.case-reel-frame i{position:absolute;top:-5px;left:calc(50% - 4px);width:8px;height:8px;background:#bca46d;transform:rotate(45deg);box-shadow:0 0 0 5px var(--paper)}
-.case-reel-frame i:last-child{top:auto;bottom:-5px}
-.case-draw-status{position:absolute;top:350px;left:48px;right:48px;text-align:center;color:#85987a;font:20px var(--serif);letter-spacing:2px;line-height:28px}
-.case-draw-actions{position:absolute;top:392px;left:48px;right:48px;display:flex;gap:16px}
-.case-draw-actions .primary-button{height:76px;font-size:24px;flex:1;min-width:0;padding:0 27px}
-.case-selector[data-draw-phase=selected] #random-case{background:transparent;color:#6c8867;border-color:#c2cfb5;box-shadow:none}
-.case-selector[data-draw-phase=selected] #random-case:hover{background:#e8eedf}
-.case-selector[data-draw-phase=drawing] .case-reel-frame{border-color:#8ca17c}
-.case-draw-actions button:disabled{opacity:.65}
-.case-choice{position:absolute;top:850px;left:48px;right:48px}
-.case-choice-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.case-choice-heading h3{margin:0;font:21px var(--serif);font-weight:400;letter-spacing:3px;color:#7c9476}
-.case-choice-heading>span{font-size:9px;letter-spacing:2px;color:#a4ad92}
-.case-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
-.case-option{position:relative;display:flex;align-items:center;gap:12px;min-width:0;min-height:110px;margin:0;padding:15px 12px;border:1px solid #d6dfcb;border-radius:11px;background:#ffffff40;color:var(--ink);text-align:left}
-button.case-option:hover{background:#eaf0e1;border-color:#a5b997;transform:translateY(-2px)}
-.case-option:disabled{opacity:.62}
-.option-art{display:block;flex:none;width:54px;height:62px}
-.option-art svg{display:block;width:100%;height:100%}
-.case-copy{display:flex;flex:1;min-width:0;flex-direction:column;align-items:flex-start;gap:6px}
-.case-copy strong{font:23px var(--serif);font-weight:400;letter-spacing:1px;white-space:nowrap}
-.case-mechanic{font-size:14px;line-height:1.45;color:#8a9b80;letter-spacing:0;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
-.case-mechanic svg{width:16px;height:16px;flex:none}
-.case-mechanic b{font-weight:400;color:#afbaa3}
-.option-state{position:absolute;right:12px;top:11px;font-size:10px;letter-spacing:1px;color:#94a088}
-button.case-option .option-state{font-size:18px;color:#7f9b76;top:10px}
-.case-complete{font-size:10px;letter-spacing:1px;color:#638a66}
-.case-option.is-coming-soon{background:#f2f3e966;border-color:#e0e5d7;color:#94a18a}
-.case-option.is-coming-soon .option-art{opacity:.65}
-.case-option.is-coming-soon .case-mechanic{color:#a0ab94}
+.diagnosis-heading h2{letter-spacing:5px}
+.diagnosis-panel{--scan-progress:0;position:absolute;top:286px;left:48px;right:48px;height:839px}
+.diagnosis-monitor{position:absolute;top:0;left:0;right:0;height:570px;overflow:hidden;border:1px solid #557b68;border-radius:17px;background-color:#193f35;background-image:linear-gradient(#96b8970c 1px,transparent 1px),linear-gradient(90deg,#96b8970c 1px,transparent 1px),radial-gradient(ellipse at 50% 40%,#37624c55,transparent 70%);background-size:30px 30px,30px 30px,100% 100%;box-shadow:inset 0 0 55px #0d2d2655,0 8px 24px #34583c0a}
+.monitor-caption{position:absolute;top:23px;left:26px;right:26px;display:flex;justify-content:space-between;color:#9cb79b;font-size:10px;letter-spacing:2px;z-index:1}
+.monitor-caption>span:last-child{color:#829f83}
+.monitor-caption i{display:inline-block;width:5px;height:5px;margin-right:7px;border-radius:50%;background:#87b18d;vertical-align:middle}
+.diagnosis-body{position:absolute;top:38px;left:0;width:100%;height:500px}
+.body-reference{stroke:#91b79a;stroke-width:1;opacity:.13;stroke-dasharray:3 7}
+.body-reference>path:last-child{stroke-dasharray:none}
+.giant-outline{fill:#91b9920c;stroke:#a0bda1;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.giant-outline .body-detail{fill:none;stroke:#88ac8b;stroke-width:1;opacity:.6}
+.giant-outline .body-flow{fill:none;stroke:#9cbc88;stroke-width:1.3;opacity:.4}
+#diagnosis-target{opacity:0;stroke:#d4b579;stroke-width:1.5;fill:none}
+#diagnosis-target>circle:nth-child(2){fill:#d4b5793d}
+#diagnosis-target .target-leader{stroke-width:1;opacity:.7}
+#diagnosis-target text{fill:#d9c08e;stroke:none;font:15px var(--serif);letter-spacing:2px}
+.diagnosis-panel[data-diagnosis-phase=ready] #diagnosis-target{opacity:1}
+.diagnosis-scan-line{display:none;position:absolute;top:64px;left:23px;right:23px;height:1px;transform:translateY(calc(var(--scan-progress)*416px));background:#bdd7a1;box-shadow:0 0 10px #b1d19577;pointer-events:none}
+.diagnosis-scan-line:before{content:"";position:absolute;bottom:0;left:0;right:0;height:55px;background:linear-gradient(transparent,#bcdaa416)}
+.diagnosis-panel[data-diagnosis-phase=scanning] .diagnosis-scan-line{display:block}
+.diagnosis-wave{position:absolute;left:25px;right:25px;bottom:19px;height:48px;display:flex;align-items:center;gap:16px;border-top:1px solid #9db48a1f;padding-top:10px;color:#9bb18e}
+.diagnosis-wave>span:first-child{font-size:10px;letter-spacing:2px}
+.diagnosis-wave svg{display:block;flex:1;min-width:0;height:37px;overflow:hidden;fill:none;stroke-width:1.4}
+.wave-baseline{stroke:#abc897;opacity:.1}
+.wave-trace{stroke:#a2c797;opacity:.25;stroke-linecap:round;stroke-linejoin:round}
+.signal-dot{width:5px;height:5px;flex:none;border-radius:50%;background:#a3c394;opacity:.35}
+.diagnosis-panel[data-diagnosis-phase=scanning] .wave-trace{opacity:.85;stroke-dasharray:110 600;animation:diagnosis-pulse 1.6s linear infinite}
+.diagnosis-panel[data-diagnosis-phase=scanning] .signal-dot,.diagnosis-panel[data-diagnosis-phase=ready] .signal-dot{opacity:1}
+.diagnosis-panel[data-diagnosis-phase=ready] .wave-trace{opacity:.8}
+@keyframes diagnosis-pulse{from{stroke-dashoffset:710}to{stroke-dashoffset:0}}
+.diagnosis-status{position:absolute;top:594px;left:0;right:0;text-align:center;color:#6d8868;font:22px var(--serif);letter-spacing:3px;line-height:30px}
+.diagnosis-report-space{position:absolute;top:640px;left:0;right:0;height:92px;border-top:1px solid #dbe3d0}
+.diagnosis-placeholder{position:absolute;top:29px;left:0;right:0;text-align:center;font-size:15px;color:#a1ac96;letter-spacing:2px}
+.diagnosis-panel[data-diagnosis-phase=ready] .diagnosis-placeholder{display:none}
+.diagnosis-report{position:absolute;inset:0;padding:18px 0 0 21px;border-left:2px solid #bda56e}
+.diagnosis-report h3{margin:0 0 8px;font-size:13px;font-weight:400;color:#9c9874;letter-spacing:2px}
+.diagnosis-report #diagnosis-finding{font:23px var(--serif);letter-spacing:2px;color:#577854;line-height:1.4}
+.diagnosis-report #diagnosis-detail{position:absolute;right:0;top:50px;font-size:14px;color:#94a087;letter-spacing:.5px}
+.diagnosis-action{position:absolute;top:756px;left:0;right:0}
+.diagnosis-action:disabled{opacity:.65}
+.case-archive{position:absolute;top:1145px;right:38px;min-width:155px}
+.case-archive>span{margin-left:8px;color:#a9ad8b}
+.case-archive:disabled{opacity:.45}
+.archive-dialog #case-records{margin-top:20px}
+.archive-dialog .case-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#8a9c7d;font-size:16px;letter-spacing:.5px;margin-bottom:20px}
+.archive-dialog #record-summary{font-size:16px;color:#7d9272}
+.archive-dialog #case-count{font-size:12px;letter-spacing:2px;color:#a2ac92}
+.archive-dialog #case-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.archive-dialog .case-option{position:relative;display:flex;align-items:flex-start;gap:10px;min-width:0;min-height:158px;margin:0;padding:42px 12px 18px;border:1px solid #d6dfcb;border-radius:11px;background:#ffffff40;color:var(--ink);text-align:left}
+.archive-dialog button.case-option:hover{background:#eaf0e1;border-color:#a5b997;transform:translateY(-2px)}
+.archive-dialog .case-option:disabled{opacity:.62}
+.archive-dialog .option-art{display:block;flex:none;width:44px;height:52px}
+.archive-dialog .option-art svg{display:block;width:100%;height:100%}
+.archive-dialog .case-copy{display:flex;flex:1;min-width:0;flex-direction:column;align-items:flex-start;gap:9px}
+.archive-dialog .case-copy strong{font:22px var(--serif);font-weight:400;letter-spacing:1px;white-space:nowrap}
+.archive-dialog .case-mechanic{max-width:100%;font-size:14px;line-height:1.5;color:#8a9b80;letter-spacing:0;display:flex;align-items:center;gap:4px;flex-wrap:wrap;overflow-wrap:anywhere}
+.archive-dialog .case-mechanic svg{width:16px;height:16px;flex:none}
+.archive-dialog .case-mechanic b{font-weight:400;color:#afbaa3}
+.archive-dialog .option-state{position:absolute;right:12px;top:14px;font-size:11px;letter-spacing:1px;color:#94a088}
+.archive-dialog button.case-option .option-state{font-size:18px;color:#7f9b76;top:10px}
+.archive-dialog .case-complete{font-size:11px;letter-spacing:1px;color:#638a66;line-height:1.5}
+.archive-dialog .case-option.is-coming-soon{background:#f2f3e966;border-color:#e0e5d7;color:#94a18a}
+.archive-dialog .case-option.is-coming-soon .option-art{opacity:.65}
+.archive-dialog .case-option.is-coming-soon .case-mechanic{color:#a0ab94}
 .secondary-button{height:74px;border:1px solid #c8d3be;border-radius:12px;background:#edf1e5;color:var(--green);font-size:20px;letter-spacing:2px}
 .secondary-button:hover{background:#e1e9d9}
-.case-footnote{position:absolute;top:1140px;width:100%;text-align:center;color:#96a18d;font:17px var(--serif);letter-spacing:2px}
 .text-button{border:0;background:none;color:#69856e;font-size:17px;letter-spacing:1px;min-height:48px;padding:10px}
 .text-button:hover{color:#2c6754;background:#e4eada77;border-radius:8px}
-.case-back{position:absolute;top:1175px;left:38px}
+.case-back{position:absolute;top:1145px;left:38px}
 .treatment-heading{position:absolute;top:157px;left:48px;right:48px}
 .small-back{position:absolute;right:0;top:0;color:#6b886f;background:#e8eddf;border:1px solid #dce3d3;border-radius:20px;font-size:16px;padding:9px 14px;letter-spacing:2px}
 .small-back span{font-size:13px;letter-spacing:1px;margin-left:3px}
@@ -183,7 +199,9 @@ button.case-option .option-state{font-size:18px;color:#7f9b76;top:10px}
 .note-orbit{font:52px Georgia;color:#a7b89a}
 @media(max-width:1100px){.desktop-note{display:none}
 }
-@media(prefers-reduced-motion:reduce){button,#progress-fill,.reel-card{transition:none}
+@media(prefers-reduced-motion:reduce){button,#progress-fill{transition:none}
+.diagnosis-panel[data-diagnosis-phase=scanning] .diagnosis-scan-line{display:none}
+.diagnosis-panel[data-diagnosis-phase=scanning] .wave-trace{animation:none;stroke-dasharray:none}
 }
 @media(max-width:600px){#app{border-radius:0;box-shadow:none}
 }
@@ -198,7 +216,6 @@ body{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
 .sound-slash{left:39px;top:27px;height:26px}
 .small-back{top:-12px;min-height:76px;min-width:110px;border-radius:13px}
 .text-button{min-height:70px}
-.case-back{top:1170px}
 .result-actions>div{margin-top:4px}
 
 .journey-note{font-size:19px}
@@ -207,8 +224,6 @@ body{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
 .dialog .dialog-tip{font-size:20px}
 .dialog .help-item p{font-size:20px}
 .result-heading>p{font-size:21px}
-.case-summary{font-size:18px}
-.case-footnote{font-size:18px}
 .time-label>span,.progress-label>span{font-size:17px}
 
 /* The chapter shares the casebook card layout with future organ chapters. */
@@ -306,19 +321,27 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
         <div class="home-heading"><p class="eyebrow"><span></span> 一份关于生命的奇幻病历 <span></span></p><h1 id="home-title">万物生<span class="title-spark">✧</span></h1><p class="home-subtitle">巨人的病历簿</p><p class="home-en">THE GIANT’S LITTLE BOOK OF CURES</p></div>
         <div class="world-caption caption-one"><span class="caption-dot"></span>他的身体，是我们的世界</div>
         <div class="world-caption caption-two">每一次治愈<br><span>都有万物回应</span><i></i></div>
-        <div class="home-bottom"><button id="begin" class="primary-button"><span>翻开病历簿</span><span class="button-arrow">↗</span></button><p class="journey-note"><span class="tiny-leaf">❧</span> 一场约 3–5 分钟的微观疗愈之旅</p><div class="home-footer"><span>心脏巡诊 · 唤醒生命之城</span><span>VOL. 01 / 2026</span></div></div>
+        <div class="home-bottom"><button id="begin" class="primary-button"><span>进入诊断室</span><span class="button-arrow">↗</span></button><p class="journey-note"><span class="tiny-leaf">❧</span> 一场约 3–5 分钟的微观疗愈之旅</p><div class="home-footer"><span>心脏巡诊 · 唤醒生命之城</span><span>VOL. 01 / 2026</span></div></div>
       </section>
       <section id="cases" class="screen" hidden aria-labelledby="cases-title">
-        <div class="page-heading"><p class="eyebrow">THE CASEBOOK <span id="case-count" class="heading-number">/ 01</span></p><h2 id="cases-title">今天，治愈哪里？</h2><p>走进巨人的身体，倾听世界的求救。</p></div>
-        <div class="case-summary"><span><i class="status-dot"></i> 生态巡诊中</span><span id="record-summary">已治愈 0 / 1 个病例</span></div>
-        <div id="case-selector" class="case-selector" data-draw-phase="idle" aria-busy="false">
-          <p id="case-pool-count" class="case-pool-count">当前可抽取 1 种玩法</p>
-          <div id="case-reel-window" class="case-reel-window" inert aria-hidden="true"><div id="case-reel-track" class="case-reel-track"></div><div class="case-reel-frame"><i></i><i></i></div></div>
-          <p id="case-draw-status" class="case-draw-status" role="status" aria-live="polite">让心跳，指引下一站。</p>
-          <div class="case-draw-actions"><button id="selected-case-start" class="primary-button" hidden disabled><span>进入玩法</span><span aria-hidden="true">↗</span></button><button id="random-case" class="primary-button"><span id="random-label">随机抽取</span><span class="button-arrow" aria-hidden="true">↗</span></button></div>
+        <div class="page-heading diagnosis-heading"><p class="eyebrow">LIFE DIAGNOSTICS <span class="heading-number">/ 01</span></p><h2 id="cases-title">生命诊断</h2></div>
+        <div id="diagnosis-panel" class="diagnosis-panel" data-diagnosis-phase="idle" aria-busy="false">
+          <div id="diagnosis-monitor" class="diagnosis-monitor">
+            <div class="monitor-caption" aria-hidden="true"><span>GIANT / 001</span><span><i></i> BIO SIGNAL</span></div>
+            <svg id="diagnosis-body" class="diagnosis-body" viewBox="0 0 624 500" fill="none" role="img" aria-label="巨人全身生命信号监测轮廓">
+              <g class="body-reference" aria-hidden="true"><path d="M312 18v448M160 177h304M188 286h248"/><circle cx="312" cy="177" r="132"/><path d="M192 40h-22v22m262-22h22v22M192 447h-22v-22m262 22h22v-22"/></g>
+              <g class="giant-outline"><ellipse cx="312" cy="66" rx="31" ry="40"/><path d="M292 105v18l-26 9c-10 4-15 10-19 22l-28 85c-4 12-1 19 8 21 9 3 15-3 19-14l22-63 5 82-4 25 6 126c0 11 6 17 16 17 11 0 16-6 17-18l4-101 4 101c1 12 6 18 17 18 10 0 16-6 16-17l6-126-4-25 5-82 22 63c4 11 10 17 19 14 9-2 12-9 8-21l-28-85c-4-12-9-18-19-22l-26-9v-18"/><path class="body-detail" d="M286 143c15 8 37 8 52 0m-26 9v131m-34-20c23 11 45 11 68 0m-61-80c15-10 39-10 54 0m-27 12c-14 13-19 31-16 48m16-48c14 13 19 31 16 48"/><path class="body-flow" d="M312 157c-1 21 7 25 15 33s10 28 9 43m-24-63c-19 4-28 13-30 27m30 44v40m-11 31-8 72m30-72 8 72"/></g>
+              <circle id="diagnosis-heart-anchor" cx="338" cy="177" r="1" fill="transparent" aria-hidden="true"/>
+              <g id="diagnosis-target" transform="translate(338 177)" aria-hidden="true"><circle r="22"/><circle r="6"/><path d="M-31 0h12m38 0h12M0-31v12m0 38v12"/><path class="target-leader" d="m23-23 32-25h60"/><text x="63" y="-58">心区</text></g>
+            </svg>
+            <div id="diagnosis-scan-line" class="diagnosis-scan-line" aria-hidden="true"></div>
+            <div id="diagnosis-wave" class="diagnosis-wave" aria-hidden="true"><span>ECG</span><svg viewBox="0 0 500 44" preserveAspectRatio="none"><path class="wave-baseline" d="M0 25h500"/><path class="wave-trace" d="M0 25h40l10-4 10 4h26l8-10 9 24 11-37 12 23h28l9-4 11 4h38l10-4 10 4h26l8-10 9 24 11-37 12 23h28l9-4 11 4h38l10-4 10 4h26l8-10 9 24 11-37 12 23h42"/></svg><span class="signal-dot"></span></div>
+          </div>
+          <p id="diagnosis-status" class="diagnosis-status" role="status" aria-live="polite">生命信号待采集</p>
+          <div class="diagnosis-report-space"><p class="diagnosis-placeholder">等待初筛记录</p><div id="diagnosis-report" class="diagnosis-report" hidden><h3>医生初筛报告</h3><p id="diagnosis-finding">心区血流信号减弱</p><p id="diagnosis-detail">具体病因待近距离确认</p></div></div>
+          <button id="diagnosis-action" class="primary-button diagnosis-action"><span id="diagnosis-action-label">开始检查</span><span class="button-arrow" aria-hidden="true">↗</span></button>
         </div>
-        <div class="case-choice"><div class="case-choice-heading"><h3>自己选</h3><span aria-hidden="true">YOUR NEXT LITTLE CURE</span></div><div id="case-options" class="case-options"></div></div>
-        <p class="case-footnote">每个世界，都值得被温柔以待。</p><button id="case-back" class="text-button case-back">← 返回封面</button>
+        <button id="case-archive" class="text-button case-archive">病例档案 <span aria-hidden="true">↗</span></button><button id="case-back" class="text-button case-back">← 返回封面</button>
       </section>
       <section id="treatment" class="screen" hidden aria-labelledby="treatment-title">
         <div class="treatment-heading"><button id="pause" class="small-back">Ⅱ <span>暂停</span></button><p id="case-number" class="eyebrow">CASE 01 / HEART</p><h2 id="treatment-title">心脏巡诊</h2><p id="treatment-subtitle">循着心跳，找到病因</p></div>
@@ -334,7 +357,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
         <div class="result-medallion"><span id="result-emblem"></span><span class="medallion-orbit orbit-one"></span><span class="medallion-orbit orbit-two"></span><i>✧</i><i>✦</i></div>
         <div class="result-heading"><div id="result-stars" class="result-stars journey-status">HEART RESTORED</div><h2 id="result-title">心脏，重新苏醒。</h2><p id="result-description">血流再次奔涌，生命之城亮起新的光。</p></div>
         <div class="result-note"><div class="result-note-label"><span>本次巡诊记录</span><span id="result-stamp">CURED ✓</span></div><div class="result-numbers"><div><strong id="result-score">100</strong><span id="metric-score-label">设备耐久</span></div><div><strong id="result-time">00:00</strong><span>巡诊用时</span></div><div><strong id="result-restored">0</strong><span id="metric-restored-label">重启次数</span></div></div><p id="result-message">一颗心重新跳动，一座世界重生。</p></div>
-        <div class="result-actions"><button id="result-next" class="primary-button"><span>返回病历簿</span><span>↗</span></button><div><button id="retry" class="text-button">↻ 重新巡诊</button><button id="result-cases" class="text-button">返回病历簿 →</button></div></div><p class="result-footnote">愿每一份微小的关怀，都有回声。</p>
+        <div class="result-actions"><button id="result-next" class="primary-button"><span>返回诊断室</span><span>↗</span></button><div><button id="retry" class="text-button">↻ 重新巡诊</button><button id="result-cases" class="text-button">返回诊断室 →</button></div></div><p class="result-footnote">愿每一份微小的关怀，都有回声。</p>
       </section>
       <div id="modal" class="modal-layer" hidden><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><p id="dialog-kicker" class="eyebrow">A MOMENT OF CARE</p><h2 id="dialog-title">让世界歇一会儿</h2><div id="dialog-body"></div><div id="dialog-actions"></div></section></div>
       <div id="toast" role="status" hidden></div>
@@ -1603,7 +1626,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
   };
 }());
 
-// Casebook shell: catalog, chapter input, active time, checkpoints and presentation.
+// Diagnosis room, case archives, chapter input, checkpoints and presentation.
 (() => {
   'use strict';
   let W = 720, H = 1280;
@@ -1633,7 +1656,11 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
   ];
   const playableCaseIds = () => entryCatalog.filter(entry => entry.status === 'available'
     && cases[entry.id] && typeof window.GiantCureGames[entry.id] === 'function').map(entry => entry.id);
-  const selector = { phase: 'idle', selectedId: null, token: 0, frame: null, reelIndex: entryCatalog.length };
+  // This is an initial screening, not the chapter's own close-range diagnosis.
+  const screeningCase = Object.freeze({
+    caseId: 'heartJourney', finding: '心区血流信号减弱', detail: '具体病因待近距离确认'
+  });
+  const diagnosis = { phase: 'idle', caseId: null, token: 0, frame: null };
   function readRecord(key) {
     try {
       const record = JSON.parse(localStorage.getItem(key) || '{}') || {};
@@ -1654,81 +1681,68 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
   let pointerScreen = null, pointerClient = null;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  function renderEntrySelector() {
+  function openCaseArchive() {
+    if (state.screen !== 'cases' || state.modal || diagnosis.phase === 'scanning') return;
     const playable = playableCaseIds();
-    $('case-options').innerHTML = entryCatalog.map(entry => {
+    const completed = caseIds.filter(id => records[id].wins > 0).length;
+    const cards = entryCatalog.map(entry => {
       const available = playable.includes(entry.id);
-      const content = `<span class="option-art">${entryIcon(entry.icon)}</span><span class="case-copy"><strong>${entry.title}</strong><span class="case-mechanic">${available ? cases[entry.id].mechanic : operationIcon(entry.icon) + entry.operation}</span>${available ? '<span class="case-complete" hidden>已治愈 ✓</span>' : ''}</span><span class="option-state">${available ? '↗' : '待开放'}</span>`;
+      const record = available ? records[entry.id] : null;
+      const mechanic = available ? record.wins && record.bestSeconds ? `键盘与鼠标 · 最佳 ${record.bestSeconds} 秒` : cases[entry.id].mechanic : operationIcon(entry.icon) + entry.operation;
+      const content = `<span class="option-art">${entryIcon(entry.icon)}</span><span class="case-copy"><strong>${entry.title}</strong><span class="case-mechanic">${mechanic}</span>${available ? `<span class="case-complete"${record.wins ? '' : ' hidden'}>已治愈 ✓</span>` : ''}</span><span class="option-state">${available ? record.wins ? '再次巡诊' : '前往巡诊 ↗' : '待开放'}</span>`;
       return available
         ? `<button type="button" class="case-option" data-case="${entry.id}">${content}</button>`
         : `<div class="case-option is-coming-soon" data-preview-case="${entry.id}" role="group" aria-label="${entry.title}，待开放">${content}</div>`;
     }).join('');
-    // Decorative copies never share the playable cards' event or record attributes.
-    $('case-reel-track').innerHTML = Array.from({ length: 6 }, () => entryCatalog.map((entry, index) =>
-      `<div class="reel-card" data-reel-case="${entry.id}"><span class="reel-kicker">CASE ${String(index + 1).padStart(2, '0')}</span><span class="reel-art">${entryIcon(entry.icon)}</span><strong>${entry.title}</strong><span class="reel-mechanic">${operationIcon(entry.icon)}${entry.operation}</span><span class="reel-badge">${playable.includes(entry.id) ? '可游玩' : '待开放'}</span></div>`
-    ).join('')).join('');
-    updateSelectorControls();
+    openDialog('病例档案', `<div id="case-records" class="case-summary"><span id="record-summary">已治愈 ${completed} / ${caseIds.length} 个病例</span><span id="case-count">${playable.length} 项可出诊</span></div><div id="case-options" class="case-options">${cards}</div>`, [
+      { label: '返回诊断室', primary: true, action: closeModal }
+    ], 'CASE ARCHIVE / FIELD NOTES', 'archive');
   }
-  function updateSelectorControls() {
-    const playable = playableCaseIds(), drawing = selector.phase === 'drawing', selected = selector.phase === 'selected';
-    $('case-selector').dataset.drawPhase = selector.phase;
-    $('case-selector').setAttribute('aria-busy', String(drawing));
-    $('case-pool-count').textContent = `当前可抽取 ${playable.length} 种玩法`;
-    $('random-case').disabled = drawing || !playable.length;
-    $('random-label').textContent = drawing ? '抽取中…' : selected ? '再抽一次' : '随机抽取';
-    $('selected-case-start').hidden = !selected;
-    $('selected-case-start').disabled = !selected || !playable.includes(selector.selectedId);
-    for (const button of $('case-options').querySelectorAll('[data-case]')) button.disabled = drawing || !playable.includes(button.dataset.case);
+  function updateDiagnosisControls() {
+    const scanning = diagnosis.phase === 'scanning', ready = diagnosis.phase === 'ready';
+    $('diagnosis-panel').dataset.diagnosisPhase = diagnosis.phase;
+    $('diagnosis-panel').setAttribute('aria-busy', String(scanning));
+    $('diagnosis-action').disabled = scanning || !playableCaseIds().includes(screeningCase.caseId);
+    $('diagnosis-action-label').textContent = scanning ? '检查中…' : ready ? '前往治疗' : '开始检查';
+    $('case-archive').disabled = scanning;
+    $('diagnosis-report').hidden = !ready;
   }
-  function reelOffset(index) {
-    const card = $('case-reel-track').children[index];
-    return $('case-reel-window').clientWidth / 2 - card.offsetLeft - card.offsetWidth / 2;
+  function resetDiagnosis() {
+    diagnosis.token++;
+    if (diagnosis.frame !== null) cancelAnimationFrame(diagnosis.frame);
+    Object.assign(diagnosis, { phase: 'idle', caseId: null, frame: null });
+    $('diagnosis-panel').style.setProperty('--scan-progress', '0');
+    $('diagnosis-monitor').style.opacity = '';
+    $('diagnosis-status').textContent = '生命信号待采集';
+    updateDiagnosisControls();
   }
-  function positionReel(index) {
-    if ($('case-reel-window').clientWidth) $('case-reel-track').style.transform = `translateX(${reelOffset(index)}px)`;
-  }
-  function resetSelector() {
-    selector.token++;
-    if (selector.frame !== null) cancelAnimationFrame(selector.frame);
-    Object.assign(selector, { phase: 'idle', selectedId: null, frame: null, reelIndex: entryCatalog.length });
-    $('case-reel-track').style.opacity = '';
-    for (const card of $('case-reel-track').children) card.classList.remove('is-selected');
-    $('case-draw-status').textContent = playableCaseIds().length ? '让心跳，指引下一站。' : '玩法正在准备中';
-    positionReel(selector.reelIndex); updateSelectorControls();
-  }
-  function drawCase() {
-    if (state.screen !== 'cases' || state.modal || selector.phase === 'drawing') return;
-    const playable = playableCaseIds();
-    if (!playable.length) return;
-    const chosenId = playable[Math.floor(Math.random() * playable.length)];
-    resetSelector();
-    const startIndex = entryCatalog.length;
-    const targetIndex = entryCatalog.length * 4 + entryCatalog.findIndex(entry => entry.id === chosenId);
-    const token = ++selector.token, startedAt = performance.now(), duration = reducedMotion ? 160 : 2800;
-    selector.phase = 'drawing';
-    $('case-draw-status').textContent = '正在寻找下一份求救…';
-    updateSelectorControls();
-    if (reducedMotion) { positionReel(targetIndex); $('case-reel-track').style.opacity = '.35'; }
+  function beginScreening() {
+    if (state.screen !== 'cases' || state.modal || diagnosis.phase !== 'idle' || !playableCaseIds().includes(screeningCase.caseId)) return;
+    const token = ++diagnosis.token, startedAt = performance.now(), duration = reducedMotion ? 160 : 2800;
+    diagnosis.phase = 'scanning';
+    $('diagnosis-status').textContent = '采集生命信号';
+    updateDiagnosisControls();
+    if (reducedMotion) $('diagnosis-monitor').style.opacity = '.35';
     function animate(now) {
-      if (selector.token !== token || selector.phase !== 'drawing' || state.screen !== 'cases') return;
+      if (diagnosis.token !== token || diagnosis.phase !== 'scanning' || state.screen !== 'cases') return;
+      if (document.hidden) { resetDiagnosis(); return; }
       const progress = Math.min(1, Math.max(0, (now - startedAt) / duration));
-      if (reducedMotion) $('case-reel-track').style.opacity = String(.35 + .65 * progress);
-      else {
-        const eased = 1 - Math.pow(1 - progress, 4), from = reelOffset(startIndex), to = reelOffset(targetIndex);
-        $('case-reel-track').style.transform = `translateX(${from + (to - from) * eased}px)`;
-      }
-      if (progress < 1) { selector.frame = requestAnimationFrame(animate); return; }
-      if (!playableCaseIds().includes(chosenId)) { resetSelector(); return; }
-      Object.assign(selector, { phase: 'selected', selectedId: chosenId, frame: null, reelIndex: targetIndex });
-      positionReel(targetIndex); $('case-reel-track').style.opacity = '';
-      $('case-reel-track').children[targetIndex].classList.add('is-selected');
-      $('case-draw-status').textContent = `已抽中 · ${cases[chosenId].title}`;
-      updateSelectorControls();
-      $('selected-case-start').focus({ preventScroll: true });
+      $('diagnosis-panel').style.setProperty('--scan-progress', String(progress));
+      const status = progress < .35 ? '采集生命信号' : progress < .73 ? '检查循环状态' : '定位异常';
+      if ($('diagnosis-status').textContent !== status) $('diagnosis-status').textContent = status;
+      if (reducedMotion) $('diagnosis-monitor').style.opacity = String(.35 + .65 * progress);
+      if (progress < 1) { diagnosis.frame = requestAnimationFrame(animate); return; }
+      if (!playableCaseIds().includes(screeningCase.caseId)) { resetDiagnosis(); return; }
+      Object.assign(diagnosis, { phase: 'ready', caseId: screeningCase.caseId, frame: null });
+      $('diagnosis-monitor').style.opacity = '';
+      $('diagnosis-finding').textContent = screeningCase.finding;
+      $('diagnosis-detail').textContent = screeningCase.detail;
+      $('diagnosis-status').textContent = '异常已定位';
+      updateDiagnosisControls();
+      $('diagnosis-action').focus({ preventScroll: true });
     }
-    selector.frame = requestAnimationFrame(animate);
+    diagnosis.frame = requestAnimationFrame(animate);
   }
-  renderEntrySelector();
 
   function resize() {
     const vw = document.documentElement.clientWidth;
@@ -1746,7 +1760,6 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     }
     if (pointerClient) pointerScreen = toPoint(pointerClient);
-    if (state.screen === 'cases' && selector.phase !== 'drawing') positionReel(selector.reelIndex);
   }
   window.addEventListener('resize', resize);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
@@ -1754,7 +1767,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 
   function clearInput() { if (state.game) state.game.clearInput(); }
   function showScreen(name) {
-    if (state.screen === 'cases' || name === 'cases') resetSelector();
+    if (state.screen === 'cases' || name === 'cases') resetDiagnosis();
     clearInput(); state.screen = name;
     for (const id of screens) $(id).hidden = id !== name;
     $('folio-page').textContent = { home: '001', cases: '002', treatment: '003', result: '004' }[name];
@@ -1762,18 +1775,6 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
     document.body.classList.toggle('landscape-treatment', name === 'treatment');
     W = name === 'treatment' ? 1280 : 720; H = name === 'treatment' ? 720 : 1280;
     resize();
-    if (name === 'cases') updateRecords();
-  }
-  function updateRecords() {
-    const completed = caseIds.filter(id => records[id].wins > 0).length;
-    $('record-summary').textContent = `已治愈 ${completed} / ${caseIds.length} 个病例`;
-    $('case-count').textContent = `/ ${String(caseIds.length).padStart(2, '0')}`;
-    for (const card of document.querySelectorAll('[data-case]')) {
-      const id = card.dataset.case, record = records[id], info = cases[id];
-      card.querySelector('.case-complete').hidden = !record.wins;
-      card.querySelector('.case-mechanic').textContent = record.wins && record.bestSeconds
-        ? `键盘与鼠标 · 最佳 ${record.bestSeconds} 秒` : info.mechanic;
-    }
   }
   function goHome() { loadToken++; closeModal(); clearInput(); state.phase = 'idle'; state.game = null; particles = []; showScreen('home'); }
   function goCases() { loadToken++; closeModal(); clearInput(); state.phase = 'idle'; state.game = null; particles = []; showScreen('cases'); }
@@ -1789,7 +1790,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 
   async function startGame(id) {
     const info = cases[id], factory = window.GiantCureGames[id];
-    if (!info || !factory || selector.phase === 'drawing' || !playableCaseIds().includes(id)) return;
+    if (!info || !factory || diagnosis.phase === 'scanning' || !playableCaseIds().includes(id)) return;
     closeModal(); clearInput();
     const token = ++loadToken;
     Object.assign(state, { id, game: null, progress: 0, elapsed: 0, activeTime: 0, result: null, finishWait: 0, feedbackTime: 0, phase: 'loading', hud: {}, cameraRoom: null });
@@ -1807,9 +1808,9 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
     catch {
       if (token !== loadToken) return;
       state.phase = 'load-error';
-      openDialog('心河还没有展开', '<p>场景插画未能载入，请重试或回到病历簿。</p>', [
+      openDialog('心河还没有展开', '<p>场景插画未能载入，请重试或返回诊断室。</p>', [
         { label: '重新载入', primary: true, action: () => { if (window.GiantCureAssets?.retry) window.GiantCureAssets.retry(); startGame(id); } },
-        { label: '返回病历簿', action: goCases }
+        { label: '返回诊断室', action: goCases }
       ]);
       return;
     }
@@ -1893,7 +1894,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
     $('metric-restored-label').textContent = '重启次数';
     $('result-message').textContent = r.won ? info.poem : '每次尝试，都是对生命的一次靠近。';
     $('retry').textContent = r.won ? '↻ 重新巡诊' : '↻ 从安全节点重启';
-    $('result-next').firstElementChild.textContent = r.won ? '完成巡诊 · 回到病历簿' : '从最近安全节点重启';
+    $('result-next').firstElementChild.textContent = r.won ? '完成巡诊 · 返回诊断室' : '从最近安全节点重启';
     $('result-next').onclick = r.won ? goCases : retryCheckpoint;
     showScreen('result');
   }
@@ -1901,19 +1902,19 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
   function showPause() {
     if (!['playing', 'paused'].includes(state.phase)) return;
     pauseGame();
-    openDialog('让世界歇一会儿', '<p>风停在树梢，河流等你回来。<br>巡诊已暂停，时间不会流逝。<br>返回病历簿会结束本次巡诊。</p>', [
+    openDialog('让世界歇一会儿', '<p>风停在树梢，河流等你回来。<br>巡诊已暂停，时间不会流逝。<br>返回诊断室会结束本次巡诊。</p>', [
       { label: '继续巡诊 ↗', primary: true, action: resumeGame },
       { label: '从头重新巡诊', action: () => startGame(state.id) },
-      { label: '返回病历簿', action: goCases }
+      { label: '返回诊断室', action: goCases }
     ]);
   }
   function resumeGame() { closeModal(); if (state.phase === 'paused') { state.phase = 'playing'; lastFrame = null; } }
   function showHelp() {
     if (state.phase === 'finishing') return;
     if (state.screen === 'cases') {
-      openDialog('让心跳，指引下一站', '<p>点击“随机抽取”，等卡片停稳后选择“进入玩法”，也可以再抽一次。</p><p>想自己挑选？点击下方可玩的卡片，即可开始巡诊。</p><p class="dialog-tip">标注“待开放”的玩法仅作预告，不参与抽取。</p>', [
+      openDialog('听见生命的求救', '<p>点击“开始检查”，等待监测屏定位异常，再选择“前往治疗”。</p><p class="dialog-tip">初筛只定位异常区域。进入身体后，再近距离检查具体病因。</p><p>病例档案可查看巡诊记录和后续病例。标注“待开放”的内容暂不可出诊。</p>', [
         { label: '明白了 ↗', primary: true, action: closeModal }
-      ], 'THE CASEBOOK / FIELD GUIDE');
+      ], 'LIFE DIAGNOSTICS / FIELD GUIDE');
       return;
     }
     const wasPlaying = ['playing', 'paused'].includes(state.phase);
@@ -1931,14 +1932,20 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
       growth: '扫描出口处异常组织，持续照射直至暂时压制，再观察它的变化。',
       ending: '这片异常组织在被压制后重新生长。心脏已恢复，但巨人的其他部位仍需要你。'
     };
-    const hint = chapter ? chapter.stage === 'escape' && chapter.crossedBarrier ? hints.growth : hints[chapter.stage] || (chapter.room === 'entry' ? hints.diagnosis : chapter.room === 'heart' ? hints.conduction : hints.bypass) : '在病历簿中点击「心脏巡诊」卡片，即可进入巨人的心脏世界。';
+    const hint = chapter ? chapter.stage === 'escape' && chapter.crossedBarrier ? hints.growth : hints[chapter.stage] || (chapter.room === 'entry' ? hints.diagnosis : chapter.room === 'heart' ? hints.conduction : hints.bypass) : '进入诊断室，检查生命信号并定位异常，再前往巨人的身体开展巡诊。';
     openDialog('带着好奇，进入心河', `<p class="dialog-tip">${hint}</p><div class="help-item"><strong>移动与观察</strong><p>WASD 移动，Shift 疾行，鼠标瞄准。Q 开关扫描：读取附近的流量、压力、组织和节点状态。扫描不耗能，世界仍在运转。</p></div><div class="help-item"><strong>治疗与连接</strong><p>接近节点后按 E 交互，依次选择节点建立连接。左键持续治疗或射击，右键精瞄。R 装填，备弹无限。</p></div><div class="help-item"><strong>安全与恢复</strong><p>避开扑击预警。设备耐久归零后，从最近安全节点重启。心脏恢复后，Space 使用循环冲刺。不限时，退出或刷新会清除本次检查点。</p></div><p>本章使用键盘与鼠标。声音默认关闭，可点击右上角音符开启。</p>`, [
       { label: wasPlaying ? '继续巡诊 ↗' : '明白了 ↗', primary: true, action: wasPlaying ? resumeGame : closeModal }
     ], 'HEART JOURNEY / FIELD GUIDE');
   }
-  function openDialog(title, body, buttons, kicker = 'A MOMENT OF CARE') {
-    if (selector.phase === 'drawing') resetSelector();
+  function dialogControls() {
+    return [...$('modal').querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+      .filter(element => !element.disabled && !element.closest('[hidden], [inert]') && element.getClientRects().length);
+  }
+  function openDialog(title, body, buttons, kicker = 'A MOMENT OF CARE', variant = '') {
+    if (diagnosis.phase === 'scanning') resetDiagnosis();
     if ($('modal').hidden) previousFocus = document.activeElement;
+    const dialog = $('modal').querySelector('.dialog');
+    dialog.classList.toggle('archive-dialog', variant === 'archive');
     state.modal = true; $('dialog-title').textContent = title; $('dialog-kicker').textContent = kicker;
     $('dialog-body').innerHTML = body; $('dialog-actions').replaceChildren();
     buttons.forEach((item, index) => {
@@ -1949,13 +1956,16 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
     $('modal').hidden = false;
     for (const id of screens) $(id).inert = true;
     document.querySelector('.app-header').inert = true;
-    $('dialog-actions').firstElementChild.focus({ preventScroll: true });
+    dialog.scrollTop = 0;
+    dialogControls()[0]?.focus({ preventScroll: true });
   }
   function closeModal() {
     $('modal').hidden = true; state.modal = false;
     for (const id of screens) $(id).inert = false;
     document.querySelector('.app-header').inert = false;
-    if (previousFocus && previousFocus.isConnected && !previousFocus.closest('[hidden]')) previousFocus.focus({ preventScroll: true });
+    $('modal').querySelector('.dialog').classList.remove('archive-dialog');
+    $('dialog-body').replaceChildren(); $('dialog-actions').replaceChildren();
+    if (previousFocus && previousFocus.isConnected && !previousFocus.disabled && !previousFocus.closest('[hidden], [inert]') && previousFocus.getClientRects().length) previousFocus.focus({ preventScroll: true });
     previousFocus = null;
   }
 
@@ -1982,22 +1992,24 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
     if (event.code === 'Escape') {
       event.preventDefault();
       if (state.phase === 'playing') showPause(); else if (state.phase === 'paused') resumeGame(); else if (state.modal) closeModal();
+      return;
     }
     if (acceptsInput() && gameKeys.has(event.code)) { event.preventDefault(); state.game.keyDown(event.code, event.repeat); }
     if (event.key === 'Tab' && state.modal) {
-      const buttons = [...$('dialog-actions').querySelectorAll('button')], first = buttons[0], last = buttons[buttons.length - 1];
+      const controls = dialogControls(), first = controls[0], last = controls[controls.length - 1];
+      if (!first) { event.preventDefault(); return; }
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      else if ((!event.shiftKey && document.activeElement === last) || !controls.includes(document.activeElement)) { event.preventDefault(); first.focus(); }
     }
   });
   document.addEventListener('keyup', event => { if (state.game) state.game.keyUp(event.code); });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) return;
-    if (selector.phase === 'drawing') resetSelector();
+    if (diagnosis.phase === 'scanning') resetDiagnosis();
     if (state.phase === 'playing') showPause();
   });
   window.addEventListener('blur', () => {
-    if (selector.phase === 'drawing') resetSelector();
+    if (diagnosis.phase === 'scanning') resetDiagnosis();
     if (state.phase === 'playing') showPause(); else clearInput();
   });
   $('brand').onclick = requestHome;
@@ -2005,11 +2017,19 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
   $('help').onclick = showHelp; $('pause').onclick = showPause;
   $('retry').onclick = () => state.result && !state.result.won ? retryCheckpoint() : startGame(state.id);
   $('result-cases').onclick = goCases;
-  $('random-case').onclick = drawCase;
-  $('selected-case-start').onclick = () => {
-    if (state.screen === 'cases' && !state.modal && selector.phase === 'selected' && playableCaseIds().includes(selector.selectedId)) startGame(selector.selectedId);
+  $('diagnosis-action').onclick = () => {
+    if (state.screen !== 'cases' || state.modal) return;
+    if (diagnosis.phase === 'ready' && playableCaseIds().includes(diagnosis.caseId)) startGame(diagnosis.caseId);
+    else beginScreening();
   };
-  document.querySelectorAll('[data-case]').forEach(card => { card.onclick = () => startGame(card.dataset.case); });
+  $('diagnosis-action').addEventListener('keydown', event => {
+    if (event.repeat && ['Enter', 'Space'].includes(event.code)) event.preventDefault();
+  });
+  $('case-archive').onclick = openCaseArchive;
+  $('dialog-body').addEventListener('click', event => {
+    const card = event.target.closest('button[data-case]');
+    if (card && state.modal && $('modal').querySelector('.dialog').classList.contains('archive-dialog')) startGame(card.dataset.case);
+  });
   for (const [id, key] of [['journey-scan', 'KeyQ'], ['journey-interact', 'KeyE'], ['journey-reload-button', 'KeyR']]) $(id).onclick = () => {
     if (acceptsInput()) { state.game.keyDown(key, false); state.game.keyUp(key); }
   };
@@ -2172,13 +2192,13 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
     screen: state.screen, phase: state.phase, id: state.id, progress: state.progress,
     remaining: null, elapsed: state.elapsed, modal: state.modal,
     result: state.result ? { ...state.result } : null,
-    selector: { phase: selector.phase, selectedId: selector.selectedId, playableIds: playableCaseIds() },
+    diagnosis: { phase: diagnosis.phase, caseId: diagnosis.caseId },
     game: state.game ? state.game.getDebugState() : null,
     view: { viewport: { ...view.viewport }, camera: { ...view.camera } },
     logicalSize: { width: W, height: H }, reducedMotion,
     particles: particles.map(p => ({ ...p })), activeTime: state.activeTime
   }) });
-  updateRecords(); requestAnimationFrame(frame);
+  resetDiagnosis(); requestAnimationFrame(frame);
 })();
 
   </script>
