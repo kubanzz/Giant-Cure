@@ -73,17 +73,34 @@ function approachHunter(game) {
   }
   assert.fail('could not approach the visible Hunter');
 }
-function weakpointPosition(game, id) {
-  const weak = state(game).weakpoints.find(p => p.id === id), clot = state(game).obstacles.find(p => p.kind === 'clot');
-  return [{ x: weak.x, y: clot.y - 50 }, { x: clot.x + clot.w + 55, y: weak.y }, { x: weak.x, y: clot.y + clot.h + 55 }, { x: clot.x - 55, y: weak.y }]
-    .sort((a, b) => distance(a, weak) - distance(b, weak)).find(p => !state(game).obstacles.some(r => r.kind !== 'clot' && r.blocking !== false && overlaps(p, r, 20)));
+function segmentDistance(point, from, to) {
+  const dx = to.x - from.x, dy = to.y - from.y, length = dx * dx + dy * dy;
+  const t = length ? Math.max(0, Math.min(1, ((point.x - from.x) * dx + (point.y - from.y) * dy) / length)) : 0;
+  return distance(point, { x: from.x + t * dx, y: from.y + t * dy });
+}
+function circleEntry(from, to, center, radius) {
+  const dx = to.x - from.x, dy = to.y - from.y, ox = from.x - center.x, oy = from.y - center.y, a = dx * dx + dy * dy;
+  const b = ox * dx + oy * dy, discriminant = b * b - a * (ox * ox + oy * oy - radius * radius);
+  if (discriminant < 0) return Infinity;
+  const t = (-b - Math.sqrt(discriminant)) / a; return t >= 0 && t <= 1 ? t : Infinity;
+}
+function weakpointPosition(game, id, avoidEnemies = false) {
+  const s = state(game), weak = s.weakpoints.find(p => p.id === id), clot = s.obstacles.find(p => p.kind === 'clot');
+  const positions = [-120, -60, 0, 60, 120].flatMap(offset => [{ x: weak.x + offset, y: clot.y - 50 }, { x: clot.x + clot.w + 55, y: weak.y + offset }, { x: weak.x + offset, y: clot.y + clot.h + 55 }, { x: clot.x - 55, y: weak.y + offset }]);
+  return positions
+    .filter(p => distance(p, weak) <= (weak.scanned ? s.toolRange - 10 : s.scanRange - 12) && !s.obstacles.some(r => r.kind !== 'clot' && r.blocking !== false && (overlaps(p, r, 20) || crosses(p, weak, r))) && (!avoidEnemies || !s.enemies.some(e => e.hp > 0 && segmentDistance(e, p, weak) < 28)))
+    .sort((a, b) => distance(a, s.player) - distance(b, s.player))[0];
 }
 function soften(game, id, seconds = 6) {
   scan(game); moveTo(game, weakpointPosition(game, id)); advance(game, 1.4); assert(state(game).weakpoints.find(p => p.id === id).scanned, 'locally discover ' + id);
-  for (let t = 0; t < seconds && !state(game).weakpoints.find(p => p.id === id).complete; t += 1 / 60) {
+  for (let attempts = 0, treated = 0; attempts < 3600 && treated < seconds && !state(game).weakpoints.find(p => p.id === id).complete; attempts++) {
     const weak = state(game).weakpoints.find(p => p.id === id);
     if (state(game).ammo === 0) { game.pointerUp(); press(game, 'KeyR'); advance(game, 1.71); }
-    game.pointerDown({ ...weak, button: 0 }); game.update(1 / 60); assert(!state(game).failed, 'therapy remains survivable');
+    game.pointerMove(weak);
+    if (state(game).toolPreview.hitType !== 'treatment' || state(game).toolPreview.targetId !== id) {
+      game.pointerUp(); const alternate = weakpointPosition(game, id, true); assert(alternate, 'an unobstructed treatment angle remains available'); moveTo(game, alternate, 4); game.update(1 / 60); continue;
+    }
+    game.pointerDown({ ...weak, button: 0 }); game.update(1 / 60); treated += 1 / 60; assert(!state(game).failed, 'therapy remains survivable');
   } game.pointerUp();
 }
 function restoreFlow(game) {
@@ -95,10 +112,10 @@ function restoreFlow(game) {
 function enterHeart(game) { interact(game, portal(game, 'to-heart')); assert.equal(state(game).room, 'heart'); advance(game, 1.6); }
 function connectHeart(game) {
   interact(game, node(game, 'C1')); assert.equal(state(game).conduction.length, 0, 'diagnosis gates connections');
-  discover(game, node(game, 'heart-signal')); assert(state(game).scanned['heart-signal']);
-  interact(game, node(game, 'C3')); assert.equal(state(game).conduction.length, 0);
-  for (const id of ['C1', 'C2', 'C3']) interact(game, node(game, id));
-  assert.equal(state(game).stage, 'recovery'); assert.equal(state(game).dashUnlocked, false); advance(game, 6.1); assert(state(game).dashUnlocked); assert.equal(state(game).heartbeat, 'stable');
+  assert.equal(state(game).guidance, null); discover(game, node(game, 'heart-signal')); assert(state(game).scanned['heart-signal']); assert.equal(state(game).guidance.target.id, 'C1');
+  interact(game, node(game, 'C3')); assert.equal(state(game).conduction.length, 0); assert.equal(state(game).guidance.target.id, 'C1');
+  for (const [index, id] of ['C1', 'C2', 'C3'].entries()) { interact(game, node(game, id)); if (index < 2) { assert.equal(state(game).guidance.source.id, id); assert.equal(state(game).guidance.target.id, ['C2', 'C3'][index]); assert.doesNotMatch(state(game).scannerInfo.join(' '), /传导中断/); } }
+  assert.equal(state(game).guidance, null); assert.equal(state(game).stage, 'recovery'); assert.doesNotMatch(state(game).scannerInfo.join(' '), /传导中断/); assert.equal(state(game).dashUnlocked, false); advance(game, 6.1); assert(state(game).dashUnlocked); assert.equal(state(game).heartbeat, 'stable'); assert.match(state(game).scannerInfo.join(' '), /稳定/); assert.doesNotMatch(state(game).scannerInfo.join(' '), /传导中断/);
 }
 function toRevivedHeart() { const run = fresh(); diagnose(run.game); connectBypasses(run.game); fightTutorial(run.game); restoreFlow(run.game); enterHeart(run.game); connectHeart(run.game); return run; }
 function verifyDraw(game) {
@@ -113,8 +130,17 @@ function verifyDraw(game) {
     return (...args) => { calls++; finite(args); if (key === 'arc') assert(args[2] >= 0); if (key === 'ellipse') assert(args[2] >= 0 && args[3] >= 0); };
   }, set(object, key, value) { object[key] = value; return true; } });
   const before = JSON.stringify(state(game));
-  game.draw(ctx, state(game).elapsed, { viewport: { x: 24, y: 84, w: 1232, h: 552 }, camera: { ...state(game).player, zoom: .8 }, hideLabels: true });
+  for (const hideLabels of [false, true]) game.draw(ctx, state(game).elapsed, { viewport: { x: 24, y: 84, w: 1232, h: 552 }, camera: { ...state(game).player, zoom: .8 }, hideLabels });
   assert.equal(depth, 0); assert(calls > 100, 'scene contains drawing primitives'); assert.equal(JSON.stringify(state(game)), before, 'rendering cannot mutate simulation');
+}
+function combatRun() { const run = fresh(); diagnose(run.game); connectBypasses(run.game); approachHunter(run.game); return run; }
+function firePreview(game, target) {
+  game.pointerDown({ ...target, button: 2 }); const before = state(game), preview = before.toolPreview;
+  verifyDraw(game);
+  game.pointerDown({ ...target, button: 0 }); game.update(.000001); game.pointerUp({ ...target, button: 0 }); game.pointerUp({ ...target, button: 2 });
+  const after = state(game); assert.equal(after.ammo, before.ammo - 1, 'every emitted ray spends exactly one dose'); assert(after.shot);
+  for (const key of ['kind', 'hitType', 'targetId', 'weakpoint', 'blocked']) assert.equal(after.shot[key], preview[key], 'preview agrees with emitted ' + key);
+  assert(distance(after.shot.to, preview.to) < 1e-7, 'preview and visible shot end at the same point'); return { before, after, preview };
 }
 
 test('entry: bounded scan, normal branch retracing, dormant dash and immutable snapshots', () => {
@@ -135,11 +161,63 @@ test('tool: precision cadence, exact magazine/reload and clearInput releases all
   assert.equal(state(game).ammo, 24); assert.equal(state(game).precision, false); assert.equal(state(game).keys.length, 0); assert.equal(state(game).player.x, before.x);
   game.pointerDown({ x: 900, y: 830, button: 0 }); advance(game, .25); press(game, 'KeyR'); advance(game, 1.71); assert.equal(state(game).reloadRemaining, 0); assert.equal(state(game).ammo, 23, 'held trigger resumes after full reload'); game.pointerUp(); advance(game, .4); assert.equal(state(game).ammo, 23);
 });
+
+test('tool: 16 ms frames preserve five doses per second and exact sustained treatment duration', () => {
+  for (const precise of [false, true]) {
+    const { game } = fresh(), target = { x: 900, y: 830 };
+    if (precise) game.pointerDown({ ...target, button: 2 }); game.pointerDown({ ...target, button: 0 }); advance(game, 2.05, .016); assert.equal(state(game).ammo, 13, 'eleven doses have fired at t=0 through t=2.0');
+    advance(game, 2.56, .016); assert.equal(state(game).ammo, 0, 'the twenty-fourth dose fires at t=4.6 without frame-rate drift');
+  }
+  const { game } = fresh(); diagnose(game); connectBypasses(game); fightTutorial(game); moveTo(game, weakpointPosition(game, 'W1')); scan(game); advance(game, 1.4); scan(game, false);
+  game.pointerDown({ ...state(game).weakpoints.find(w => w.id === 'W1'), button: 0 }); advance(game, 3.21, .016); game.pointerUp(); assert(state(game).weakpoints.find(w => w.id === 'W1').complete, '3.2 seconds of paid therapy survives fractional RAF frames');
+});
 test('tool: a solid tissue wall stops the shot at its near face and consumes one round', () => {
   const { game } = fresh(); const wall = state(game).obstacles.find(r => r.kind === 'tissue'); assert(wall);
   const from = { x: wall.x + wall.w / 2, y: wall.y + wall.h + 35 }; moveTo(game, from);
   const target = { x: from.x, y: wall.y + wall.h - 10 }; game.pointerDown({ ...target, button: 0 }); game.update(1 / 60); game.pointerUp();
   const s = state(game); assert.equal(s.ammo, 23); assert(s.shot); assert.equal(s.shot.blocked, true); assert(s.shot.to.y >= wall.y + wall.h - .1, 'shot ends at the first wall surface');
+});
+
+test('ray: a near cursor only sets direction and the visible ray reaches the full tool range', () => {
+  const { game } = fresh(), s = state(game); const result = firePreview(game, { x: s.player.x + 15, y: s.player.y });
+  assert.equal(result.preview.hitType, 'none'); assert(Math.abs(distance(result.preview.from, result.preview.to) - s.toolRange) < 1e-7);
+  assert(Object.isFrozen(state(game).toolPreview), 'new preview remains read-only'); assert.equal(state(game).precision, false);
+});
+
+test('ray: aim beyond a Hunter, including far outside range, hits the first Hunter body', () => {
+  for (const factor of [1.2, 8]) {
+    const { game } = combatRun(); scan(game, false); const s = state(game), hunter = s.enemies.find(e => e.hp > 0);
+    const target = { x: s.player.x + (hunter.x - s.player.x) * factor, y: s.player.y + (hunter.y - s.player.y) * factor };
+    assert(distance(target, hunter) > 22, 'cursor is visibly beyond the Hunter'); if (factor === 8) assert(distance(target, s.player) > s.toolRange);
+    const result = firePreview(game, target); assert.equal(result.preview.hitType, 'hunter'); assert.equal(result.preview.targetId, hunter.id);
+    assert.equal(result.preview.weakpoint, false); assert.equal(state(game).enemies.find(e => e.id === hunter.id).hp, hunter.hp - 1);
+  }
+});
+
+test('ray: scanning exposes same-Hunter weakpoints while an off-center body ray stays ordinary', () => {
+  for (const weakHit of [false, true]) {
+    const { game } = combatRun(); scan(game); const s = state(game), hunter = s.enemies.find(e => e.hp > 0), d = distance(s.player, hunter);
+    const direction = { x: (hunter.x - s.player.x) / d, y: (hunter.y - s.player.y) / d };
+    const target = weakHit ? hunter.weakpoint : { x: hunter.x - direction.y * 18, y: hunter.y + direction.x * 18 };
+    const result = firePreview(game, target); assert.equal(result.preview.hitType, 'hunter'); assert.equal(result.preview.weakpoint, weakHit);
+    assert.equal(state(game).enemies.find(e => e.id === hunter.id).hp, hunter.hp - (weakHit ? 3 : 1));
+  }
+});
+
+test('ray: tissue before a pursuing Hunter keeps the Hunter unharmed', () => {
+  const { game } = fresh(); diagnose(game); connectBypasses(game); moveTo(game, { x: 1145, y: 670 });
+  const wall = state(game).obstacles.find(r => r.id === 'main-island-r'); let blockedTarget;
+  for (let i = 0; i < 12 * 60 && distance(state(game).player, state(game).enemies[0]) > 150; i++) game.update(1 / 60);
+  for (let i = 0; i < 8 * 60; i++) {
+    const s = state(game), hunter = s.enemies.find(e => e.hp > 0);
+    if (distance(s.player, hunter) < s.toolRange + 15 && crosses(s.player, hunter, wall)) { blockedTarget = hunter; break; }
+    const waypoint = nextWaypoint(s, { x: 1005, y: 670 }); assert(waypoint);
+    for (const [key, down] of [['KeyA', waypoint.x - s.player.x < -3], ['KeyD', waypoint.x - s.player.x > 3], ['KeyW', waypoint.y - s.player.y < -3], ['KeyS', waypoint.y - s.player.y > 3]]) { if (down) game.keyDown(key); else game.keyUp(key); }
+    game.keyDown('ShiftLeft');
+    game.update(1 / 60); assert(!state(game).failed);
+  }
+  game.clearInput(); assert(blockedTarget, 'natural Hunter path crosses the island sight line'); const result = firePreview(game, blockedTarget);
+  assert.equal(result.preview.hitType, 'wall'); assert.equal(result.preview.targetId, wall.id); assert.equal(state(game).enemies.find(e => e.id === blockedTarget.id).hp, blockedTarget.hp);
 });
 test('valve: shared heartbeat, closure safely ejects overlapping unit without injury', () => {
   const { game } = fresh(); discover(game, node(game, 'pressure')); const valve = state(game).obstacles.find(r => r.kind === 'valve'); assert(valve);
@@ -151,6 +229,17 @@ test('diagnosis: premature release, wrong branch sequences and cumulative entry 
   const { game, events } = fresh(); diagnose(game); interact(game, node(game, 'release')); assert(!state(game).flowRestored); assert.equal(state(game).stage, 'bypass');
   interact(game, node(game, 'A2')); assert.equal(state(game).connection.length, 0); interact(game, node(game, 'A1')); interact(game, node(game, 'B2')); assert.equal(state(game).connection.length, 0); assert.equal(state(game).health, 100);
   const elapsed = state(game).elapsed; game.retryFromCheckpoint(); assert.equal(state(game).checkpoint, 'entry'); assert.equal(state(game).elapsed, elapsed); assert.equal(state(game).ammo, 24); assert(events.tasks.length >= 2); assert(state(game).task);
+});
+
+test('guidance: no diagnosis spoiler, selected endpoint, wrong-order reset, safe-window wait and retry reset', () => {
+  const { game } = fresh(); assert.equal(state(game).guidance, null); diagnose(game); assert.equal(state(game).guidance, null);
+  interact(game, node(game, 'A1')); let guide = state(game).guidance; assert.equal(guide.kind, 'bypass'); assert.equal(guide.source.id, 'A1'); assert.equal(guide.target.id, 'A2'); assert.match(state(game).task, /A.*寻找 B/); verifyDraw(game);
+  interact(game, node(game, 'B2')); assert.equal(state(game).guidance, null); assert.equal(state(game).connection.length, 0);
+  interact(game, node(game, 'A1')); interact(game, node(game, 'A2')); assert.equal(state(game).guidance, null);
+  interact(game, node(game, 'B1')); moveTo(game, node(game, 'B2')); while (state(game).beat.safe) game.update(1 / 60);
+  assert.equal(state(game).guidance.target.id, 'B2'); assert.equal(state(game).guidance.waiting, true); press(game, 'KeyE'); assert.equal(state(game).guidance.source.id, 'B1');
+  while (!state(game).beat.safe) game.update(1 / 60); assert.equal(state(game).guidance.waiting, false); press(game, 'KeyE'); assert.equal(state(game).guidance, null);
+  game.retryFromCheckpoint(); assert.equal(state(game).guidance, null); assert.equal(state(game).connection.length, 0);
 });
 test('Hunter: normal/weakpoint damage, warning, invulnerability, retreat and checkpoint revival', () => {
   const { game, events } = fresh(); diagnose(game); connectBypasses(game); approachHunter(game); let target = state(game).enemies.find(e => e.hp > 0);
@@ -168,12 +257,70 @@ test('therapy: independent local scans, partial progress, two interferers and ch
   moveTo(game, { x: 500, y: 220 }); advance(game, .5); assert.equal(state(game).weakpoints[0].progress, amount); soften(game, id); assert(state(game).weakpoints[0].complete); assert.equal(state(game).enemies.filter(e => e.hp > 0).length, 2); assert.equal(state(game).stage, 'clot');
   const elapsed = state(game).elapsed; game.retryFromCheckpoint(); assert.equal(state(game).elapsed, elapsed); assert(state(game).weakpoints.every(p => p.progress === 0 && !p.complete)); assert.equal(state(game).stage, 'combat');
 });
+
+test('therapy: unknown structure reports diagnosis; scanned structure admits its own clot with Q off and retains progress through reload', () => {
+  const { game, events } = fresh(); diagnose(game); connectBypasses(game); fightTutorial(game); scan(game, false);
+  const weak = state(game).weakpoints.find(p => !p.scanned); assert(weak); moveTo(game, weakpointPosition(game, weak.id));
+  let result = firePreview(game, weak); assert.equal(result.preview.hitType, 'clot'); assert.match(result.preview.label, /扫描|诊断/); assert.equal(state(game).weakpoints.find(w => w.id === weak.id).progress, 0); assert(events.feedback.some(f => /扫描|诊断/.test(f.text)));
+  scan(game); advance(game, 1.4); scan(game, false); advance(game, .21); assert(state(game).weakpoints.find(w => w.id === weak.id).scanned);
+  result = firePreview(game, weak); assert.equal(result.preview.hitType, 'treatment'); assert.equal(result.preview.targetId, weak.id); assert.equal(result.preview.blocked, false);
+  const clot = state(game).obstacles.find(o => o.kind === 'clot'); assert(result.preview.to.x >= clot.x && result.preview.to.x <= clot.x + clot.w && result.preview.to.y >= clot.y && result.preview.to.y <= clot.y + clot.h, 'diagnosed treatment enters its target clot');
+  game.pointerDown({ ...weak, button: 0 }); advance(game, .31); game.clearInput(); const progress = state(game).weakpoints.find(w => w.id === weak.id).progress; assert(progress > 0 && progress < 1); assert.equal(state(game).scanner, false);
+  press(game, 'KeyR'); advance(game, .85); assert.equal(state(game).weakpoints.find(w => w.id === weak.id).progress, progress); advance(game, .86); assert.equal(state(game).ammo, 24); assert.equal(state(game).weakpoints.find(w => w.id === weak.id).progress, progress);
+  game.pointerDown({ ...weak, button: 0 }); advance(game, .31); game.pointerUp(); assert(state(game).weakpoints.find(w => w.id === weak.id).progress > progress);
+});
+
+test('ray: clustered living interferers stop at the first Hunter without penetrating the second', () => {
+  const { game } = fresh(); diagnose(game); connectBypasses(game); fightTutorial(game); soften(game, 'W1'); scan(game, false); moveTo(game, { x: 975, y: 560 });
+  let aligned;
+  for (let i = 0; i < 20 * 60 && !aligned; i++) {
+    const s = state(game), alive = s.enemies.filter(e => e.hp > 0);
+    assert.equal(alive.length, 2);
+    for (const far of alive) { const near = alive.find(e => e.id !== far.id); if (distance(s.player, far) < s.toolRange && distance(s.player, near) < distance(s.player, far) - 24 && segmentDistance(near, s.player, far) < 18) { game.pointerMove(far); const ray = state(game).toolPreview; if (ray.hitType === 'hunter' && ray.targetId === near.id) { aligned = { near, far }; break; } } }
+    if (!aligned) { game.update(1 / 60); assert(!state(game).failed, 'two-Hunter lineup remains survivable'); }
+  }
+  assert(aligned, 'natural pursuit creates a front/back Hunter lineup'); const result = firePreview(game, aligned.far); assert.equal(result.preview.targetId, aligned.near.id);
+  assert.equal(state(game).enemies.find(e => e.id === aligned.near.id).hp, aligned.near.hp - 1); assert.equal(state(game).enemies.find(e => e.id === aligned.far.id).hp, aligned.far.hp);
+});
+
+test('therapy: a living Hunter in front of a diagnosed clot structure intercepts treatment', () => {
+  const { game } = fresh(); diagnose(game); connectBypasses(game); fightTutorial(game); soften(game, 'W1');
+  discover(game, { x: 975, y: 382 }); const weak = state(game).weakpoints.find(w => w.id === 'W2'); assert(weak.scanned); scan(game, false); let intercepted;
+  for (let i = 0; i < 8 * 60; i++) { game.pointerMove(weak); const s = state(game); if (s.toolPreview.hitType === 'hunter') { intercepted = s; break; } game.update(1 / 60); assert(!state(game).failed); }
+  assert(intercepted, 'approaching interference actually crosses the treatment ray'); const result = firePreview(game, weak); assert.equal(result.preview.hitType, 'hunter');
+  assert.equal(state(game).weakpoints.find(w => w.id === weak.id).progress, weak.progress); const prior = intercepted.enemies.find(e => e.id === result.preview.targetId); assert.equal(state(game).enemies.find(e => e.id === prior.id).hp, prior.hp - 1);
+});
+
+test('ray: a rear overlapping Hunter weakpoint cannot steal the nearer Hunter body hit', () => {
+  const { game } = fresh(); diagnose(game); connectBypasses(game); fightTutorial(game); soften(game, 'W1'); scan(game);
+  const route = [{ x: 1400, y: 850 }, { x: 1400, y: 450 }, { x: 1000, y: 800 }, { x: 1250, y: 500 }]; let leg = 0, found;
+  // Genuine pursuit eventually overlaps the two Hunters. Search read-only geometry
+  // for the regression where the rear weakpoint protrudes before the front body.
+  for (let frame = 0; frame < 3600 && !found; frame++) {
+    const s = state(game), alive = s.enemies.filter(e => e.hp > 0);
+    for (let degrees = 0; degrees < 360; degrees++) {
+      const angle = degrees * Math.PI / 180, target = { x: s.player.x + Math.cos(angle) * s.toolRange, y: s.player.y + Math.sin(angle) * s.toolRange };
+      const bodies = alive.map(e => ({ enemy: e, at: circleEntry(s.player, target, e, 22) })).filter(e => Number.isFinite(e.at)).sort((a, b) => a.at - b.at);
+      if (bodies.length !== 2 || Number.isFinite(circleEntry(s.player, target, bodies[0].enemy.weakpoint, 11)) || circleEntry(s.player, target, bodies[1].enemy.weakpoint, 11) >= bodies[0].at) continue;
+      game.pointerMove(target); if (state(game).toolPreview.hitType === 'hunter') { found = { target, front: bodies[0].enemy, rear: bodies[1].enemy }; break; }
+    }
+    if (found) break;
+    if (distance(s.player, route[leg]) < 10) leg = (leg + 1) % route.length;
+    const waypoint = nextWaypoint(s, route[leg]); assert(waypoint);
+    for (const [key, down] of [['KeyA', waypoint.x - s.player.x < -3], ['KeyD', waypoint.x - s.player.x > 3], ['KeyW', waypoint.y - s.player.y < -3], ['KeyS', waypoint.y - s.player.y > 3]]) { if (down) game.keyDown(key); else game.keyUp(key); }
+    game.keyDown('ShiftLeft'); game.update(1 / 60); assert(!state(game).failed, 'public kiting route survives until overlap');
+  }
+  game.clearInput(); assert(found, 'natural gameplay reproduces overlapping body/weakpoint priority'); const result = firePreview(game, found.target);
+  assert.equal(result.preview.targetId, found.front.id); assert.equal(result.preview.weakpoint, false); assert.equal(state(game).enemies.find(e => e.id === found.front.id).hp, found.front.hp - 1); assert.equal(state(game).enemies.find(e => e.id === found.rear.id).hp, found.rear.hp);
+});
 test('chapter: flush with living Hunters, heart diagnosis, growth suppression/regrowth and one result', () => {
   const { game, events } = toRevivedHeart(); const beats = events.heartbeats.length; advance(game, 1.35); assert.equal(events.heartbeats.length - beats, 1); assert.equal(events.heartbeats.at(-1).period, 1.35);
   const barrier = state(game).obstacles.find(r => r.kind === 'dashBarrier'); moveTo(game, { x: 1300, y: barrier.y + barrier.h + 25 }); game.keyDown('KeyW'); advance(game, .3); game.keyUp('KeyW'); assert(!state(game).crossedBarrier);
   game.keyDown('KeyW'); press(game, 'Space'); advance(game, .35); game.clearInput(); assert(state(game).crossedBarrier); assert(!overlaps(state(game).player, barrier));
   const growth = state(game).growth; moveTo(game, growth); game.pointerDown({ ...growth, button: 0 }); advance(game, .3); game.pointerUp(); assert.equal(state(game).stage, 'escape');
-  discover(game, growth); assert(state(game).growth.scanned); game.pointerDown({ ...growth, button: 0 }); advance(game, 1.51); game.pointerUp(); assert.equal(state(game).stage, 'ending');
+  discover(game, growth); assert(state(game).growth.scanned); advance(game, 2.5); moveTo(game, { x: 1300, y: barrier.y - 25 }); game.keyDown('KeyS'); press(game, 'Space'); advance(game, .35); game.clearInput();
+  moveTo(game, { x: 1300, y: barrier.y + barrier.h + 25 }); scan(game, false); const blocked = firePreview(game, growth); assert.equal(blocked.preview.hitType, 'wall'); assert.equal(blocked.preview.targetId, barrier.id); assert.equal(state(game).growth.progress, 0, 'another tissue barrier still blocks diagnosed treatment');
+  advance(game, 2.5); game.keyDown('KeyW'); press(game, 'Space'); advance(game, .35); game.clearInput(); moveTo(game, growth); game.pointerDown({ ...growth, button: 0 }); advance(game, 1.51, .016); game.pointerUp(); assert.equal(state(game).stage, 'ending'); assert.equal(state(game).scanner, false, 'growth treatment also preserves diagnosis with Q off');
   advance(game, 2.5); assert(state(game).growth.regrowing); advance(game, 3); assert.equal(state(game).endingScene, 'exterior'); advance(game, 2);
   assert.equal(events.success, 1); assert.equal(events.fail, 0); assert.equal(state(game).stage, 'complete'); assert.equal(events.progress.at(-1), 1); console.log('INFO input-driven controller completion: ' + state(game).elapsed.toFixed(1) + ' active seconds (no human reading/decision time)'); advance(game, 30); press(game, 'KeyE'); assert.equal(events.success, 1); assert.equal(game.retryFromCheckpoint(), false);
 });

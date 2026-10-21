@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
-const { distance, overlaps, nextWaypoint } = require('./journey-navigation.cjs');
+const { distance, crosses, overlaps, nextWaypoint } = require('./journey-navigation.cjs');
 const url = pathToFileURL(path.join(__dirname, '..', 'index.html')).href;
 const snapshot = page => page.evaluate(() => window.GiantCure.snapshot());
 const game = async page => (await snapshot(page)).game;
@@ -115,25 +115,34 @@ async function fightTutorial(page) {
   } finally { if (held) await page.mouse.up(); }
   assert.equal((await game(page)).stage, 'clot');
 }
-function therapyPosition(s, id) {
-  const w = s.weakpoints.find(p => p.id === id), clot = s.obstacles.find(r => r.kind === 'clot');
-  return [{ x: w.x, y: clot.y - 50 }, { x: clot.x + clot.w + 55, y: w.y }, { x: w.x, y: clot.y + clot.h + 55 }, { x: clot.x - 55, y: w.y }]
-    .sort((a, b) => distance(a, w) - distance(b, w)).find(p => !s.obstacles.some(r => r.kind !== 'clot' && r.blocking !== false && overlaps(p, r, 20)));
+function segmentDistance(point, from, to) {
+  const dx = to.x - from.x, dy = to.y - from.y, length = dx * dx + dy * dy;
+  const t = length ? Math.max(0, Math.min(1, ((point.x - from.x) * dx + (point.y - from.y) * dy) / length)) : 0;
+  return distance(point, { x: from.x + t * dx, y: from.y + t * dy });
 }
-async function soften(page, id) {
+function therapyPosition(s, id, avoidEnemies = false) {
+  const w = s.weakpoints.find(p => p.id === id), clot = s.obstacles.find(r => r.kind === 'clot');
+  return [-120, -60, 0, 60, 120].flatMap(offset => [{ x: w.x + offset, y: clot.y - 50 }, { x: clot.x + clot.w + 55, y: w.y + offset }, { x: w.x + offset, y: clot.y + clot.h + 55 }, { x: clot.x - 55, y: w.y + offset }])
+    .filter(p => distance(p, w) <= (w.scanned ? s.toolRange - 10 : s.scanRange - 12) && !s.obstacles.some(r => r.kind !== 'clot' && r.blocking !== false && (overlaps(p, r, 20) || crosses(p, w, r))) && (!avoidEnemies || !s.enemies.some(e => e.hp > 0 && segmentDistance(e, p, w) < 35)))
+    .sort((a, b) => distance(a, s.player) - distance(b, s.player))[0];
+}
+async function soften(page, id, onPartial) {
   await scan(page); await moveTo(page, therapyPosition(await game(page), id)); await tick(page, 1400);
-  assert((await game(page)).weakpoints.find(p => p.id === id).scanned); let held = false;
+  assert((await game(page)).weakpoints.find(p => p.id === id).scanned); await scan(page, false); let held = false, observedPartial = false;
   try {
-    for (let i = 0; i < 150 && !(await game(page)).weakpoints.find(p => p.id === id).complete; i++) {
+    for (let i = 0; i < 600 && !(await game(page)).weakpoints.find(p => p.id === id).complete; i++) {
       const s = await game(page);
       if (s.ammo === 0) { if (held) { await page.mouse.up(); held = false; } await page.keyboard.press('KeyR'); await tick(page, 1720); }
-      await mouseAt(page, s.weakpoints.find(p => p.id === id)); if (!held) { await page.mouse.down(); held = true; } await tick(page, 64); assert(!(await game(page)).failed, 'treatment survives interference');
+      await mouseAt(page, s.weakpoints.find(p => p.id === id)); const ray = (await game(page)).toolPreview;
+      if (ray.hitType !== 'treatment' || ray.targetId !== id) { if (held) { await page.mouse.up(); held = false; } const alternate = therapyPosition(await game(page), id, true); assert(alternate, 'alternate treatment angle is available'); await moveTo(page, alternate, 6); await tick(page, 16); continue; }
+      if (!held) { await page.mouse.down(); held = true; } await tick(page, 32); assert(!(await game(page)).failed, 'treatment survives interference');
+      if (onPartial && !observedPartial && (await game(page)).weakpoints.find(p => p.id === id).progress > .2) { observedPartial = true; if (held) { await page.mouse.up(); held = false; } await onPartial(id); }
     }
   } finally { if (held) await page.mouse.up(); }
   assert((await game(page)).weakpoints.find(p => p.id === id).complete, 'sustained local therapy completes ' + id);
 }
-async function restoreFlow(page, beforeRelease, duringBurst) {
-  for (const w of (await game(page)).weakpoints) await soften(page, w.id);
+async function restoreFlow(page, beforeRelease, duringBurst, duringTherapy) {
+  for (const [index, w] of (await game(page)).weakpoints.entries()) await soften(page, w.id, index === 0 ? duringTherapy : undefined);
   assert((await game(page)).enemies.some(e => e.hp > 0), 'living interferers do not block release');
   await moveTo(page, await node(page, 'release')); if (beforeRelease) await beforeRelease(); await page.keyboard.press('KeyE'); await tick(page, 32); assert.equal((await game(page)).stage, 'burst');
   if (duringBurst) await duringBurst();
@@ -144,7 +153,7 @@ async function connectHeart(page, onRecovery) {
   await interact(page, await node(page, 'C1')); assert.equal((await game(page)).conduction.length, 0);
   await discover(page, await node(page, 'heart-signal')); assert((await game(page)).scanned['heart-signal']);
   for (const id of ['C1', 'C2', 'C3']) await interact(page, await node(page, id)); assert.equal((await game(page)).stage, 'recovery');
-  if (onRecovery) await onRecovery(); await tick(page, 6100); assert((await game(page)).dashUnlocked); assert.equal((await game(page)).heartbeat, 'stable');
+  if (onRecovery) await onRecovery(); await tick(page, Math.max(0, 6100 - (await game(page)).recovery * 1000)); assert((await game(page)).dashUnlocked); assert.equal((await game(page)).heartbeat, 'stable');
 }
 async function capture(page, name, hideLabels = false) {
   const folder = path.join(__dirname, 'screenshots'); fs.mkdirSync(folder, { recursive: true });

@@ -62,9 +62,9 @@
       bounds: { x: 80, y: 80, w: 1640, h: 1040, left: 80, right: 1720, top: 80, bottom: 1120 },
       nodes: [
         { id: 'heart-signal', x: 900, y: 700, label: '心脏信号', kind: 'diagnostic', symptom: '局部搏动存在 · 传导信号中断' },
-        { id: 'C1', x: 400, y: 920, label: '传导 · A', kind: 'conduction' },
-        { id: 'C2', x: 1370, y: 760, label: '传导 · B', kind: 'conduction' },
-        { id: 'C3', x: 650, y: 500, label: '传导 · C', kind: 'conduction' }
+        { id: 'C1', x: 600, y: 900, label: '传导 · A', kind: 'conduction' },
+        { id: 'C2', x: 1180, y: 730, label: '传导 · B', kind: 'conduction' },
+        { id: 'C3', x: 780, y: 500, label: '传导 · C', kind: 'conduction' }
       ],
       obstacles: [
         { id: 'heart-island', x: 800, y: 810, w: 160, h: 90, kind: 'tissue' },
@@ -85,24 +85,38 @@
   window.GiantCureGames = window.GiantCureGames || {};
   window.GiantCureGames.heartJourney = function createHeartJourney(api) {
     const state = {
-      room: 'entry', stage: 'diagnosis', player: { x: 800, y: 830, radius: RADIUS }, aim: { x: 1120, y: 640 }, keys: new Set(), firing: false, precision: false,
+      room: 'entry', stage: 'diagnosis', player: { x: 800, y: 830, radius: RADIUS }, aim: { x: 1120, y: 640 }, aimDirection: { x: 0, y: -1 }, keys: new Set(), firing: false, precision: false,
       scanner: false, scanned: {}, scanProgress: {}, bypassA: false, bypassB: false, connection: [], conduction: [], heartConnected: false, flowRestored: false,
       weakpoints: WEAKPOINTS.map(p => ({ ...p, scanned: false, scanProgress: 0, progress: 0, complete: false })),
       growth: { ...GROWTH, scanned: false, scanProgress: 0, progress: 0, suppressed: false, regrowing: false },
       integrity: 100, ammo: MAGAZINE, reloadRemaining: 0, shotCooldown: 0, enemies: [], enemySerial: 0, combatWave: 0, waveDelay: 0, combatComplete: false,
       elapsed: 0, heartbeatClock: 0, checkpoint: 'entry', retries: 0, dashUnlocked: false, dashRemaining: 0, dashCooldown: 0, dashDirection: { x: 0, y: -1 },
       crossedBarrier: false, burst: 0, recovery: 0, ending: 0, invulnerable: 0, revealRemaining: 0, heartRevealed: false, firstStrongBeat: false, valveSide: 'below',
-      damageFlash: 0, notice: '', noticeTime: 0, warningCooldown: 0, shot: null, failed: false, finished: false, lastProgress: -1, hudTimer: 0
+      damageFlash: 0, notice: '', noticeTime: 0, warningCooldown: 0, shot: null, treatmentLease: 0, treatmentTargetId: null, failed: false, finished: false, lastProgress: -1, hudTimer: 0
     };
     let playedHeartbeatThisUpdate = false;
     function call(name, ...args) { if (typeof api[name] === 'function') api[name](...args); }
     function feedback(text, kind = 'info') { state.notice = text; state.noticeTime = 3.6; call('feedback', text, kind); }
     function task() {
       if (state.stage === 'diagnosis' && state.room === 'main') return '主流被堵塞 · 扫描血栓，确认高压的来源';
-      if (state.stage === 'conduction' && state.scanned['heart-signal']) return '传导中断 · 依次接通 A → B → C，让整座心腔重新搏动';
-      if (state.stage === 'escape' && state.crossedBarrier) return state.growth.scanned ? '异常组织短暂暴露 · 开启扫描并持续照射，观察它的反应' : '出口组织仍有异常 · 扫描这处不协调的生长';
+      const guide = guidance(); if (guide) return guide.text;
+      if (state.stage === 'recovery' && state.firstStrongBeat) return '有力的心跳正在传播 · 灯窗与植物依次苏醒';
+      if (state.stage === 'escape' && state.crossedBarrier) return state.growth.scanned ? '异常组织已经识别 · 持续照射，观察它的反应（扫描记录已保留）' : '出口组织仍有异常 · 扫描这处不协调的生长';
       if (state.stage === 'clot' && state.weakpoints.every(p => p.complete)) return '血栓已软化 · 回到主流阀，释放安全的血流';
       return TASKS[state.stage];
+    }
+    function guidance() {
+      let sequence, current, label, kind;
+      if (state.room === 'main' && state.stage === 'bypass' && state.connection.length) {
+        const first = state.connection[0].startsWith('A'); sequence = first ? ['A1', 'A2'] : ['B1', 'B2']; current = state.connection; label = first ? '侧支一' : '侧支二'; kind = 'bypass';
+      } else if (state.room === 'heart' && state.stage === 'conduction' && state.scanned['heart-signal']) {
+        sequence = ['C1', 'C2', 'C3']; current = state.conduction; label = '心脏传导'; kind = 'conduction';
+      } else return null;
+      if (current.length >= sequence.length) return null;
+      const nodes = GEOMETRY[state.room].nodes, target = nodes.find(n => n.id === sequence[current.length]), source = current.length ? nodes.find(n => n.id === current[current.length - 1]) : null;
+      if (!target) return null;
+      const letter = id => id === 'C1' || id === 'A1' || id === 'B1' ? 'A' : id === 'C3' ? 'C' : 'B', waiting = target.id === 'B2' && !beat().safe;
+      return { kind, label, text: label + '：' + (source ? letter(source.id) + ' 已连接 → 寻找 ' : '已定位 → 连接 ') + letter(target.id) + (waiting ? ' · 等待瓣膜舒张' : ''), source: source ? { id: source.id, x: source.x, y: source.y, label: source.label } : null, target: { id: target.id, x: target.x, y: target.y, label: target.label }, waiting };
     }
     function setStage(stage) { state.stage = stage; call('setTask', task()); publish(true); }
     function inputLocked() { return state.revealRemaining > 0 || ['burst', 'recovery', 'ending'].includes(state.stage); }
@@ -123,7 +137,7 @@
       }
       if (state.player.y < barrier.y - RADIUS) state.crossedBarrier = true;
     }
-    function clearInput() { state.keys.clear(); state.firing = false; state.precision = false; if (state.dashRemaining > 0) resolveDashOverlap(); state.dashRemaining = 0; }
+    function clearInput() { state.keys.clear(); state.firing = false; state.precision = false; state.treatmentLease = 0; state.treatmentTargetId = null; if (state.dashRemaining > 0) resolveDashOverlap(); state.dashRemaining = 0; }
     function obstacles(room = state.room, forEnemy = false) {
       const items = GEOMETRY[room].obstacles.filter(o => !(o.kind === 'clot' && state.flowRestored) && !(o.kind === 'dashBarrier' && state.dashRemaining > 0 && !forEnemy));
       if (room === 'entry' && !beat().safe) items.push(VALVE);
@@ -197,7 +211,7 @@
       return GEOMETRY[state.room].nodes.map(node => {
         const isA = node.id === 'A1' || node.id === 'A2', isB = node.id === 'B1' || node.id === 'B2';
         const complete = isA ? state.bypassA : isB ? state.bypassB : node.kind === 'conduction' ? state.heartConnected : node.id === 'release' ? state.flowRestored : !!state.scanned[node.id], selected = state.connection.includes(node.id) || state.conduction.includes(node.id);
-        return { ...node, scanned: !!state.scanned[node.id], complete, active: !complete, selected, progress: complete || selected ? 1 : state.scanProgress[node.id] || 0 };
+        return { ...node, symptom: node.kind === 'diagnostic' && state.scanned[node.id] ? diagnosticText(node.id) : node.symptom, scanned: !!state.scanned[node.id], complete, active: !complete, selected, progress: complete || selected ? 1 : state.scanProgress[node.id] || 0 };
       });
     }
     function nearbyInteraction() {
@@ -223,7 +237,7 @@
     function beginCombat() { state.checkpoint = 'bypass'; state.connection = []; state.combatWave = 1; state.waveDelay = 0; spawnHunters([{ x: 1120, y: 450 }]); setStage('combat'); feedback('两条侧支开始分担压力 · 一只异常细胞被血流惊醒', 'good'); }
     function interactNode(node) {
       if (node.kind === 'diagnostic') { feedback(state.scanned[node.id] ? diagnosticText(node.id) : 'Q 开启扫描，在附近停留以读取组织状态'); return; }
-      if (node.kind === 'growth') { feedback(state.growth.scanned ? '这处组织可以暂时压制 · 保持 Q 扫描并持续照射' : '这处生长与周围组织不同 · 用 Q 扫描它'); return; }
+      if (node.kind === 'growth') { feedback(state.growth.scanned ? '扫描记录已保留 · 持续照射可以暂时压制这处组织' : '这处生长与周围组织不同 · 用 Q 扫描它'); return; }
       if (node.kind === 'connection' || node.kind === 'timedConnection') {
         if (state.stage !== 'bypass') { feedback(state.bypassA && state.bypassB ? '侧支已恢复 · 压力保持安全' : '扫描主血栓后才能读取侧支连接状态'); return; }
         const first = node.id.startsWith('A'); if (first ? state.bypassA : state.bypassB) { feedback('这条侧支已恢复流动', 'good'); return; }
@@ -247,9 +261,17 @@
     }
     function diagnosticText(id) {
       if (id === 'flow') return '正常支路：流量稳定、压力正常 · 这里的血液仍能顺畅循环';
-      if (id === 'pressure') return '异常通路：低流量、上游高压 · 阻力来自瓣膜后的主血管';
-      if (id === 'clot') return '纤维性血栓：上游鼓胀、下游缺血 · 先分流降压，再软化结构';
-      if (id === 'heart-signal') return '心腔：局部搏动存在，但传导中断 · 接通 A → B → C 可恢复同步';
+      if (id === 'pressure') return state.flowRestored ? '通路已恢复：流量稳定、压力安全 · 血液重新抵达下游' : state.bypassA && state.bypassB ? '分流已恢复：压力安全 · 主血管等待软化和冲流' : state.bypassA || state.bypassB ? '分流开始起效：压力下降 · 仍有一条侧支等待恢复' : '异常通路：低流量、上游高压 · 阻力来自瓣膜后的主血管';
+      if (id === 'clot') return state.flowRestored ? '主血管：血栓已移除 · 下游灌流恢复' : state.bypassA && state.bypassB ? '血栓：分流压力安全 · ' + state.weakpoints.filter(p => p.complete).length + '/3 处结构已软化' : '纤维性血栓：上游鼓胀、下游缺血 · 先分流降压，再软化结构';
+      if (id === 'heart-signal') {
+        if (state.ending >= 3.8 || state.finished) return '心脏：同步搏动稳定 · 巨人胸口重新起伏，肺部仍需巡诊';
+        if (state.growth.regrowing) return '心脏：同步搏动稳定 · 异常组织再次生长，信号延伸至肺部';
+        if (state.growth.suppressed) return '心脏：同步搏动稳定 · 出口异常组织已暂时压制';
+        if (state.dashUnlocked) return '心脏：传导完整、同步搏动稳定 · 循环冲刺已恢复';
+        if (state.heartConnected) return '心脏：传导已接通 · ' + (state.firstStrongBeat ? '有力心跳正唤醒灯火与植物' : '等待第一声有力的心跳');
+        if (state.conduction.length) return '心脏：传导连接中 · ' + state.conduction.length + '/3 节点已接通';
+        return '心腔：局部搏动存在，但传导中断 · 接通 A → B → C 可恢复同步';
+      }
       return '连接：' + (state.scanned[id] ? '组织状态可读取' : '等待扫描');
     }
     function scanTarget(target, dt, onComplete) { if (distance(target, state.player) > SCAN_RANGE || target.scanned) return; target.scanProgress = Math.min(1, (target.scanProgress || 0) + dt / SCAN_TIME); if (target.scanProgress >= 1) { target.scanned = true; if (onComplete) onComplete(); } }
@@ -266,38 +288,77 @@
     function startReload() { if (state.reloadRemaining > 0 || state.ammo === MAGAZINE || state.failed || state.finished || inputLocked()) return; state.reloadRemaining = RELOAD_TIME; feedback('正在装填医疗介质 · 1.7 秒'); publish(true); }
     function warning(text) { if (state.warningCooldown <= 0) { state.warningCooldown = 2; feedback(text); } }
     function enemyWeakpoint(enemy) { const angle = Math.atan2(state.player.y - enemy.y, state.player.x - enemy.x); return { x: enemy.x + Math.cos(angle) * 16, y: enemy.y + Math.sin(angle) * 16, radius: 11 }; }
-    function recordShot(target, kind, ignoredId = '') { const hit = wallHit(state.player, target, 0, ignoredId); state.shot = { from: { x: state.player.x, y: state.player.y }, to: hit ? { x: hit.x, y: hit.y } : { x: target.x, y: target.y }, age: 0, kind, blocked: !!hit }; return !hit; }
-    function consumeTreatment(dt, target, duration) { target.progress = clamp(target.progress + dt / duration, 0, 1); if (state.shotCooldown <= 0) { state.ammo--; state.shotCooldown = 0.2; call('sound', 'hit'); } }
+    function circleHit(from, to, center, radius) {
+      const dx = to.x - from.x, dy = to.y - from.y, ox = from.x - center.x, oy = from.y - center.y, a = dx * dx + dy * dy, c = ox * ox + oy * oy - radius * radius;
+      if (c <= 0) return 0;
+      const b = ox * dx + oy * dy, discriminant = b * b - a * c;
+      if (a < 1e-12 || discriminant < 0) return null;
+      const t = (-b - Math.sqrt(discriminant)) / a; return t >= 0 && t <= 1 ? t : null;
+    }
+    // A single, read-only query drives both precision preview and the actual tool.
+    // Only a diagnosed, available treatment endpoint can admit a ray into its own clot.
+    function resolveToolRay() {
+      const from = { x: state.player.x, y: state.player.y }, dx = state.aim.x - from.x, dy = state.aim.y - from.y, length = Math.hypot(dx, dy), direction = length > 1e-8 ? { x: dx / length, y: dy / length } : state.aimDirection;
+      const far = { x: from.x + direction.x * TOOL_RANGE, y: from.y + direction.y * TOOL_RANGE }, candidates = [];
+      const structures = state.room === 'main' && !state.flowRestored ? state.weakpoints.filter(p => !p.complete).map(p => ({ p, t: circleHit(from, far, p, 25) })).filter(p => p.t !== null).sort((a, b) => a.t - b.t) : [];
+      const treatment = structures.length && structures[0].p.scanned && state.stage === 'clot' ? structures[0] : null;
+      const wall = wallHit(from, far, 0, treatment ? 'clot' : '');
+      if (wall) candidates.push({ t: wall.t, priority: 0, hitType: wall.rect.kind === 'clot' ? 'clot' : 'wall', targetId: wall.rect.id, weakpoint: false, blocked: true, label: wall.rect.kind === 'clot' ? state.stage !== 'clot' ? '血栓坚硬 · 先分流降压并处理干扰' : structures.some(item => !item.p.scanned) ? '结构尚未诊断 · Q 扫描后再治疗' : '血栓实体 · 瞄准已识别的纤维结构' : '实体组织阻挡射线' });
+      // The world boundary is solid tissue as well, rather than an invisible range extension.
+      const b = bounds();
+      for (const [delta, origin, edge] of [[far.x - from.x, from.x, b.left], [far.x - from.x, from.x, b.right], [far.y - from.y, from.y, b.top], [far.y - from.y, from.y, b.bottom]]) {
+        if (Math.abs(delta) < 1e-8) continue; const t = (edge - origin) / delta;
+        if (t >= 0 && t <= 1) candidates.push({ t, priority: 0, hitType: 'wall', targetId: 'boundary', weakpoint: false, blocked: true, label: '外围组织阻挡射线' });
+      }
+      if (treatment) candidates.push({ t: treatment.t, priority: 2, hitType: 'treatment', targetId: treatment.p.id, weakpoint: false, blocked: false, label: treatment.p.label + ' · 持续照射软化' });
+      if (state.room === 'heart' && state.stage === 'escape' && state.crossedBarrier) {
+        const t = circleHit(from, far, GROWTH, GROWTH.radius);
+        if (t !== null) candidates.push({ t, priority: 2, hitType: state.growth.scanned ? 'treatment' : 'undiagnosed', targetId: GROWTH.id, weakpoint: false, blocked: false, label: state.growth.scanned ? '异常组织 · 持续照射暂时压制' : '异常组织尚未诊断 · 先用 Q 扫描' });
+      }
+      if (state.room === 'main') state.enemies.filter(e => e.hp > 0).forEach(enemy => {
+        const bodyT = circleHit(from, far, enemy, 22), weakT = state.scanner ? circleHit(from, far, enemyWeakpoint(enemy), 11) : null;
+        // Identify the first body before considering that Hunter's exposed weakpoint.
+        // A protruding weakpoint on an overlapping rear Hunter cannot steal the hit.
+        if (bodyT === null) return;
+        const weak = weakT !== null && (!wall || weakT < wall.t - 1e-8);
+        candidates.push({ t: bodyT, endpointT: weak ? weakT : bodyT, priority: 1, hitType: 'hunter', targetId: enemy.id, weakpoint: weak, blocked: false, label: weak ? 'Hunter 显露弱点 · 3 点伤害' : 'Hunter 身体 · 1 点伤害' });
+      });
+      candidates.sort((a, b) => Math.abs(a.t - b.t) <= 1e-8 ? a.priority - b.priority : a.t - b.t);
+      const hit = candidates[0], t = hit ? hit.endpointT === undefined ? hit.t : hit.endpointT : 1;
+      return { from, to: { x: from.x + (far.x - from.x) * t, y: from.y + (far.y - from.y) * t }, kind: hit && hit.hitType === 'treatment' ? 'treatment' : hit && ['clot', 'undiagnosed'].includes(hit.hitType) ? 'warning' : 'shot', hitType: hit ? hit.hitType : 'none', targetId: hit ? hit.targetId : null, weakpoint: hit ? hit.weakpoint : false, blocked: hit ? hit.blocked : false, label: hit ? hit.label : '射程内无目标', range: TOOL_RANGE };
+    }
     function spawnHunters(points, append = false) { const list = points.map((p, i) => ({ ...p, id: ++state.enemySerial, hp: 6, state: 'approach', timer: 1.2 + i * 0.9, target: null, hasHit: false, hitFlash: 0, telegraph: 0 })); state.enemies = append ? [...state.enemies.filter(e => e.hp > 0), ...list] : list; }
     function beginEnding() { state.growth.progress = 1; state.growth.suppressed = true; state.ending = 0.001; clearInput(); setStage('ending'); feedback('异常组织已暂时压制 · 但它的生长信号没有消失…'); call('effect', GROWTH.x, GROWTH.y, '#badbc4', 18); }
-    function useTool(dt) {
+    function useTool(dt, timing) {
       if (!state.firing || state.reloadRemaining > 0 || state.failed || state.finished || inputLocked()) return;
-      if (state.ammo <= 0) { warning('医疗介质已用尽 · 按 R 装填，无限备弹'); return; }
-      if (distance(state.player, state.aim) > TOOL_RANGE + 25) { warning('目标超出工具射程 · 请靠近一些'); return; }
-      const aimedEnemy = state.room === 'main' ? state.enemies.filter(e => e.hp > 0).sort((a, b) => distance(a, state.aim) - distance(b, state.aim)).find(e => distance(e, state.aim) <= 31 && distance(e, state.player) <= TOOL_RANGE) : null;
-      if (state.room === 'heart' && state.stage === 'escape' && state.crossedBarrier && distance(state.aim, GROWTH) <= 40) {
-        if (!state.growth.scanned || !state.scanner) { warning('先开启 Q 扫描，读取异常组织，再持续照射'); return; }
-        if (distance(state.player, GROWTH) > TOOL_RANGE || !recordShot(GROWTH, 'treatment')) return;
-        consumeTreatment(dt, state.growth, 1.5); if (state.growth.progress >= 1) beginEnding(); return;
+      // Integrate the dose over the part of this frame before and after a shot.
+      // Carry the 200 ms boundary through frames instead of rounding every shot up
+      // to the next frame; a final, partial lease must contribute its actual time.
+      const inactive = Math.min(dt, timing.reloadRemaining), active = dt - inactive;
+      if (active <= 1e-10) return;
+      const cooldown = Math.max(0, timing.cooldown - inactive), lease = Math.max(0, timing.lease - inactive), ray = resolveToolRay(), oldTreatment = ray.hitType === 'treatment' && timing.targetId === ray.targetId;
+      let treatmentTime = oldTreatment ? Math.min(active, lease) : 0;
+      if (state.ammo > 0 && cooldown <= active + 1e-8) {
+        const beforeShot = Math.min(active, cooldown), afterShot = active - beforeShot;
+        treatmentTime = (oldTreatment ? Math.min(beforeShot, lease) : 0) + (ray.hitType === 'treatment' ? afterShot : 0);
+        state.shotCooldown = 0.2 - afterShot; state.ammo--; state.shot = { ...ray, age: afterShot }; state.treatmentTargetId = ray.hitType === 'treatment' ? ray.targetId : null; state.treatmentLease = ray.hitType === 'treatment' ? 0.2 - afterShot : 0; call('sound', 'shot');
+        if (ray.hitType === 'hunter') {
+          const enemy = state.enemies.find(e => e.id === ray.targetId);
+          enemy.hp = Math.max(0, enemy.hp - (ray.weakpoint ? 3 : 1)); enemy.hitFlash = 0.18; call('sound', ray.weakpoint ? 'hitWeak' : 'hit'); call('effect', ray.to.x, ray.to.y, ray.weakpoint ? '#fae3a7' : '#dbc5d7', ray.weakpoint ? 12 : 5);
+          if (enemy.hp === 0) { feedback('异常细胞已净化' + (ray.weakpoint ? ' · 弱点命中' : ''), 'good'); call('effect', enemy.x, enemy.y, '#b5dbb6', 18); }
+        } else if (ray.hitType === 'treatment') { call('sound', 'treatment'); call('effect', ray.to.x, ray.to.y, '#c3e4c1', 3); }
+        else if (ray.blocked) { call('sound', 'wall'); call('effect', ray.to.x, ray.to.y, '#b8aa99', 3); }
+        if (ray.hitType === 'undiagnosed' || ray.hitType === 'clot') warning(ray.label);
       }
-      if (state.room === 'main' && !state.flowRestored) {
-        const weak = state.weakpoints.find(p => !p.complete && distance(p, state.aim) <= 25);
-        if (weak && state.stage === 'clot' && weak.scanned && state.scanner && distance(weak, state.player) <= TOOL_RANGE) {
-          // Medical rays enter their target clot, while other solid tissue still blocks them.
-          if (!recordShot(weak, 'treatment', 'clot')) { warning('组织遮住了治疗射线 · 调整照射位置'); return; }
-          consumeTreatment(dt, weak, 3.2);
-          if (weak.progress >= 1) { weak.complete = true; call('effect', weak.x, weak.y, '#f4df9c', 22); if (state.combatWave < 2) { state.combatWave = 2; spawnHunters([{ x: 490, y: 235 }, { x: 1170, y: 420 }], true); feedback('第一处纤维松解 · 两只异常细胞逼近，治疗进度会保留'); } else feedback(state.weakpoints.every(p => p.complete) ? '三处结构全部软化 · 可直接启动主流阀，血流会带走干扰者' : '一处纤维结构已经软化', 'good'); }
-          return;
-        }
-        if (!aimedEnemy && distance(state.aim, CLOT) <= CLOT.radius + 15) { warning(state.stage === 'clot' ? '开启 Q，分别扫描并照射尚未软化的结构' : '直接击碎会产生碎屑 · 先分流降压，再处理血栓'); recordShot(state.aim, 'warning'); return; }
-      }
-      if (state.shotCooldown > 0) return;
-      state.shotCooldown = 0.2; state.ammo--; call('sound', 'tap');
-      const enemy = aimedEnemy;
-      if (!recordShot(state.aim, 'shot') || !enemy || blockedSegment(state.player, enemy, 0)) return;
-      const weakHit = state.scanner && distance(enemyWeakpoint(enemy), state.aim) <= 11;
-      enemy.hp = Math.max(0, enemy.hp - (weakHit ? 3 : 1)); enemy.hitFlash = 0.18; call('effect', state.aim.x, state.aim.y, weakHit ? '#fae3a7' : '#dbc5d7', weakHit ? 12 : 5);
-      if (enemy.hp === 0) { feedback('异常细胞已净化' + (weakHit ? ' · 弱点命中' : ''), 'good'); call('effect', enemy.x, enemy.y, '#b5dbb6', 18); }
+      if (ray.hitType !== 'treatment' || treatmentTime <= 0) { if (state.ammo <= 0) warning('医疗介质已用尽 · 按 R 装填，无限备弹'); return; }
+      const weak = state.weakpoints.find(p => p.id === ray.targetId), target = weak || state.growth, duration = weak ? 3.2 : 1.5;
+      target.progress = clamp(target.progress + treatmentTime / duration, 0, 1);
+      if (target.progress < 1 - 1e-8) return;
+      target.progress = 1;
+      if (!weak) { beginEnding(); return; }
+      weak.complete = true; state.treatmentLease = 0; call('effect', weak.x, weak.y, '#f4df9c', 22);
+      if (state.combatWave < 2) { state.combatWave = 2; spawnHunters([{ x: 490, y: 235 }, { x: 1170, y: 420 }], true); feedback('第一处纤维松解 · 两只异常细胞逼近，治疗进度会保留'); }
+      else feedback(state.weakpoints.every(p => p.complete) ? '三处结构全部软化 · 可直接启动主流阀，血流会带走干扰者' : '一处纤维结构已经软化', 'good');
     }
     function hurt() {
       if (state.invulnerable > 0 || state.failed || state.finished) return;
@@ -330,7 +391,8 @@
     function advanceHeartbeat(dt) { const b = beat(), previous = Math.floor(state.heartbeatClock / b.period); state.heartbeatClock += dt; if (!b.silent && !playedHeartbeatThisUpdate && Math.floor(state.heartbeatClock / b.period) > previous) { playedHeartbeatThisUpdate = true; call('sound', 'heartbeat'); } }
     function step(dt) {
       state.elapsed += dt; advanceHeartbeat(dt); updateValve(); state.hudTimer -= dt;
-      for (const key of ['shotCooldown', 'dashCooldown', 'invulnerable', 'damageFlash', 'noticeTime', 'warningCooldown']) state[key] = Math.max(0, state[key] - dt);
+      const toolTiming = { cooldown: state.shotCooldown, lease: state.treatmentLease, targetId: state.treatmentTargetId, reloadRemaining: state.reloadRemaining };
+      for (const key of ['shotCooldown', 'treatmentLease', 'dashCooldown', 'invulnerable', 'damageFlash', 'noticeTime', 'warningCooldown']) state[key] = Math.max(0, state[key] - dt);
       if (state.shot) { state.shot.age += dt; if (state.shot.age > 0.16) state.shot = null; }
       if (state.reloadRemaining > 0) { state.reloadRemaining = Math.max(0, state.reloadRemaining - dt); if (state.reloadRemaining === 0) { state.ammo = MAGAZINE; feedback('装填完成 · 医疗介质 24/24', 'good'); } }
       if (state.revealRemaining > 0) state.revealRemaining = Math.max(0, state.revealRemaining - dt);
@@ -344,7 +406,7 @@
         if (state.ending >= 1.8 && previous < 1.8) { state.growth.regrowing = true; feedback('刚被压制的异常组织再次生长 · 信号延伸到肺叶深处'); }
         if (state.ending >= 3.8 && previous < 3.8) feedback('巨人的胸口重新起伏 · 肺部的求救信号仍然微弱');
         if (state.ending >= ENDING_TIME) { state.finished = true; clearInput(); setStage('complete'); call('success'); }
-      } else { updateMovement(dt); updateScanner(dt); useTool(dt); updateEnemies(dt); }
+      } else { updateMovement(dt); updateScanner(dt); useTool(dt, toolTiming); updateEnemies(dt); }
       const wasDashing = state.dashRemaining > 0; state.dashRemaining = Math.max(0, state.dashRemaining - dt); if (wasDashing && state.dashRemaining === 0) resolveDashOverlap(); publish(false);
     }
     function update(dt) { if (!Number.isFinite(dt) || dt <= 0 || state.failed || state.finished) return; playedHeartbeatThisUpdate = false; let remaining = dt; while (remaining > 1e-8 && !state.failed && !state.finished) { const slice = Math.min(remaining, 1 / 60); step(slice); remaining -= slice; } }
@@ -356,7 +418,7 @@
     }
     function keyDown(code, repeat = false) { if (state.failed || state.finished || inputLocked()) return; state.keys.add(code); if (repeat) return; if (code === 'KeyQ') { state.scanner = !state.scanner; feedback(state.scanner ? '扫描已开启 · 靠近组织读取症状，敌人弱点将显现' : '扫描已关闭'); publish(true); } else if (code === 'KeyE') interact(); else if (code === 'KeyR') startReload(); else if (code === 'Space') dash(); }
     function keyUp(code) { state.keys.delete(code); }
-    function pointerMove(point) { if (point && Number.isFinite(point.x) && Number.isFinite(point.y)) state.aim = { x: point.x, y: point.y }; }
+    function pointerMove(point) { if (point && Number.isFinite(point.x) && Number.isFinite(point.y)) { state.aim = { x: point.x, y: point.y }; const dx = point.x - state.player.x, dy = point.y - state.player.y, length = Math.hypot(dx, dy); if (length > 1e-8) state.aimDirection = { x: dx / length, y: dy / length }; } }
     function pointerDown(point) { if (state.failed || state.finished || inputLocked() || !point) return; pointerMove(point); if (point.button === 2) state.precision = true; else state.firing = true; }
     function pointerUp(point) { pointerMove(point); if (point && point.button === 2) state.precision = false; else state.firing = false; }
     function retryFromCheckpoint() {
@@ -377,7 +439,7 @@
     function cameraCue() {
       if (state.revealRemaining > 0) return { kind: 'reveal', target: { x: 900, y: 640 }, progress: 1 - state.revealRemaining / REVEAL_TIME };
       if (state.stage === 'burst') return { kind: 'burst', target: { ...CLOT }, progress: Math.min(1, state.burst / BURST_TIME) };
-      if (state.stage === 'recovery') return { kind: 'recovery', target: { x: 900, y: 640 }, progress: Math.min(1, state.recovery / RECOVERY_TIME) };
+      if (state.stage === 'recovery') return { kind: 'recovery', target: { x: 850, y: 690 }, progress: Math.min(1, state.recovery / RECOVERY_TIME) };
       if (state.stage === 'ending') return { kind: 'ending', target: { ...GROWTH }, progress: Math.min(1, state.ending / ENDING_TIME) };
       return { kind: 'follow', target: { x: state.player.x, y: state.player.y }, progress: 0 };
     }
@@ -386,13 +448,19 @@
       if (state.scanner) {
         if (state.room === 'entry') GEOMETRY.entry.nodes.filter(n => distance(n, state.player) <= SCAN_RANGE).forEach(n => info.push(state.scanned[n.id] ? diagnosticText(n.id) : n.label + '读取中…'));
         else if (state.room === 'main') { info.push('流量：' + (state.flowRestored ? '畅通' : state.bypassA || state.bypassB ? '部分恢复' : '低流量')); info.push('压力：' + (state.bypassA && state.bypassB ? '安全' : state.bypassA || state.bypassB ? '下降中' : '过高')); if (state.scanned.clot) info.push('结构：' + state.weakpoints.filter(p => p.complete).length + '/3 处已软化'); }
-        else info.push(state.crossedBarrier ? state.growth.scanned ? '异常组织：生长紊乱 · 可暂时压制' : '异常组织：等待近距离扫描' : state.scanned['heart-signal'] ? diagnosticText('heart-signal') : '心跳：局部搏动存在 · 信号尚未诊断');
+        else {
+          info.push(state.scanned['heart-signal'] ? diagnosticText('heart-signal') : '心跳：局部搏动存在 · 信号尚未诊断');
+          if (state.crossedBarrier) info.push(state.growth.regrowing ? '异常组织：再次生长 · 肺部出现相同信号' : state.growth.suppressed ? '异常组织：已暂时压制 · 仍有残留信号' : state.growth.scanned ? '异常组织：生长紊乱 · 扫描记录已保留，可持续照射' : '异常组织：等待近距离扫描');
+        }
+      } else {
+        if (state.room === 'heart' && state.scanned['heart-signal']) info.push(diagnosticText('heart-signal'));
+        if (state.room === 'heart' && state.crossedBarrier && state.growth.scanned && state.stage === 'escape') info.push('异常组织已识别 · 可直接照射暂时压制');
       }
       const walls = GEOMETRY[state.room].obstacles.filter(o => o.kind !== 'clot' || !state.flowRestored).map(o => ({ ...o, blocking: o.kind !== 'dashBarrier' || state.dashRemaining <= 0, dashPassable: o.kind === 'dashBarrier' && state.dashUnlocked }));
       if (state.room === 'entry') walls.push({ ...VALVE, blocking: !currentBeat.safe });
       return {
         type: 'heartJourney', area: { ...AREA }, bounds: { ...bounds() }, worldSize: { ...GEOMETRY[state.room].size }, room: state.room, roomLabel: ROOMS[state.room],
-        player: { ...state.player, dashing: state.dashRemaining > 0, invulnerable: state.invulnerable > 0 }, aim: { ...state.aim }, scanner: state.scanner, scanOn: state.scanner, precision: state.precision,
+        player: { ...state.player, dashing: state.dashRemaining > 0, invulnerable: state.invulnerable > 0 }, aim: { ...state.aim }, scanner: state.scanner, scanOn: state.scanner, precision: state.precision, toolPreview: resolveToolRay(), guidance: guidance(),
         beat: currentBeat, stage: state.stage, phase: state.stage, stageLabel: STAGES[state.stage], task: task(), integrity: state.integrity, health: state.integrity, ammo: state.ammo, reloadRemaining: state.reloadRemaining,
         nodes: nodeList(), portals: portalList(), obstacles: walls, valves: state.room === 'entry' ? [{ ...VALVE, open: currentBeat.safe, blocking: !currentBeat.safe, enteredFrom: state.valveSide }] : [],
         paths: GEOMETRY[state.room].paths.map(p => ({ ...copy(p), active: p.branch ? p.branch === 'A' ? state.bypassA : state.bypassB : true, flow: p.flow === undefined ? state.flowRestored ? 1 : p.kind === 'bypass' ? (p.branch === 'A' ? state.bypassA : state.bypassB) ? 0.7 : 0.05 : 0.14 : p.flow })),

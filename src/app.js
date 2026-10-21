@@ -146,6 +146,7 @@
     for (const id of screens) $(id).hidden = id !== name;
     $('folio-page').textContent = { home: '001', cases: '002', treatment: '003', result: '004' }[name];
     $('app').classList.toggle('journey-mode', name === 'treatment');
+    if (name !== 'treatment') $('app').classList.remove('journey-exterior');
     document.body.classList.toggle('landscape-treatment', name === 'treatment');
     W = name === 'treatment' ? 1280 : 720; H = name === 'treatment' ? 720 : 1280;
     resize();
@@ -444,7 +445,7 @@
       diagnosis: '正常血流应当平稳。对比两条支路的流量与压力，沿着淤积的血河寻找上游异常；瓣膜在舒张时开放。',
       bypass: '血栓前方压力过高。先恢复两条侧支，让血流有去处，再处理血栓。第二条侧支需要留意心跳的舒张窗口。',
       combat: '观察 Hunter 扑击前的预警，躲开后瞄准发光弱点。先解除第一只 Hunter 的干扰，再开始治疗。',
-      clot: '血栓有三处结构。扫描发现后持续照射，松开照射可躲避敌人，软化进度会保留。全部软化后主血流便能带走它。',
+      clot: '血栓有三处结构。扫描发现后，关闭 Q 也能继续治疗。让射线对准结构，遇到组织或敌人遮挡时调整位置；躲避和装填都会保留软化进度。',
       burst: '两条侧支降低了上游压力，软化后的血栓正在被主血流带走。观察下游重新恢复流动。',
       conduction: '血流已恢复，但心跳信号仍然中断。扫描传导节点，接近后依次连接 A、B、C，重新建立搏动顺序。',
       recovery: '传导顺序已经接通。第一声强心跳将唤醒城市，并为医疗单位提供循环冲刺能力。',
@@ -453,7 +454,7 @@
       ending: '这片异常组织在被压制后重新生长。心脏已恢复，但巨人的其他部位仍需要你。'
     };
     const hint = chapter ? chapter.stage === 'escape' && chapter.crossedBarrier ? hints.growth : hints[chapter.stage] || (chapter.room === 'entry' ? hints.diagnosis : chapter.room === 'heart' ? hints.conduction : hints.bypass) : '进入诊断室，检查生命信号并定位异常，再前往巨人的身体开展巡诊。';
-    openDialog('带着好奇，进入心河', `<p class="dialog-tip">${hint}</p><div class="help-item"><strong>移动与观察</strong><p>WASD 移动，Shift 疾行，鼠标瞄准。Q 开关扫描：读取附近的流量、压力、组织和节点状态。扫描不耗能，世界仍在运转。</p></div><div class="help-item"><strong>治疗与连接</strong><p>接近节点后按 E 交互，依次选择节点建立连接。左键持续治疗或射击，右键精瞄。R 装填，备弹无限。</p></div><div class="help-item"><strong>安全与恢复</strong><p>避开扑击预警。设备耐久归零后，从最近安全节点重启。心脏恢复后，Space 使用循环冲刺。不限时，退出或刷新会清除本次检查点。</p></div><p>本章使用键盘与鼠标。声音默认关闭，可点击右上角音符开启。</p>`, [
+    openDialog('带着好奇，进入心河', `<p class="dialog-tip">${hint}</p><div class="help-item"><strong>移动与观察</strong><p>WASD 移动，Shift 疾行。组织地面和浅血流槽都可行走，高起组织墙会挡路。Q 读取附近症状，静态目标的诊断会保留；Hunter 弱点需要实时扫描。</p></div><div class="help-item"><strong>治疗与连接</strong><p>鼠标决定方向，左键沿射线治疗或射击，射程 225；前方实体会挡住射线。按住右键减速，提前查看第一命中点。R 装填，备弹无限。接近节点按 E，连接后跟随下一端提示。</p></div><div class="help-item"><strong>安全与恢复</strong><p>避开扑击预警。设备耐久归零后，从最近安全节点重启。心脏恢复后，Space 使用循环冲刺。不限时，退出或刷新会清除本次检查点。</p></div><p>本章使用键盘与鼠标。声音默认关闭，可点击右上角音符开启。</p>`, [
       { label: wasPlaying ? '继续巡诊 ↗' : '明白了 ↗', primary: true, action: wasPlaying ? resumeGame : closeModal }
     ], 'HEART JOURNEY / FIELD GUIDE');
   }
@@ -584,12 +585,19 @@
       if (!audioContext) { const Audio = window.AudioContext || window.webkitAudioContext; if (!Audio) return; audioContext = new Audio(); }
       if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
       const heartbeat = kind === 'heartbeat' || kind === 'heartbeatStrong';
-      const notes = heartbeat ? [110, 73.42] : kind === 'flow' ? [146.83, 220, 293.66, 440] : kind === 'win' ? [523.25, 659.25, 783.99, 1046.5] : kind === 'hit' ? [659.25, 880] : kind === 'miss' || kind === 'lose' ? [261.63, 220] : [440];
+      const profile = ({
+        shot: { notes: [349.23], duration: .07, volume: .018, spacing: 0, type: 'triangle' },
+        hit: { notes: [659.25], duration: .12, volume: .03, spacing: 0 },
+        hitWeak: { notes: [880, 1318.51], duration: .13, volume: .04, spacing: .055 },
+        treatment: { notes: [523.25, 659.25], duration: .09, volume: .018, spacing: .035 },
+        wall: { notes: [164.81], duration: .055, volume: .016, spacing: 0, type: 'triangle' }
+      })[kind];
+      const notes = profile?.notes || (heartbeat ? [110, 73.42] : kind === 'flow' ? [146.83, 220, 293.66, 440] : kind === 'win' ? [523.25, 659.25, 783.99, 1046.5] : kind === 'miss' || kind === 'lose' ? [261.63, 220] : [440]);
       notes.forEach((hz, i) => {
         const oscillator = audioContext.createOscillator(), gain = audioContext.createGain();
-        const time = audioContext.currentTime + i * (heartbeat ? .14 : .1), duration = heartbeat ? .24 : .65;
-        oscillator.type = 'sine'; oscillator.frequency.value = hz;
-        gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(kind === 'heartbeatStrong' ? .07 : heartbeat ? .035 : .045, time + .015); gain.gain.exponentialRampToValueAtTime(.001, time + duration);
+        const time = audioContext.currentTime + i * (profile?.spacing ?? (heartbeat ? .14 : .1)), duration = profile?.duration ?? (heartbeat ? .24 : .65);
+        oscillator.type = profile?.type || 'sine'; oscillator.frequency.value = hz;
+        gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(profile?.volume ?? (kind === 'heartbeatStrong' ? .07 : heartbeat ? .035 : .045), time + .015); gain.gain.exponentialRampToValueAtTime(.001, time + duration);
         oscillator.connect(gain); gain.connect(audioContext.destination); oscillator.start(time); oscillator.stop(time + duration + .05);
       });
     } catch { soundEnabled = false; $('sound').setAttribute('aria-pressed', 'false'); toast('此浏览器暂不支持声音，可继续游玩'); }
@@ -622,6 +630,7 @@
   function updateCamera(dt, snap = false) {
     if (!state.game) return;
     const g = state.game.getDebugState(), roomChanged = state.cameraRoom !== g.room;
+    $('app').classList.toggle('journey-exterior', g.endingScene === 'exterior');
     const size = g.worldSize || { width: g.room === 'heart' ? 1800 : 1600, height: g.room === 'heart' ? 1200 : 1000 };
     const cue = g.cameraCue || { kind: 'follow' };
     const progress = Math.max(0, Math.min(1, cue.progress || 0));
@@ -632,7 +641,7 @@
       zoom = .74 + .36 * blend;
     } else if (cue.kind !== 'follow') {
       target = cue.target || g.player;
-      zoom = cue.kind === 'burst' ? .8 : cue.kind === 'recovery' ? .65 : .72;
+      zoom = cue.zoom ?? (cue.kind === 'burst' ? .8 : cue.kind === 'recovery' ? .82 : .72);
     }
     if (reducedMotion && cue.kind === 'reveal') { target = g.player; zoom = 1.1; }
     const clampCenter = (v, total, half) => total <= half * 2 ? total / 2 : Math.max(half, Math.min(total - half, v));

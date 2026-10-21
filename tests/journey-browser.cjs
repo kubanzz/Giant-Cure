@@ -6,13 +6,13 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
 const h = require('./journey-browser-helpers.cjs');
-const { distance, overlaps } = require('./journey-navigation.cjs');
+const { distance, crosses, overlaps } = require('./journey-navigation.cjs');
 const { snapshot, game, tick, click, primary, setup, start, mouseAt, mouseScreen, moveTo, node, portal, interact, discover, diagnose, connectBypasses, fightTutorial, restoreFlow, enterHeart, connectHeart, capture, inspectFit } = h;
 const errors = [], requests = [], checks = []; let browser, page;
 const entryHash = () => crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname, '..', 'index.html'))).digest('hex');
 const testedEntry = entryHash();
 async function mark(name, run) { await run(); checks.push(name); console.log('PASS ' + name); assert.deepEqual(errors, [], 'no browser runtime errors'); }
-function frozenPart(s) { return { elapsed: s.elapsed, activeTime: s.activeTime, camera: s.view.camera, particles: s.particles, player: s.game.player, beat: s.game.beat, burst: s.game.burst, recovery: s.game.recovery, ending: s.game.ending, revealRemaining: s.game.revealRemaining }; }
+function frozenPart(s) { return { elapsed: s.elapsed, activeTime: s.activeTime, camera: s.view.camera, particles: s.particles, player: s.game.player, beat: s.game.beat, burst: s.game.burst, recovery: s.game.recovery, ending: s.game.ending, revealRemaining: s.game.revealRemaining, reloadRemaining: s.game.reloadRemaining, therapy: s.game.weakpoints.map(p => p.progress) }; }
 async function assertFrozen(page, open, close = primary) {
   await open(); assert.equal((await snapshot(page)).phase, 'paused'); const before = frozenPart(await snapshot(page));
   await tick(page, 2000); assert.deepEqual(frozenPart(await snapshot(page)), before, 'pause freezes time, camera, world particles and sequence state'); await close(page);
@@ -38,7 +38,12 @@ async function exitAndSuppress(page) {
     const images = await page.evaluate(() => Object.entries(window.GiantCureAssets.images).map(([name, image]) => ({ name, loaded: image.complete && image.naturalWidth > 0 })));
     assert.deepEqual(images.map(i => i.name).sort(), ['entry', 'exterior', 'heart', 'main']); assert(images.every(i => i.loaded), 'all four embedded illustrations are decoded before play');
     assert.equal(await page.locator('#journey-task').textContent(), s.game.task); await tick(page, 4000);
-    assert.equal(await page.locator('#journey-task').textContent(), (await game(page)).task, 'persistent task survives transient feedback'); await capture(page, 'entry');
+    assert.equal(await page.locator('#journey-task').textContent(), (await game(page)).task, 'persistent task survives transient feedback');
+    const typeSizes = await page.evaluate(() => {
+      const app = document.querySelector('#app'), scale = app.getBoundingClientRect().width / app.offsetWidth;
+      return ['#journey-task', '#journey-scanner-info'].map(selector => ({ selector, pixels: parseFloat(getComputedStyle(document.querySelector(selector)).fontSize) * scale }));
+    }); for (const item of typeSizes) assert(item.pixels >= 14, item.selector + ' renders at least 14 CSS pixels at 1366×768');
+    assert.equal(s.game.guidance, null, 'entry diagnosis has no solution arrow'); await capture(page, 'entry'); await capture(page, 'shallow-flow-no-labels', true);
   });
   await mark('stationary cursor is transformed again while the follow camera moves', async () => {
     const logical = { x: 950, y: 400 }; await mouseScreen(page, logical); const before = await snapshot(page);
@@ -64,6 +69,17 @@ async function exitAndSuppress(page) {
   await mark('normal/abnormal scanning, visible分流 changes, combat retreat, real failure and cumulative checkpoint recovery', async () => {
     await diagnose(page); await capture(page, 'diagnosis'); await capture(page, 'bypass-before'); await connectBypasses(page); await capture(page, 'bypass-after');
     const enemy = (await game(page)).enemies.find(e => e.hp > 0); await moveTo(page, { x: enemy.x, y: enemy.y + 100 });
+    await h.scan(page, false); let aimed, player, beyond;
+    for (let i = 0; i < 12; i++) {
+      const s = await snapshot(page); player = s.game.player; aimed = s.game.enemies.find(e => e.hp > 0); const d = distance(player, aimed), dx = (aimed.x - player.x) / d, dy = (aimed.y - player.y) / d;
+      beyond = { x: aimed.x + dx * 35, y: aimed.y + dy * 35 }; const projected = h.project(s, beyond), v = s.view.viewport;
+      if (d < 200 && !s.game.obstacles.some(r => r.blocking !== false && crosses(player, aimed, r)) && projected.x > v.x + 4 && projected.x < v.x + v.w - 4 && projected.y > v.y + 4 && projected.y < v.y + v.h - 4) break;
+      await moveTo(page, { x: aimed.x - dx * 95, y: aimed.y - dy * 95 }); await tick(page, 64); assert(i < 11, 'a visible Hunter can be approached for native shooting');
+    }
+    await mouseAt(page, beyond); await page.mouse.down({ button: 'right' }); await tick(page, 16); const precision = await game(page);
+    assert(precision.precision); assert.equal(precision.toolPreview.hitType, 'hunter'); assert.equal(precision.toolPreview.targetId, aimed.id); assert(!precision.toolPreview.weakpoint);
+    await capture(page, 'precision-direction-ray'); await page.mouse.down(); await tick(page, 32); await page.mouse.up(); await page.mouse.up({ button: 'right' });
+    const fired = await game(page); assert.equal(fired.ammo, precision.ammo - 1); assert.equal(fired.shot.targetId, aimed.id); assert.equal(fired.shot.hitType, precision.toolPreview.hitType); assert.equal(fired.enemies.find(e => e.id === aimed.id).hp, aimed.hp - 1, 'a real cursor beyond the Hunter damages its body');
     for (let i = 0; i < 100 && (await game(page)).health === 100; i++) await tick(page, 100);
     assert((await game(page)).health > 0 && (await game(page)).health < 100); await capture(page, 'hunter');
     await moveTo(page, await portal(page, 'to-entry')); const before = await game(page); await page.keyboard.press('KeyE'); await tick(page, 32); assert.equal((await game(page)).room, 'entry');
@@ -77,19 +93,30 @@ async function exitAndSuppress(page) {
   });
   await mark('Hunter tutorial opens treatment; living interferers do not prevent flushing; burst pauses correctly', async () => {
     await fightTutorial(page); await capture(page, 'clot-before'); await capture(page, 'clot-before-no-labels', true);
-    await restoreFlow(page, async () => { await capture(page, 'clot-softened'); }, async () => { await assertFrozen(page, () => click(page, '#pause')); await capture(page, 'burst'); }); await capture(page, 'flow-restored'); await capture(page, 'flow-restored-no-labels', true);
+    await restoreFlow(page, async () => { await capture(page, 'clot-softened'); }, async () => { await assertFrozen(page, () => click(page, '#pause')); await capture(page, 'burst'); }, async id => {
+      const partial = (await game(page)).weakpoints.find(p => p.id === id).progress; assert(partial > 0 && partial < 1); assert.equal((await game(page)).scanner, false, 'a retained diagnosis supports real therapy with Q off'); await capture(page, 'clot-softening'); await capture(page, 'clot-softening-no-labels', true);
+      await page.keyboard.press('KeyR'); await tick(page, 500); assert((await game(page)).reloadRemaining > 0); await assertFrozen(page, () => click(page, '#pause')); await tick(page, 1250);
+      assert.equal((await game(page)).ammo, 24); assert.equal((await game(page)).weakpoints.find(p => p.id === id).progress, partial, 'reload and pause retain accumulated therapy');
+    }); await capture(page, 'flow-restored'); await capture(page, 'flow-restored-no-labels', true);
     assert((await game(page)).flowRestored); assert((await game(page)).enemies.every(e => e.hp <= 0));
   });
   await mark('heart diagnosis gates the ordered connections, reveal/recovery pause and restored city provide a dash', async () => {
     await interact(page, await portal(page, 'to-heart')); assert.equal((await game(page)).room, 'heart');
     await assertFrozen(page, () => click(page, '#pause')); await tick(page, 1600); await capture(page, 'heart-before'); await capture(page, 'heart-before-no-labels', true);
-    await connectHeart(page, async () => { await tick(page, 1200); assert((await snapshot(page)).particles.length > 0, 'first strong heartbeat produces world particles'); await assertFrozen(page, () => click(page, '#pause')); }); await capture(page, 'heart-restored'); await capture(page, 'heart-restored-no-labels', true);
-    assert.equal((await game(page)).heartbeat, 'stable');
+    await connectHeart(page, async () => {
+      await tick(page, 1200); assert((await snapshot(page)).particles.length > 0, 'first strong heartbeat produces world particles'); assert.doesNotMatch((await game(page)).scannerInfo.join(' '), /传导中断/); await capture(page, 'heart-local-recovery'); await assertFrozen(page, () => click(page, '#pause'));
+      await tick(page, 2600); await capture(page, 'heart-local-recovery-3.8s'); await capture(page, 'heart-local-recovery-3.8s-no-labels', true);
+      await tick(page, 1500); await capture(page, 'heart-local-recovery-5.3s'); await capture(page, 'heart-local-recovery-5.3s-no-labels', true);
+    }); await capture(page, 'heart-restored'); await capture(page, 'heart-restored-no-labels', true);
+    assert.equal((await game(page)).heartbeat, 'stable'); assert.match(await page.locator('#journey-scanner-info').innerText(), /稳定/); assert.doesNotMatch(await page.locator('#journey-scanner-info').innerText(), /传导中断/);
   });
   await mark('dash crosses the barrier, scanned tissue is suppressed then regrows and giant exterior precedes one result', async () => {
     await exitAndSuppress(page); await capture(page, 'growth-suppressed'); await assertFrozen(page, () => click(page, '#pause'));
     await tick(page, 2600); const s = await game(page); assert(s.growth.regrowing); await capture(page, 'growth-regrown');
-    await tick(page, 2500); assert.equal((await game(page)).endingScene, 'exterior'); await capture(page, 'giant-exterior'); await tick(page, 4000);
+    await tick(page, 2500); assert.equal((await game(page)).endingScene, 'exterior');
+    for (const selector of ['.journey-vitals', '.journey-tools', '.journey-telemetry', '#journey-checkpoint', '.journey-keys', '.treatment-stats']) assert.equal(await page.locator(selector).isVisible(), false, 'exterior hides ' + selector);
+    assert(await page.locator('#pause').isVisible()); assert(await page.locator('#sound').isVisible()); const sound = await page.locator('#sound').getAttribute('aria-pressed'); await click(page, '#sound'); assert.notEqual(await page.locator('#sound').getAttribute('aria-pressed'), sound); await click(page, '#sound');
+    await assertFrozen(page, () => click(page, '#pause')); await capture(page, 'giant-exterior'); await tick(page, 4000);
     const result = await snapshot(page); assert.equal(result.screen, 'result'); assert.equal(result.result.won, true); assert.equal(result.game.retries, 1); assert.equal(result.progress, 1); console.log('INFO browser completion: ' + result.result.seconds + ' active seconds including one deliberate failure'); await capture(page, 'result');
     await tick(page, 10000); assert.equal((await snapshot(page)).result.seconds, result.result.seconds, 'result cannot be recorded repeatedly');
     await click(page, '#result-next'); assert.equal((await snapshot(page)).screen, 'cases'); assert.deepEqual((await snapshot(page)).diagnosis, { phase: 'idle', caseId: null });

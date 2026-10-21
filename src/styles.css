@@ -273,14 +273,14 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 .journey-mode .journey-tools button:nth-child(2){flex:1}
 .journey-mode .journey-tools kbd{font-size:11px;margin-right:3px;padding:1px 3px}
 .journey-mode #journey-checkpoint{position:absolute;right:25px;top:64px;font-size:10px;letter-spacing:0;margin:0;color:#8b9a80}
-.journey-telemetry{position:absolute;left:25px;right:370px;top:64px;display:flex;align-items:center;gap:17px;font-size:11px;color:#7f9177;white-space:nowrap}
+.journey-telemetry{position:absolute;left:25px;right:290px;top:63px;display:flex;align-items:center;gap:14px;font-size:14px;line-height:18px;color:#617b60;white-space:nowrap}
 .journey-telemetry #journey-room{color:#3e7760;font-weight:600;flex:none;letter-spacing:1px}
 .journey-telemetry #journey-beat{flex:none;color:#aa8465}
 .journey-telemetry #journey-beat[data-safe=true]{color:#5e956a}
 .journey-telemetry #journey-scanner-info{overflow:hidden;text-overflow:ellipsis}
-.journey-mode .journey-task{position:absolute;left:38px;right:380px;top:645px;font-size:17px;line-height:25px;letter-spacing:.5px;color:#356d59;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.journey-mode .game-feedback{top:675px;left:38px;right:380px;height:20px;text-align:left;font-size:12px;letter-spacing:.3px;line-height:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.journey-mode .journey-keys{left:38px;right:25px;top:701px;display:flex;justify-content:space-between;font-size:9px;letter-spacing:0;color:#8b9b80}
+.journey-mode .journey-task{position:absolute;left:38px;right:380px;top:645px;font-size:18px;line-height:25px;letter-spacing:.5px;color:#356d59;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.journey-mode .game-feedback{top:674px;left:38px;right:380px;height:21px;text-align:left;font-size:14px;letter-spacing:.2px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.journey-mode .journey-keys{left:38px;right:25px;top:701px;display:flex;justify-content:space-between;font-size:11px;letter-spacing:0;color:#71896d}
 .journey-mode .journey-keys p{gap:6px;margin:0}
 .journey-mode .journey-keys p>span:last-child{margin-left:9px}
 .journey-mode .journey-keys kbd{font-size:8px;padding:0 3px;line-height:1.2}
@@ -296,6 +296,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 .journey-mode .dialog .secondary-button{height:42px;font-size:15px;margin-top:9px}
 .journey-mode .dialog .text-button{font-size:14px;min-height:38px;margin-top:5px}
 .journey-mode #toast{left:auto;right:35px;bottom:108px;max-width:430px;padding:12px 22px;font-size:14px}
+.journey-mode.journey-exterior .journey-vitals,.journey-mode.journey-exterior .journey-tools,.journey-mode.journey-exterior .journey-telemetry,.journey-mode.journey-exterior #journey-checkpoint,.journey-mode.journey-exterior .journey-keys,.journey-mode.journey-exterior .treatment-stats,.journey-mode.journey-exterior .journey-task,.journey-mode.journey-exterior .game-feedback,.journey-mode.journey-exterior .brand,.journey-mode.journey-exterior #help,.journey-mode.journey-exterior .treatment-heading>p,.journey-mode.journey-exterior .treatment-heading h2{visibility:hidden;pointer-events:none}
 
 /* The entry transition uses screen pixels; its animation is driven by the app. */
 .entry-transition{position:fixed;inset:0;z-index:30;pointer-events:none}

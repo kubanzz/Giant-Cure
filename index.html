@@ -282,14 +282,14 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 .journey-mode .journey-tools button:nth-child(2){flex:1}
 .journey-mode .journey-tools kbd{font-size:11px;margin-right:3px;padding:1px 3px}
 .journey-mode #journey-checkpoint{position:absolute;right:25px;top:64px;font-size:10px;letter-spacing:0;margin:0;color:#8b9a80}
-.journey-telemetry{position:absolute;left:25px;right:370px;top:64px;display:flex;align-items:center;gap:17px;font-size:11px;color:#7f9177;white-space:nowrap}
+.journey-telemetry{position:absolute;left:25px;right:290px;top:63px;display:flex;align-items:center;gap:14px;font-size:14px;line-height:18px;color:#617b60;white-space:nowrap}
 .journey-telemetry #journey-room{color:#3e7760;font-weight:600;flex:none;letter-spacing:1px}
 .journey-telemetry #journey-beat{flex:none;color:#aa8465}
 .journey-telemetry #journey-beat[data-safe=true]{color:#5e956a}
 .journey-telemetry #journey-scanner-info{overflow:hidden;text-overflow:ellipsis}
-.journey-mode .journey-task{position:absolute;left:38px;right:380px;top:645px;font-size:17px;line-height:25px;letter-spacing:.5px;color:#356d59;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.journey-mode .game-feedback{top:675px;left:38px;right:380px;height:20px;text-align:left;font-size:12px;letter-spacing:.3px;line-height:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.journey-mode .journey-keys{left:38px;right:25px;top:701px;display:flex;justify-content:space-between;font-size:9px;letter-spacing:0;color:#8b9b80}
+.journey-mode .journey-task{position:absolute;left:38px;right:380px;top:645px;font-size:18px;line-height:25px;letter-spacing:.5px;color:#356d59;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.journey-mode .game-feedback{top:674px;left:38px;right:380px;height:21px;text-align:left;font-size:14px;letter-spacing:.2px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.journey-mode .journey-keys{left:38px;right:25px;top:701px;display:flex;justify-content:space-between;font-size:11px;letter-spacing:0;color:#71896d}
 .journey-mode .journey-keys p{gap:6px;margin:0}
 .journey-mode .journey-keys p>span:last-child{margin-left:9px}
 .journey-mode .journey-keys kbd{font-size:8px;padding:0 3px;line-height:1.2}
@@ -305,6 +305,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 .journey-mode .dialog .secondary-button{height:42px;font-size:15px;margin-top:9px}
 .journey-mode .dialog .text-button{font-size:14px;min-height:38px;margin-top:5px}
 .journey-mode #toast{left:auto;right:35px;bottom:108px;max-width:430px;padding:12px 22px;font-size:14px}
+.journey-mode.journey-exterior .journey-vitals,.journey-mode.journey-exterior .journey-tools,.journey-mode.journey-exterior .journey-telemetry,.journey-mode.journey-exterior #journey-checkpoint,.journey-mode.journey-exterior .journey-keys,.journey-mode.journey-exterior .treatment-stats,.journey-mode.journey-exterior .journey-task,.journey-mode.journey-exterior .game-feedback,.journey-mode.journey-exterior .brand,.journey-mode.journey-exterior #help,.journey-mode.journey-exterior .treatment-heading>p,.journey-mode.journey-exterior .treatment-heading h2{visibility:hidden;pointer-events:none}
 
 /* The entry transition uses screen pixels; its animation is driven by the app. */
 .entry-transition{position:fixed;inset:0;z-index:30;pointer-events:none}
@@ -369,7 +370,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
         <p id="journey-task" class="journey-task" role="status">寻找血管里的异常</p>
         <div id="game-feedback" role="status" aria-live="polite" class="game-feedback">按 Q 扫描，观察血管中的异常。</div>
         <div id="journey-hud" class="journey-hud"><div class="journey-vitals"><span>设备耐久 <strong id="journey-integrity">100</strong><i class="integrity-track"><i id="integrity-fill"></i></i></span><span>弹匣 <strong id="journey-ammo">24 / 24</strong><small id="journey-reload">无限备弹</small></span></div><div class="journey-tools"><button id="journey-scan" aria-pressed="false"><kbd>Q</kbd> 扫描</button><button id="journey-interact"><kbd>E</kbd> 交互 / 连接</button><button id="journey-reload-button"><kbd>R</kbd> 装填</button></div><p id="journey-checkpoint">安全节点 · 血管入口</p></div>
-        <div id="journey-keys" class="journey-keys"><p><kbd>WASD</kbd> 移动 <kbd>Shift</kbd> 疾行 <span>鼠标瞄准 · 左键治疗/射击 · 右键精瞄</span></p><p><kbd>Space</kbd> <span id="journey-dash-label">循环冲刺 · 等待心脏恢复</span><span>Esc 暂停 · 离开后会重头开始</span></p></div>
+        <div id="journey-keys" class="journey-keys"><p><kbd>WASD</kbd> 移动 <span>左键治疗/射击 · 右键命中预览</span></p><p><kbd>Space</kbd> <span id="journey-dash-label">循环冲刺 · 等待心脏恢复</span><span>? 完整操作 · Esc 暂停</span></p></div>
       </section>
       <section id="result" class="screen" hidden aria-labelledby="result-title">
         <div class="result-topline"><p id="result-kicker" class="eyebrow">A WORLD REBORN</p><span id="result-case">CASE 01 / 心脏巡诊</span></div>
@@ -444,9 +445,29 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     oval(c, x, y, r, r, g);
   }
   function badge(c, value, x, y, color, size) {
-    size = size || 13; const w = Math.max(60, value.length * size + 20);
-    round(c, x - w / 2, y - 12, w, 25, 7); c.fillStyle = 'rgba(250,247,232,.94)'; c.fill();
+    size = size || 14; c.font = '600 ' + size + 'px ' + FONT;
+    const w = Math.max(38, c.measureText(value).width + 22), h = size + 14;
+    round(c, x - w / 2, y - h / 2, w, h, 7); c.fillStyle = 'rgba(250,247,232,.96)'; c.fill();
+    c.strokeStyle = 'rgba(133,151,112,.22)'; c.lineWidth = 1; c.stroke();
     label(c, value, x, y + .5, size, color || INK, 600);
+  }
+  // Labels are laid out after the world transform so camera zoom never makes
+  // interaction text tiny or clips the words on the edge of the viewport.
+  function worldBadge(labels, value, x, y, dx, dy, color, size) {
+    labels.push({ value, x, y, dx: dx || 0, dy: dy || 0, color: color || INK, size: size || 14 });
+  }
+  function drawWorldLabels(c, labels, view) {
+    const p = view.viewport, cam = view.camera;
+    labels.forEach(item => {
+      const ax = p.x + p.w / 2 + (item.x - cam.x) * cam.zoom;
+      const ay = p.y + p.h / 2 + (item.y - cam.y) * cam.zoom;
+      if (ax < p.x - 10 || ax > p.x + p.w + 10 || ay < p.y - 10 || ay > p.y + p.h + 10) return;
+      c.font = '600 ' + item.size + 'px ' + FONT;
+      const half = Math.max(19, c.measureText(item.value).width / 2 + 11), hh = (item.size + 14) / 2;
+      const x = clamp(ax + item.dx, p.x + half + 8, p.x + p.w - half - 8);
+      const y = clamp(ay + item.dy, p.y + hh + 8, p.y + p.h - hh - 8);
+      badge(c, item.value, x, y, item.color, item.size);
+    });
   }
   function line(c, points, color, width) {
     if (!points || points.length < 2) return;
@@ -458,7 +479,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     line(c, [{ x: 0, y: -2 }, { x: 0, y: -s * .8 }], 'rgba(255,248,217,.45)', 1); c.restore();
   }
   function plant(c, x, y, s, seed, alive, time) {
-    c.save(); c.translate(x, y); c.rotate(Math.sin(time * .65 + seed) * .045);
+    c.save(); c.translate(x, y); c.rotate(alive ? Math.sin(time * .65 + seed) * .045 : Math.sin(seed) * .025);
     shape(c, p => { p.moveTo(0, 0); p.quadraticCurveTo(-s * .15, -s * .6, 0, -s); }, null, alive ? '#6b9c80' : '#9eab96', 2);
     leaf(c, 0, -s * .2, s * .55, -.9, alive ? '#87ad87' : '#a8b29a');
     leaf(c, -1, -s * .52, s * .42, .9, alive ? '#9fbd8d' : '#b4b99e');
@@ -481,44 +502,154 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       { id: 'abnormal', width: 132, points: [{ x: 800, y: 790 }, { x: 1130, y: 790 }, { x: 1130, y: 0 }], active: s.flowRestored }
     ];
   }
+  function curvedPath(points) {
+    // Round the original waypoints without changing the simulation's route.
+    // Every visual layer samples this single centre line, including blood cells.
+    const pts = points.filter(Boolean), samples = [], add = p => {
+      const last = samples[samples.length - 1];
+      if (!last || Math.hypot(p.x - last.x, p.y - last.y) > .01) samples.push({ x: p.x, y: p.y });
+    };
+    if (pts.length < 2) return { samples, total: 0 };
+    add(pts[0]);
+    const straight = end => {
+      const start = samples[samples.length - 1], count = Math.max(1, Math.ceil(Math.hypot(end.x - start.x, end.y - start.y) / 16));
+      for (let i = 1; i <= count; i++) add({ x: start.x + (end.x - start.x) * i / count, y: start.y + (end.y - start.y) * i / count });
+    };
+    for (let i = 1; i < pts.length - 1; i++) {
+      const prev = pts[i - 1], at = pts[i], next = pts[i + 1];
+      const before = Math.hypot(at.x - prev.x, at.y - prev.y), after = Math.hypot(next.x - at.x, next.y - at.y);
+      const r = Math.min(110, before * .25, after * .25);
+      if (r < 1) { straight(at); continue; }
+      const a = { x: at.x + (prev.x - at.x) * r / before, y: at.y + (prev.y - at.y) * r / before };
+      const b = { x: at.x + (next.x - at.x) * r / after, y: at.y + (next.y - at.y) * r / after };
+      straight(a);
+      const count = Math.max(8, Math.ceil(r / 8));
+      for (let k = 1; k <= count; k++) { const t = k / count, u = 1 - t; add({ x: u * u * a.x + 2 * u * t * at.x + t * t * b.x, y: u * u * a.y + 2 * u * t * at.y + t * t * b.y }); }
+    }
+    straight(pts[pts.length - 1]);
+    let total = 0;
+    samples.forEach((p, i) => {
+      if (i) total += Math.hypot(p.x - samples[i - 1].x, p.y - samples[i - 1].y);
+      const a = samples[Math.max(0, i - 1)], b = samples[Math.min(samples.length - 1, i + 1)];
+      p.distance = total; p.angle = Math.atan2(b.y - a.y, b.x - a.x);
+    });
+    return { samples, total };
+  }
+  function alongPath(curve, distance) {
+    const pts = curve.samples;
+    if (!pts.length) return { x: 0, y: 0, angle: 0, distance: 0 };
+    distance = clamp(distance, 0, curve.total);
+    let i = 1; while (i < pts.length - 1 && pts[i].distance < distance) i++;
+    const a = pts[i - 1] || pts[0], b = pts[i] || a, t = (distance - a.distance) / Math.max(.01, b.distance - a.distance);
+    return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, angle: Math.atan2(b.y - a.y, b.x - a.x), distance };
+  }
+  function channelWidth(base, distance) { return base * (.93 + Math.sin(distance * .013) * .045 + Math.sin(distance * .031 + .7) * .025); }
+  function ribbon(c, curve, base, color, spread) {
+    const side = sign => curve.samples.map(p => {
+      const w = channelWidth(base, p.distance) * (spread || 1) / 2;
+      return { x: p.x - Math.sin(p.angle) * w * sign, y: p.y + Math.cos(p.angle) * w * sign };
+    });
+    const a = side(1), b = side(-1).reverse();
+    if (!a.length) return;
+    shape(c, p => { p.moveTo(a[0].x, a[0].y); a.slice(1).concat(b).forEach(v => p.lineTo(v.x, v.y)); p.closePath(); }, color);
+  }
   function stream(c, path, s) {
-    const pts = (path.points || []).filter(Boolean); if (pts.length < 2) return;
+    const curve = curvedPath(path.points || []); if (curve.total < 1) return;
     const flow = clamp(Number(path.flow === undefined ? path.active ? 1 : .05 : path.flow), 0, 1);
-    const open = flow > .4;
-    const w = path.width || 85;
+    const open = flow > .4, w = path.width || 85;
     c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
-    line(c, pts, 'rgba(112,105,83,.16)', w + 26);
-    line(c, pts, open ? 'rgba(183,132,112,.67)' : 'rgba(148,144,122,.66)', w + 10);
-    line(c, pts, open ? 'rgba(232,174,142,.72)' : 'rgba(190,182,151,.68)', w);
-    line(c, pts, open ? 'rgba(252,218,167,.40)' : 'rgba(239,224,185,.30)', w * .55);
-    let total = 0; const segs = [];
-    for (let i = 1; i < pts.length; i++) { const length = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); segs.push({ a: pts[i - 1], b: pts[i], length }); total += length; }
+    // The banks sit flush in the ground. Only solid tissue uses a raised rim.
+    ribbon(c, curve, w + 8, 'rgba(139,143,109,.13)');
+    ribbon(c, curve, w, open ? 'rgba(198,163,129,.32)' : 'rgba(158,162,128,.26)');
+    ribbon(c, curve, w, open ? 'rgba(232,192,151,.32)' : 'rgba(213,208,165,.26)', .84);
+    ribbon(c, curve, w, open ? 'rgba(253,229,180,.31)' : 'rgba(242,228,184,.20)', .56);
+    for (let distance = 13, i = 0; distance < curve.total; distance += 31, i++) {
+      const p = alongPath(curve, distance), offset = Math.sin(i * 2.7) * w * .42, nx = -Math.sin(p.angle), ny = Math.cos(p.angle);
+      const x = p.x + nx * offset, y = p.y + ny * offset;
+      line(c, [{ x, y }, { x: x + Math.cos(p.angle) * (8 + i % 5 * 2), y: y + Math.sin(p.angle) * (8 + i % 5 * 2) }], 'rgba(122,133,105,.10)', 1);
+    }
     const phase = s.elapsed * (4 + flow * 44);
-    for (let k = 0; k < Math.ceil(total / 62); k++) {
-      let travel = (k * 62 + phase) % total, seg = segs[0];
-      for (const v of segs) { seg = v; if (travel <= v.length) break; travel -= v.length; }
-      const f = clamp(travel / Math.max(1, seg.length), 0, 1), a = Math.atan2(seg.b.y - seg.a.y, seg.b.x - seg.a.x);
-      const offset = Math.sin(k * 4.2) * w * .24, x = seg.a.x + (seg.b.x - seg.a.x) * f - Math.sin(a) * offset, y = seg.a.y + (seg.b.y - seg.a.y) * f + Math.cos(a) * offset;
-      oval(c, x, y, 10, 5, open ? 'rgba(169,94,83,.70)' : 'rgba(132,128,110,.38)', a);
-      oval(c, x, y - 1, 5, 1.5, 'rgba(255,230,189,.52)', a);
+    for (let k = 0; k < Math.ceil(curve.total / 62); k++) {
+      const p = alongPath(curve, (k * 62 + phase) % curve.total), offset = Math.sin(k * 4.2) * channelWidth(w, p.distance) * .24;
+      const x = p.x - Math.sin(p.angle) * offset, y = p.y + Math.cos(p.angle) * offset;
+      oval(c, x, y, 9, 4.6, open ? 'rgba(173,103,88,.64)' : 'rgba(137,133,111,.36)', p.angle);
+      oval(c, x, y, 4.8, 1.5, 'rgba(255,230,189,.48)', p.angle);
     }
     if (s.scanner) {
-      c.setLineDash([9, 12]); line(c, pts, open ? 'rgba(62,139,116,.66)' : 'rgba(160,100,73,.65)', 2); c.setLineDash([]);
+      c.setLineDash([8, 14]); c.lineDashOffset = -phase;
+      line(c, curve.samples, open ? 'rgba(65,136,114,.55)' : 'rgba(158,107,78,.55)', 1.8); c.setLineDash([]);
     }
     c.restore();
   }
   function tissue(c, o, alive) {
     if (o.kind !== 'tissue') return;
     const x = o.x, y = o.y, w = o.w, h = o.h;
-    oval(c, x + w / 2, y + h * .92, w * .58, Math.min(25, h * .2), 'rgba(67,87,68,.20)');
-    const g = c.createLinearGradient(x, y, x, y + h); g.addColorStop(0, alive ? '#c3d1a5' : '#c1c3a3'); g.addColorStop(1, alive ? '#7fa98a' : '#8e9a81');
-    shape(c, p => { p.moveTo(x, y + h); p.bezierCurveTo(x - 10, y + h * .35, x + w * .18, y - 12, x + w * .5, y); p.bezierCurveTo(x + w * .86, y - 10, x + w + 10, y + h * .4, x + w, y + h); p.closePath(); }, g, '#768d75', 2);
-    for (let i = 0; i < Math.max(3, Math.floor(w / 40)); i++) oval(c, x + 15 + i * Math.max(25, w / Math.max(3, Math.floor(w / 40))), y + h * (.4 + Math.sin(i * 2) * .13), Math.min(13, w * .12), Math.min(10, h * .1), 'rgba(239,236,201,.23)', i);
+    // The complete rectangular base is visible: there are no painted slopes
+    // outside the collision footprint that could be mistaken for walking space.
+    c.save();
+    const g = c.createLinearGradient(x, y, x, y + h); g.addColorStop(0, alive ? '#cbd4ac' : '#c6c7a7'); g.addColorStop(.7, alive ? '#a2b78d' : '#a5ad8e'); g.addColorStop(1, '#7c9276');
+    round(c, x, y, w, h, 4); c.fillStyle = g; c.fill(); c.strokeStyle = '#70896e'; c.lineWidth = 3; c.stroke();
+    round(c, x + 1.5, y + 1.5, w - 3, h - 3, 3); c.clip();
+    line(c, [{ x: x + 3, y: y + 6 }, { x: x + w - 3, y: y + 6 }], 'rgba(246,239,203,.70)', 3);
+    line(c, [{ x: x + 2, y: y + h - 5 }, { x: x + w - 2, y: y + h - 5 }], 'rgba(71,101,73,.38)', 7);
+    for (let i = 0; i < Math.ceil(w / 26); i++) {
+      const px = x + 12 + i * 26;
+      shape(c, p => { p.moveTo(px - 8, y + h - 9); p.bezierCurveTo(px + 4, y + h * .7, px - 10, y + h * .35, px + 5, y + 13); }, null, 'rgba(244,237,204,.22)', 2);
+      oval(c, px, y + h * (.34 + Math.sin(i * 2) * .08), 6 + i % 3 * 2, 5, 'rgba(125,150,112,.14)', i);
+    }
+    c.restore();
+  }
+  function perimeter(c, b, size) {
+    const outside = '#a7b294', extent = 2200;
+    c.save();
+    c.fillStyle = outside;
+    c.fillRect(-extent, -extent, size.width + extent * 2, b.top + extent);
+    c.fillRect(-extent, b.bottom, size.width + extent * 2, size.height + extent - b.bottom);
+    c.fillRect(-extent, b.top, b.left + extent, b.bottom - b.top);
+    c.fillRect(b.right, b.top, size.width + extent - b.right, b.bottom - b.top);
+    const rim = c.createLinearGradient(0, b.top - 36, 0, b.top + 3);
+    rim.addColorStop(0, '#bec4a5'); rim.addColorStop(1, '#7a9176');
+    c.fillStyle = rim; c.fillRect(b.left - 30, b.top - 36, b.right - b.left + 60, 36);
+    c.fillStyle = '#9aaa89'; c.fillRect(b.left - 30, b.bottom, b.right - b.left + 60, 35);
+    c.fillRect(b.left - 35, b.top, 35, b.bottom - b.top);
+    c.fillRect(b.right, b.top, 35, b.bottom - b.top);
+    shape(c, p => { p.moveTo(b.left, b.top); p.lineTo(b.right, b.top); p.lineTo(b.right, b.bottom); p.lineTo(b.left, b.bottom); p.closePath(); }, null, '#718a70', 3);
+    for (let i = 0; i < Math.ceil((b.right - b.left) / 58); i++) {
+      const x = b.left + 16 + i * 58;
+      oval(c, x, b.top - 17, 15, 5, 'rgba(232,232,196,.26)', -.1);
+      oval(c, x + 8, b.bottom + 17, 15, 5, 'rgba(232,232,196,.22)', .1);
+    }
+    c.restore();
+  }
+  function recoveryFraction(s) {
+    return s.stage === 'recovery' ? clamp((s.recovery - 1.1) / Math.max(1, (s.recoveryDuration || 6) - 1.1), 0, 1) : s.heartConnected ? 1 : 0;
+  }
+  function heartNeighborhoods(c, s) {
+    const recovering = recoveryFraction(s), pulse = s.beat.pulse;
+    ['C1', 'C2', 'C3'].forEach((id, index) => {
+      const n = (s.nodes || []).find(p => p.id === id); if (!n) return;
+      const bloom = clamp((recovering - index * .20) / .42, 0, 1), alive = bloom > .55;
+      // These small inhabited gardens remain near the player during connection.
+      const x = n.x - 108, y = n.y - 80;
+      oval(c, x + 25, y + 21, 43, 12, 'rgba(92,112,79,.10)');
+      if (bloom > 0) glow(c, x + 22, y - 10, 54 + pulse * 11, 'rgba(250,215,133,' + (.24 * bloom) + ')');
+      for (let k = 0; k < 3; k++) {
+        const wx = x + k * 20, wy = y - (k === 1 ? 13 : 0);
+        round(c, wx - 7, wy - 13, 15, 26, 5); c.fillStyle = '#a4b491'; c.fill(); c.strokeStyle = '#7b9679'; c.lineWidth = 1.4; c.stroke();
+        round(c, wx - 4, wy - 8, 9, 15, 3); c.fillStyle = alive ? '#f3d38f' : '#7e9480'; c.fill();
+        if (alive) { c.globalAlpha = .35 + pulse * .35; line(c, [{ x: wx - 2, y: wy - 7 }, { x: wx - 2, y: wy + 3 }], '#fff1c0', 1.5); c.globalAlpha = 1; }
+      }
+      c.save(); c.translate(n.x + 73, n.y + 20);
+      const unfurl = .60 + bloom * .4; c.scale(unfurl, unfurl);
+      plant(c, 0, 0, 34, index, alive, alive ? s.elapsed : 0);
+      plant(c, 28, 10, 24, index + 1, alive, alive ? s.elapsed : 0);
+      c.restore();
+    });
   }
   function drawBackground(c, s, time) {
     const size = s.worldSize || { width: s.room === 'heart' ? 1800 : 1600, height: s.room === 'heart' ? 1200 : 1000 };
     c.fillStyle = '#e9e5cc'; c.fillRect(-2000, -2000, size.width + 4000, size.height + 4000);
-    const recovering = s.stage === 'recovery' ? clamp((s.recovery - .7) / 4.5, 0, 1) : s.heartConnected ? 1 : 0;
+    const recovering = recoveryFraction(s);
     const art = window.GiantCureAssets && window.GiantCureAssets.images[s.room];
     if (art) {
       c.save();
@@ -530,6 +661,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     paths.forEach(p => stream(c, p, s));
     (s.obstacles || []).forEach(o => tissue(c, o, s.room === 'heart' ? recovering > .4 : s.flowRestored));
     const b = s.bounds;
+    perimeter(c, b, size);
     for (let i = 0; i < 38; i++) {
       const left = i % 2 === 0, x = left ? b.left - 14 + (i % 3) * 12 : b.right + 10 - (i % 3) * 12;
       const y = b.top + 30 + ((i * 137) % Math.max(80, b.bottom - b.top - 60));
@@ -537,6 +669,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       plant(c, x, y, 25 + i % 5 * 7, i, alive, time);
     }
     if (s.room === 'heart') {
+      heartNeighborhoods(c, s);
       const spots = [[250,230],[470,200],[680,170],[1110,180],[1430,280],[1540,540],[260,550],[330,770],[1480,960],[720,1050]];
       spots.forEach((p, i) => {
         const light = recovering > Math.hypot(p[0] - 900, p[1] - 650) / 1500;
@@ -544,7 +677,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       });
     }
   }
-  function node(c, n, s, hideLabels) {
+  function node(c, n, s, hideLabels, labels) {
     const near = s.nearestId === n.id, show = s.scanner || near || n.selected || n.complete;
     const color = n.complete ? '#a68542' : n.selected ? '#b68b44' : '#4f8a75';
     if (show) glow(c, n.x, n.y, near ? 58 : 40, n.complete ? 'rgba(245,205,112,.35)' : 'rgba(199,232,187,.43)');
@@ -552,22 +685,22 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     oval(c, n.x, n.y, near ? 25 : 22, near ? 25 : 22, '#f6f0d8', 0, color, near ? 3 : 1.8);
     oval(c, n.x, n.y, 15, 15, n.complete ? '#ead59a' : '#c6d9b6');
     if (n.complete) line(c, [{ x:n.x-6,y:n.y },{ x:n.x-1,y:n.y+5 },{ x:n.x+7,y:n.y-6 }], color, 2.5);
-    else if (show) label(c, (String(n.label).match(/[ABC]\s*$/) || [''])[0].trim() || (n.kind === 'release' ? '◎' : '≈'), n.x, n.y, 16, color, 700);
-    if (!hideLabels && show) badge(c, n.label, n.x, n.y + 43, color, 12);
-    if (!hideLabels && s.scanner && n.scanned && n.symptom) badge(c, n.symptom, n.x, n.y + 73, '#657b58', 11);
-    if (!hideLabels && near) badge(c, 'E', n.x + 34, n.y - 26, INK, 12);
+    else if (show && !hideLabels) label(c, (String(n.label).match(/[ABC]\s*$/) || [''])[0].trim() || (n.kind === 'release' ? '◎' : '≈'), n.x, n.y, 16, color, 700);
+    if (!hideLabels && show) worldBadge(labels, n.label, n.x, n.y, 0, 38, color);
+    if (!hideLabels && s.scanner && n.scanned && n.symptom) worldBadge(labels, n.symptom, n.x, n.y, 0, 69, '#657b58', 13);
+    if (!hideLabels && near) worldBadge(labels, 'E', n.x, n.y, 35, -27, INK, 13);
     if (s.scanner && !n.complete) { c.save(); c.setLineDash([3, 7]); oval(c, n.x, n.y, 33, 33, null, 0, '#659c83', 1.3); c.restore(); }
   }
-  function portal(c, p, s, hideLabels) {
+  function portal(c, p, s, hideLabels, labels) {
     const near = s.nearestId === p.id, open = !p.locked;
     if (open) glow(c, p.x, p.y, 58, 'rgba(231,208,130,.32)');
     oval(c, p.x, p.y + 10, 37, 13, '#b8c9a4', 0, '#769575', 2);
     shape(c, a => { a.moveTo(p.x-31,p.y+5); a.bezierCurveTo(p.x-33,p.y-45,p.x+33,p.y-45,p.x+31,p.y+5); }, null, open ? '#759c7d' : '#a2a88c', 6);
     label(c, open ? '↗' : '·', p.x, p.y - 8, 26, open ? INK : '#939b80');
-    if (!hideLabels && (near || s.scanner || open)) badge(c, p.label, p.x, p.y + 39, open ? INK : '#84917b', 12);
-    if (!hideLabels && near && open) badge(c, 'E', p.x + 44, p.y - 22, INK, 12);
+    if (!hideLabels && (near || s.scanner || open)) worldBadge(labels, p.label, p.x, p.y, 0, 38, open ? INK : '#84917b');
+    if (!hideLabels && near && open) worldBadge(labels, 'E', p.x, p.y, 43, -25, INK, 13);
   }
-  function valve(c, v, s, hideLabels) {
+  function valve(c, v, s, hideLabels, labels) {
     const open = v.open !== undefined ? v.open : s.beat.safe;
     const x = v.x, y = v.y, w = v.w, h = v.h;
     c.save();
@@ -576,7 +709,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       const root = side < 0 ? x : x+w;
       shape(c, p => { p.moveTo(root,y-15); p.bezierCurveTo(root-side*w*.13,y-30,root-side*w*(open?.13:.46),y-8,root-side*w*(open?.13:.50),y+h/2); p.bezierCurveTo(root-side*w*(open?.10:.38),y+h+24,root-side*w*.08,y+h+20,root,y+h+10); p.closePath(); }, open?'#b0cdb2':'#c8b196', open?'#5c967c':'#9a8063', 2.5);
     });
-    if (!hideLabels && (s.scanner || Math.hypot(s.player.x-x-w/2,s.player.y-y-h/2)<220)) badge(c, open?'舒张 · 可通行':'收缩 · 等待舒张',x+w/2,y-42,open?'#3e846b':'#926b4d',13);
+    if (!hideLabels && (s.scanner || Math.hypot(s.player.x-x-w/2,s.player.y-y-h/2)<220)) worldBadge(labels,open?'舒张 · 可通行':'收缩 · 等待舒张',x+w/2,y+h/2,0,-42,open?'#3e846b':'#926b4d');
     c.restore();
   }
   function links(c, s) {
@@ -587,10 +720,16 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       c.shadowBlur=0;
       line(c,[a,b],'rgba(255,235,164,.8)',1.8); c.restore();
     });
+    const source = s.guidance && s.guidance.source;
+    if (source) {
+      const phase = (s.elapsed * .75) % 1;
+      oval(c, source.x, source.y, 29 + phase * 34, 29 + phase * 34, null, 0, 'rgba(177,148,76,' + (.60 * (1 - phase)) + ')', 2);
+      glow(c, source.x, source.y, 47, 'rgba(239,208,125,.26)');
+    }
   }
-  function clot(c, s, hideLabels) {
+  function clot(c, s, hideLabels, labels) {
     const a=s.clot;if(s.room!=='main'||!a||a.removed)return;
-    const r=a.radius||125,soft=(s.weakpoints||[]).reduce((v,p)=>v+p.progress,0)/3;
+    const r=a.radius||125,weakpoints=s.weakpoints||[],soft=weakpoints.reduce((v,p)=>v+p.progress,0)/Math.max(1,weakpoints.length);
     const burst=s.stage==='burst'?clamp(s.burst/4,0,1):0;
     c.save();c.translate(a.x,a.y);
     if(burst>.45)c.globalAlpha=1-clamp((burst-.45)/.55,0,1);
@@ -608,6 +747,24 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       const angle=i*2.4,rr=r*.5;
       oval(c,Math.cos(angle)*rr,Math.sin(angle)*rr*.75,18,11,'rgba(228,207,161,.13)',angle);
     }
+    if(parts===1) {
+      for(let i=0;i<32;i++) {
+        const angle=i*TAU/32,wp=weakpoints[i%Math.max(1,weakpoints.length)],loose=wp?wp.progress:0;
+        const inner=r*(.14+Math.sin(i*2.8)*.06),outer=r*(.83+Math.sin(i*3.9)*.035);
+        const sx=Math.cos(angle)*inner,sy=Math.sin(angle)*inner*.8,ex=Math.cos(angle)*outer,ey=Math.sin(angle)*outer*.8;
+        const slack=Math.sin(i*1.8)*9+loose*20,alpha=.13+(1-loose)*.17;
+        shape(c,p=>{p.moveTo(sx,sy);p.bezierCurveTo(sx-slack,sy+20+loose*9,ex+slack,ey-18-loose*5,ex,ey);},null,'rgba(224,208,166,'+alpha+')',1.1+loose*.5);
+      }
+      weakpoints.forEach((wp,i)=>{
+        const progress=clamp(wp.progress,0,1);if(progress<=0)return;
+        const px=wp.x-a.x,py=wp.y-a.y;
+        for(let k=0;k<5;k++) {
+          const angle=k*2.3+i,spread=8+progress*21,dx=Math.cos(angle)*spread,dy=Math.sin(angle)*spread*.7;
+          shape(c,p=>{p.moveTo(px+dx-3,py+dy);p.quadraticCurveTo(px+dx+4,py+dy-8-progress*5,px+dx+9,py+dy-2);p.lineTo(px+dx+4,py+dy+3);p.closePath();},'rgba(210,193,145,'+(.13+progress*.44)+')');
+          shape(c,p=>{p.moveTo(px,py);p.quadraticCurveTo(px+dx*.45+6,py+dy*.45-4,px+dx,py+dy);},null,'rgba(244,222,171,'+progress*.6+')',1+progress*2);
+        }
+      });
+    }
     const crack=2+soft*6;
     shape(c,p=>{p.moveTo(-35,-r*.75);p.lineTo(-15,-20);p.lineTo(12,0);p.lineTo(-16,27);p.lineTo(-5,r*.7);p.moveTo(12,0);p.lineTo(r*.65,-25);},null,soft>.3?'#ead4a0':'#626e5a',crack);
     c.restore();
@@ -618,9 +775,9 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       if(!hideLabels)label(c,p.complete?'✓':String(i+1),p.x,p.y,13,p.complete?'#796734':'#733f34',700);
       if(p.progress>0&&!p.complete)shape(c,a=>a.arc(p.x,p.y,18,-Math.PI/2,-Math.PI/2+TAU*p.progress),null,'#ffe4a0',4);
     });
-    if(!hideLabels&&s.scanner)badge(c,'纤维性血栓 · '+Math.round(soft*100)+'% 已软化',a.x,a.y+r+28,'#735f43',13);
+    if(!hideLabels&&s.scanner)worldBadge(labels,'纤维性血栓 · '+Math.round(soft*100)+'% 已软化',a.x,a.y,0,r*.65+30,'#735f43');
   }
-  function hunter(c,e,s,hideLabels) {
+  function hunter(c,e,s,hideLabels,labels) {
     if(e.hp<=0)return;
     if(e.target&&(e.state==='telegraph'||e.state==='lunge')) {
       c.save();c.setLineDash([7,7]);line(c,[e,e.target],e.state==='lunge'?'rgba(178,80,72,.75)':'rgba(175,101,81,.65)',3);c.setLineDash([]);
@@ -633,13 +790,12 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     for(let i=0;i<7;i++){const a=i*TAU/7;oval(c,e.x+Math.cos(a)*23,e.y+Math.sin(a)*23,4,7,'#9f8ca2',a);}
     oval(c,e.x+5,e.y-3,8,10,'#806b8c');
     if(s.scanner&&e.weakpoint){const w=e.weakpoint;glow(c,w.x,w.y,20,'rgba(255,209,113,.6)');oval(c,w.x,w.y,w.radius||11,w.radius||11,'#f0cb7e',0,'#fff0b5',1.8);}
-    if(!hideLabels&&e.state==='telegraph')badge(c,'扑击预警',e.x,e.y-44,'#a16450',12);
+    if(!hideLabels&&e.state==='telegraph')worldBadge(labels,'扑击预警',e.x,e.y,0,-38,'#a16450');
   }
   function player(c,s,time) {
     const p=s.player,a=Math.atan2(s.aim.y-p.y,s.aim.x-p.x);
     c.save();
     if(s.scanner){const r=90+s.beat.phase*50;oval(c,p.x,p.y,r,r,null,0,'rgba(66,137,111,'+(.28-s.beat.phase*.16)+')',1.5);}
-    if(s.scanner||s.precision){c.setLineDash([3,7]);line(c,[p,s.aim],s.precision?'rgba(140,111,54,.7)':'rgba(65,121,102,.35)',1.4);c.setLineDash([]);}
     if(p.dashing)for(let i=1;i<=5;i++)oval(c,p.x-Math.cos(a)*i*12,p.y-Math.sin(a)*i*12,16-i*2,11-i,'rgba(240,201,112,'+(.35-i*.05)+')',a);
     glow(c,p.x,p.y,43,'rgba(255,242,183,.60)');oval(c,p.x,p.y+12,22,9,'rgba(48,80,64,.28)');
     c.translate(p.x,p.y);c.rotate(a+Math.PI/2);if(p.invulnerable&&Math.floor(time*12)%2)c.globalAlpha=.6;
@@ -653,14 +809,14 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     oval(c,aim.x,aim.y,s.precision?8:12,s.precision?8:12,null,0,s.precision?'#a57e38':'#3d7b67',1.6);
     [-1,1].forEach(k=>{line(c,[{x:aim.x+k*17,y:aim.y},{x:aim.x+k*8,y:aim.y}],'#457b66',1.4);line(c,[{x:aim.x,y:aim.y+k*17},{x:aim.x,y:aim.y+k*8}],'#457b66',1.4);});
   }
-  function barrier(c,o,s,hideLabels) {
+  function barrier(c,o,s,hideLabels,labels) {
     const unlocked=s.dashUnlocked;
     c.save();c.setLineDash(unlocked?[9,9]:[]);
     round(c,o.x,o.y,o.w,o.h,14);c.fillStyle=unlocked?'rgba(220,199,128,.16)':'rgba(119,151,112,.45)';c.fill();c.strokeStyle=unlocked?'#b39650':'#79966e';c.lineWidth=2;c.stroke();c.setLineDash([]);
     for(let i=0;i<o.w/58;i++){const x=o.x+25+i*58;if(unlocked)line(c,[{x:x-5,y:o.y+o.h/2+5},{x,y:o.y+o.h/2-5},{x:x+5,y:o.y+o.h/2+5}],'#a58a47',2);else leaf(c,x,o.y+o.h,42,-.15,'#98b08a');}
-    if(!hideLabels)badge(c,unlocked?'Space · 循环冲刺':'尚未苏醒的循环屏障',o.x+o.w/2,o.y-26,unlocked?'#987a39':INK,13);c.restore();
+    if(!hideLabels)worldBadge(labels,unlocked?'Space · 循环冲刺':'尚未苏醒的循环屏障',o.x+o.w/2,o.y+o.h/2,0,-29,unlocked?'#987a39':INK);c.restore();
   }
-  function growth(c,g,s,hideLabels) {
+  function growth(c,g,s,hideLabels,labels) {
     if(!g)return;
     const state=g.state||'dormant',suppressed=state==='suppressed',regrowing=state==='regrowing';
     const r=(g.radius||24)*(suppressed?.35:regrowing?.75+.25*s.beat.pulse:1),x=g.x,y=g.y;
@@ -668,10 +824,72 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     for(let i=0;i<6;i++){const a=i*TAU/6;oval(c,x+Math.cos(a)*r*.6,y+Math.sin(a)*r*.6,r*.6,r*.5,suppressed?'#a7b498':'#a28ca1',a,'#89788c',1.3);}
     oval(c,x,y,r*.52,r*.52,suppressed?'#c9c6a2':'#816a8c');
     if(g.progress>0&&!suppressed&&!regrowing)shape(c,p=>p.arc(x,y,r+9,-Math.PI/2,-Math.PI/2+TAU*g.progress),null,'#edce81',4);
-    if(!hideLabels&&(s.scanner||g.scanned||s.stage==='ending'))badge(c,regrowing?'同一组织 · 再次生长':suppressed?'已暂时压制':g.scanned?'异常组织 · 特征未知':'未知生物信号',x,y+50,regrowing?'#8b5f83':INK,13);
+    if(!hideLabels&&(s.scanner||g.scanned||s.stage==='ending'))worldBadge(labels,regrowing?'同一组织 · 再次生长':suppressed?'已暂时压制':g.scanned?'异常组织 · 特征未知':'未知生物信号',x,y,0,44,regrowing?'#8b5f83':INK);
+  }
+  function toolPalette(result) {
+    if(result.weakpoint)return { color:'#b88a32',light:'#fff0b2',shape:'weakpoint' };
+    if(result.hitType==='treatment'||result.kind==='treatment')return { color:'#428c77',light:'#dff0c2',shape:'treatment' };
+    if(result.blocked||result.hitType==='wall'||result.hitType==='clot'||result.kind==='blocked')return { color:'#968568',light:'#ead8ac',shape:'wall' };
+    if(result.hitType==='hunter')return { color:'#b4745a',light:'#f8d7ab',shape:'hunter' };
+    if(result.hitType==='undiagnosed'||result.kind==='warning')return { color:'#9b7b57',light:'#f1ddb1',shape:'unknown' };
+    return { color:'#72917f',light:'#e5eac7',shape:'none' };
+  }
+  function toolRay(c,result,preview) {
+    if(!result||!result.from||!result.to)return;
+    const palette=toolPalette(result),p=result.to,a=Math.atan2(p.y-result.from.y,p.x-result.from.x);
+    c.save();c.lineCap='round';
+    if(preview)c.setLineDash([4,7]);
+    line(c,[result.from,p],palette.color,preview?1.8:4.5);
+    c.setLineDash([]);
+    if(!preview)line(c,[result.from,p],palette.light,1.4);
+    if(palette.shape==='weakpoint') {
+      const r=preview?10:14;
+      shape(c,q=>{q.moveTo(p.x,p.y-r);q.lineTo(p.x+r,p.y);q.lineTo(p.x,p.y+r);q.lineTo(p.x-r,p.y);q.closePath();},null,palette.color,2);
+      oval(c,p.x,p.y,3.5,3.5,palette.light,0,palette.color,1);
+    } else if(palette.shape==='treatment') {
+      oval(c,p.x,p.y,preview?9:13,preview?9:13,null,0,palette.color,2);
+      line(c,[{x:p.x-5,y:p.y},{x:p.x+5,y:p.y}],palette.color,2);
+      line(c,[{x:p.x,y:p.y-5},{x:p.x,y:p.y+5}],palette.color,2);
+    } else if(palette.shape==='wall') {
+      const dx=-Math.sin(a)*9,dy=Math.cos(a)*9;
+      line(c,[{x:p.x-dx,y:p.y-dy},{x:p.x+dx,y:p.y+dy}],palette.color,3);
+      if(!preview)oval(c,p.x,p.y,11,11,null,0,palette.light,2);
+    } else if(palette.shape==='hunter') {
+      [-1,1].forEach(k=>line(c,[{x:p.x-6,y:p.y-6*k},{x:p.x+6,y:p.y+6*k}],palette.color,2));
+      if(!preview)oval(c,p.x,p.y,13,13,null,0,palette.light,1.8);
+    } else if(palette.shape==='unknown') {
+      shape(c,q=>{q.moveTo(p.x,p.y-10);q.lineTo(p.x+9,p.y+7);q.lineTo(p.x-9,p.y+7);q.closePath();},null,palette.color,1.8);
+    } else oval(c,p.x,p.y,preview?5:7,preview?5:7,null,0,palette.color,1.5);
+    c.restore();
+  }
+  function preview(c,s,hideLabels,labels) {
+    const result=s.precision&&s.toolPreview;if(!result)return;
+    toolRay(c,result,true);
+    if(!hideLabels&&result.label)worldBadge(labels,result.label,result.to.x,result.to.y,0,-29,toolPalette(result).color,13);
+  }
+  function edgeGuidance(c,s,v) {
+    const guidance=s.guidance;if(!guidance||!guidance.target)return;
+    const p=v.viewport,cam=v.camera,t=guidance.target,cx=p.x+p.w/2,cy=p.y+p.h/2;
+    const tx=cx+(t.x-cam.x)*cam.zoom,ty=cy+(t.y-cam.y)*cam.zoom;
+    if(tx>=p.x+12&&tx<=p.x+p.w-12&&ty>=p.y+12&&ty<=p.y+p.h-12)return;
+    const dx=tx-cx,dy=ty-cy;
+    const scale=Math.min((p.w/2-32)/Math.max(1,Math.abs(dx)),(p.h/2-32)/Math.max(1,Math.abs(dy)));
+    const x=cx+dx*scale,y=cy+dy*scale,angle=Math.atan2(dy,dx),color=guidance.waiting?'#9c7e49':'#6c9478';
+    c.save();
+    glow(c,x,y,37,'rgba(241,229,174,.50)');
+    oval(c,x,y,20,20,'rgba(250,246,226,.93)',0,'rgba(126,150,112,.45)',1);
+    c.translate(x,y);c.rotate(angle);
+    shape(c,q=>{q.moveTo(8,0);q.lineTo(-5,-6);q.lineTo(-2,0);q.lineTo(-5,6);q.closePath();},color);
+    c.restore();
+    const text=t.label||guidance.label||'下一连接端',size=14;
+    c.font='600 '+size+'px '+FONT;
+    const half=Math.max(19,c.measureText(text).width/2+11);
+    let bx=x-Math.cos(angle)*(half+30),by=y-Math.sin(angle)*34;
+    bx=clamp(bx,p.x+half+8,p.x+p.w-half-8);by=clamp(by,p.y+24,p.y+p.h-24);
+    badge(c,text,bx,by,color,size);
   }
   function worldEffects(c,s,time) {
-    if(s.shot&&s.shot.age<.2){c.save();c.globalAlpha=1-s.shot.age/.2;line(c,[s.shot.from,s.shot.to],s.shot.kind==='blocked'?'#c9ac79':'#f0cd7a',5);line(c,[s.shot.from,s.shot.to],'#fff2bd',1.7);c.restore();}
+    if(s.shot&&s.shot.age<.2){c.save();c.globalAlpha=1-s.shot.age/.2;toolRay(c,s.shot,false);c.restore();}
     if(s.stage==='burst')for(let i=0;i<35;i++){const x=800+Math.sin(i*2.7)*90,y=1000-((i*43+s.burst*520)%1050);line(c,[{x,y:y+40},{x:x+4,y:y-25}],'rgba(255,231,166,.77)',i%3?3:6);}
     if(s.stage==='recovery') {const t=s.recovery;if(t>.65){const r=(t-.65)*240;oval(c,900,700,r,r*.65,null,0,'rgba(255,221,139,'+Math.max(0,.6-t*.07)+')',5);glow(c,900,700,220+s.beat.pulse*70,'rgba(255,221,133,.20)');}}
     if(s.heartConnected)for(let i=0;i<22;i++){const x=180+(i*137)%1450,y=1080-((i*97+time*17)%980);oval(c,x,y,i%3?1.8:3,i%3?1.8:3,'rgba(231,180,78,.55)');}
@@ -694,21 +912,22 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     if(!s||!s.player)return;
     const size=s.worldSize||{width:s.room==='heart'?1800:1600,height:s.room==='heart'?1200:1000};
     const v=view||{viewport:{x:24,y:84,w:1232,h:552},camera:{x:size.width/2,y:size.height/2,zoom:.65}};
-    const p=v.viewport,cam=v.camera,hide=!!v.hideLabels;
+    const p=v.viewport,cam=v.camera,hide=!!v.hideLabels,labels=[];
     if(s.endingScene==='exterior'){exterior(c,s,v);return;}
     c.save();round(c,p.x,p.y,p.w,p.h,16);c.clip();
     c.translate(p.x+p.w/2,p.y+p.h/2);c.scale(cam.zoom,cam.zoom);c.translate(-cam.x,-cam.y);
     drawBackground(c,s,time);links(c,s);
-    (s.portals||[]).forEach(a=>portal(c,a,s,hide));(s.nodes||[]).forEach(a=>node(c,a,s,hide));
-    (s.valves||[]).forEach(a=>valve(c,a,s,hide));clot(c,s,hide);
-    (s.obstacles||[]).filter(a=>a.kind==='dashBarrier').forEach(a=>barrier(c,a,s,hide));
-    if(s.room==='heart'&&(s.dashUnlocked||s.stage==='ending'))growth(c,s.growth,s,hide);
-    (s.enemies||[]).forEach(a=>hunter(c,a,s,hide));player(c,s,time);worldEffects(c,s,time);
+    (s.portals||[]).forEach(a=>portal(c,a,s,hide,labels));(s.nodes||[]).forEach(a=>node(c,a,s,hide,labels));
+    (s.valves||[]).forEach(a=>valve(c,a,s,hide,labels));clot(c,s,hide,labels);
+    (s.obstacles||[]).filter(a=>a.kind==='dashBarrier').forEach(a=>barrier(c,a,s,hide,labels));
+    if(s.room==='heart'&&(s.dashUnlocked||s.stage==='ending'))growth(c,s.growth,s,hide,labels);
+    (s.enemies||[]).forEach(a=>hunter(c,a,s,hide,labels));preview(c,s,hide,labels);player(c,s,time);worldEffects(c,s,time);
     // Soft perimeter foreground establishes depth without hiding interactive objects.
     c.save();c.globalAlpha=.65;
     [0,1].forEach(side=>{for(let i=0;i<9;i++)leaf(c,side?size.width+10:-10,100+i*130,100+i%3*35,side?-.6:.6,'#7b997a');});c.restore();
     c.restore();
     c.save();round(c,p.x,p.y,p.w,p.h,16);c.strokeStyle='#b7c9ad';c.lineWidth=1;c.stroke();
+    if(!hide) {drawWorldLabels(c,labels,v);edgeGuidance(c,s,v);}
     if(s.damageFlash>0){round(c,p.x,p.y,p.w,p.h,16);c.fillStyle='rgba(173,77,62,'+Math.min(.18,s.damageFlash*.3)+')';c.fill();}
     if(!hide&&s.stage==='burst')badge(c,'主血流重新奔涌',p.x+p.w/2,p.y+40,'#8f713e',20);
     if(!hide&&s.stage==='recovery'&&s.recovery>.65)badge(c,'一颗心，重新有了光',p.x+p.w/2,p.y+40,INK,20);
@@ -783,9 +1002,9 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       bounds: { x: 80, y: 80, w: 1640, h: 1040, left: 80, right: 1720, top: 80, bottom: 1120 },
       nodes: [
         { id: 'heart-signal', x: 900, y: 700, label: '心脏信号', kind: 'diagnostic', symptom: '局部搏动存在 · 传导信号中断' },
-        { id: 'C1', x: 400, y: 920, label: '传导 · A', kind: 'conduction' },
-        { id: 'C2', x: 1370, y: 760, label: '传导 · B', kind: 'conduction' },
-        { id: 'C3', x: 650, y: 500, label: '传导 · C', kind: 'conduction' }
+        { id: 'C1', x: 600, y: 900, label: '传导 · A', kind: 'conduction' },
+        { id: 'C2', x: 1180, y: 730, label: '传导 · B', kind: 'conduction' },
+        { id: 'C3', x: 780, y: 500, label: '传导 · C', kind: 'conduction' }
       ],
       obstacles: [
         { id: 'heart-island', x: 800, y: 810, w: 160, h: 90, kind: 'tissue' },
@@ -806,24 +1025,38 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
   window.GiantCureGames = window.GiantCureGames || {};
   window.GiantCureGames.heartJourney = function createHeartJourney(api) {
     const state = {
-      room: 'entry', stage: 'diagnosis', player: { x: 800, y: 830, radius: RADIUS }, aim: { x: 1120, y: 640 }, keys: new Set(), firing: false, precision: false,
+      room: 'entry', stage: 'diagnosis', player: { x: 800, y: 830, radius: RADIUS }, aim: { x: 1120, y: 640 }, aimDirection: { x: 0, y: -1 }, keys: new Set(), firing: false, precision: false,
       scanner: false, scanned: {}, scanProgress: {}, bypassA: false, bypassB: false, connection: [], conduction: [], heartConnected: false, flowRestored: false,
       weakpoints: WEAKPOINTS.map(p => ({ ...p, scanned: false, scanProgress: 0, progress: 0, complete: false })),
       growth: { ...GROWTH, scanned: false, scanProgress: 0, progress: 0, suppressed: false, regrowing: false },
       integrity: 100, ammo: MAGAZINE, reloadRemaining: 0, shotCooldown: 0, enemies: [], enemySerial: 0, combatWave: 0, waveDelay: 0, combatComplete: false,
       elapsed: 0, heartbeatClock: 0, checkpoint: 'entry', retries: 0, dashUnlocked: false, dashRemaining: 0, dashCooldown: 0, dashDirection: { x: 0, y: -1 },
       crossedBarrier: false, burst: 0, recovery: 0, ending: 0, invulnerable: 0, revealRemaining: 0, heartRevealed: false, firstStrongBeat: false, valveSide: 'below',
-      damageFlash: 0, notice: '', noticeTime: 0, warningCooldown: 0, shot: null, failed: false, finished: false, lastProgress: -1, hudTimer: 0
+      damageFlash: 0, notice: '', noticeTime: 0, warningCooldown: 0, shot: null, treatmentLease: 0, treatmentTargetId: null, failed: false, finished: false, lastProgress: -1, hudTimer: 0
     };
     let playedHeartbeatThisUpdate = false;
     function call(name, ...args) { if (typeof api[name] === 'function') api[name](...args); }
     function feedback(text, kind = 'info') { state.notice = text; state.noticeTime = 3.6; call('feedback', text, kind); }
     function task() {
       if (state.stage === 'diagnosis' && state.room === 'main') return '主流被堵塞 · 扫描血栓，确认高压的来源';
-      if (state.stage === 'conduction' && state.scanned['heart-signal']) return '传导中断 · 依次接通 A → B → C，让整座心腔重新搏动';
-      if (state.stage === 'escape' && state.crossedBarrier) return state.growth.scanned ? '异常组织短暂暴露 · 开启扫描并持续照射，观察它的反应' : '出口组织仍有异常 · 扫描这处不协调的生长';
+      const guide = guidance(); if (guide) return guide.text;
+      if (state.stage === 'recovery' && state.firstStrongBeat) return '有力的心跳正在传播 · 灯窗与植物依次苏醒';
+      if (state.stage === 'escape' && state.crossedBarrier) return state.growth.scanned ? '异常组织已经识别 · 持续照射，观察它的反应（扫描记录已保留）' : '出口组织仍有异常 · 扫描这处不协调的生长';
       if (state.stage === 'clot' && state.weakpoints.every(p => p.complete)) return '血栓已软化 · 回到主流阀，释放安全的血流';
       return TASKS[state.stage];
+    }
+    function guidance() {
+      let sequence, current, label, kind;
+      if (state.room === 'main' && state.stage === 'bypass' && state.connection.length) {
+        const first = state.connection[0].startsWith('A'); sequence = first ? ['A1', 'A2'] : ['B1', 'B2']; current = state.connection; label = first ? '侧支一' : '侧支二'; kind = 'bypass';
+      } else if (state.room === 'heart' && state.stage === 'conduction' && state.scanned['heart-signal']) {
+        sequence = ['C1', 'C2', 'C3']; current = state.conduction; label = '心脏传导'; kind = 'conduction';
+      } else return null;
+      if (current.length >= sequence.length) return null;
+      const nodes = GEOMETRY[state.room].nodes, target = nodes.find(n => n.id === sequence[current.length]), source = current.length ? nodes.find(n => n.id === current[current.length - 1]) : null;
+      if (!target) return null;
+      const letter = id => id === 'C1' || id === 'A1' || id === 'B1' ? 'A' : id === 'C3' ? 'C' : 'B', waiting = target.id === 'B2' && !beat().safe;
+      return { kind, label, text: label + '：' + (source ? letter(source.id) + ' 已连接 → 寻找 ' : '已定位 → 连接 ') + letter(target.id) + (waiting ? ' · 等待瓣膜舒张' : ''), source: source ? { id: source.id, x: source.x, y: source.y, label: source.label } : null, target: { id: target.id, x: target.x, y: target.y, label: target.label }, waiting };
     }
     function setStage(stage) { state.stage = stage; call('setTask', task()); publish(true); }
     function inputLocked() { return state.revealRemaining > 0 || ['burst', 'recovery', 'ending'].includes(state.stage); }
@@ -844,7 +1077,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       }
       if (state.player.y < barrier.y - RADIUS) state.crossedBarrier = true;
     }
-    function clearInput() { state.keys.clear(); state.firing = false; state.precision = false; if (state.dashRemaining > 0) resolveDashOverlap(); state.dashRemaining = 0; }
+    function clearInput() { state.keys.clear(); state.firing = false; state.precision = false; state.treatmentLease = 0; state.treatmentTargetId = null; if (state.dashRemaining > 0) resolveDashOverlap(); state.dashRemaining = 0; }
     function obstacles(room = state.room, forEnemy = false) {
       const items = GEOMETRY[room].obstacles.filter(o => !(o.kind === 'clot' && state.flowRestored) && !(o.kind === 'dashBarrier' && state.dashRemaining > 0 && !forEnemy));
       if (room === 'entry' && !beat().safe) items.push(VALVE);
@@ -918,7 +1151,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       return GEOMETRY[state.room].nodes.map(node => {
         const isA = node.id === 'A1' || node.id === 'A2', isB = node.id === 'B1' || node.id === 'B2';
         const complete = isA ? state.bypassA : isB ? state.bypassB : node.kind === 'conduction' ? state.heartConnected : node.id === 'release' ? state.flowRestored : !!state.scanned[node.id], selected = state.connection.includes(node.id) || state.conduction.includes(node.id);
-        return { ...node, scanned: !!state.scanned[node.id], complete, active: !complete, selected, progress: complete || selected ? 1 : state.scanProgress[node.id] || 0 };
+        return { ...node, symptom: node.kind === 'diagnostic' && state.scanned[node.id] ? diagnosticText(node.id) : node.symptom, scanned: !!state.scanned[node.id], complete, active: !complete, selected, progress: complete || selected ? 1 : state.scanProgress[node.id] || 0 };
       });
     }
     function nearbyInteraction() {
@@ -944,7 +1177,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     function beginCombat() { state.checkpoint = 'bypass'; state.connection = []; state.combatWave = 1; state.waveDelay = 0; spawnHunters([{ x: 1120, y: 450 }]); setStage('combat'); feedback('两条侧支开始分担压力 · 一只异常细胞被血流惊醒', 'good'); }
     function interactNode(node) {
       if (node.kind === 'diagnostic') { feedback(state.scanned[node.id] ? diagnosticText(node.id) : 'Q 开启扫描，在附近停留以读取组织状态'); return; }
-      if (node.kind === 'growth') { feedback(state.growth.scanned ? '这处组织可以暂时压制 · 保持 Q 扫描并持续照射' : '这处生长与周围组织不同 · 用 Q 扫描它'); return; }
+      if (node.kind === 'growth') { feedback(state.growth.scanned ? '扫描记录已保留 · 持续照射可以暂时压制这处组织' : '这处生长与周围组织不同 · 用 Q 扫描它'); return; }
       if (node.kind === 'connection' || node.kind === 'timedConnection') {
         if (state.stage !== 'bypass') { feedback(state.bypassA && state.bypassB ? '侧支已恢复 · 压力保持安全' : '扫描主血栓后才能读取侧支连接状态'); return; }
         const first = node.id.startsWith('A'); if (first ? state.bypassA : state.bypassB) { feedback('这条侧支已恢复流动', 'good'); return; }
@@ -968,9 +1201,17 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     }
     function diagnosticText(id) {
       if (id === 'flow') return '正常支路：流量稳定、压力正常 · 这里的血液仍能顺畅循环';
-      if (id === 'pressure') return '异常通路：低流量、上游高压 · 阻力来自瓣膜后的主血管';
-      if (id === 'clot') return '纤维性血栓：上游鼓胀、下游缺血 · 先分流降压，再软化结构';
-      if (id === 'heart-signal') return '心腔：局部搏动存在，但传导中断 · 接通 A → B → C 可恢复同步';
+      if (id === 'pressure') return state.flowRestored ? '通路已恢复：流量稳定、压力安全 · 血液重新抵达下游' : state.bypassA && state.bypassB ? '分流已恢复：压力安全 · 主血管等待软化和冲流' : state.bypassA || state.bypassB ? '分流开始起效：压力下降 · 仍有一条侧支等待恢复' : '异常通路：低流量、上游高压 · 阻力来自瓣膜后的主血管';
+      if (id === 'clot') return state.flowRestored ? '主血管：血栓已移除 · 下游灌流恢复' : state.bypassA && state.bypassB ? '血栓：分流压力安全 · ' + state.weakpoints.filter(p => p.complete).length + '/3 处结构已软化' : '纤维性血栓：上游鼓胀、下游缺血 · 先分流降压，再软化结构';
+      if (id === 'heart-signal') {
+        if (state.ending >= 3.8 || state.finished) return '心脏：同步搏动稳定 · 巨人胸口重新起伏，肺部仍需巡诊';
+        if (state.growth.regrowing) return '心脏：同步搏动稳定 · 异常组织再次生长，信号延伸至肺部';
+        if (state.growth.suppressed) return '心脏：同步搏动稳定 · 出口异常组织已暂时压制';
+        if (state.dashUnlocked) return '心脏：传导完整、同步搏动稳定 · 循环冲刺已恢复';
+        if (state.heartConnected) return '心脏：传导已接通 · ' + (state.firstStrongBeat ? '有力心跳正唤醒灯火与植物' : '等待第一声有力的心跳');
+        if (state.conduction.length) return '心脏：传导连接中 · ' + state.conduction.length + '/3 节点已接通';
+        return '心腔：局部搏动存在，但传导中断 · 接通 A → B → C 可恢复同步';
+      }
       return '连接：' + (state.scanned[id] ? '组织状态可读取' : '等待扫描');
     }
     function scanTarget(target, dt, onComplete) { if (distance(target, state.player) > SCAN_RANGE || target.scanned) return; target.scanProgress = Math.min(1, (target.scanProgress || 0) + dt / SCAN_TIME); if (target.scanProgress >= 1) { target.scanned = true; if (onComplete) onComplete(); } }
@@ -987,38 +1228,77 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     function startReload() { if (state.reloadRemaining > 0 || state.ammo === MAGAZINE || state.failed || state.finished || inputLocked()) return; state.reloadRemaining = RELOAD_TIME; feedback('正在装填医疗介质 · 1.7 秒'); publish(true); }
     function warning(text) { if (state.warningCooldown <= 0) { state.warningCooldown = 2; feedback(text); } }
     function enemyWeakpoint(enemy) { const angle = Math.atan2(state.player.y - enemy.y, state.player.x - enemy.x); return { x: enemy.x + Math.cos(angle) * 16, y: enemy.y + Math.sin(angle) * 16, radius: 11 }; }
-    function recordShot(target, kind, ignoredId = '') { const hit = wallHit(state.player, target, 0, ignoredId); state.shot = { from: { x: state.player.x, y: state.player.y }, to: hit ? { x: hit.x, y: hit.y } : { x: target.x, y: target.y }, age: 0, kind, blocked: !!hit }; return !hit; }
-    function consumeTreatment(dt, target, duration) { target.progress = clamp(target.progress + dt / duration, 0, 1); if (state.shotCooldown <= 0) { state.ammo--; state.shotCooldown = 0.2; call('sound', 'hit'); } }
+    function circleHit(from, to, center, radius) {
+      const dx = to.x - from.x, dy = to.y - from.y, ox = from.x - center.x, oy = from.y - center.y, a = dx * dx + dy * dy, c = ox * ox + oy * oy - radius * radius;
+      if (c <= 0) return 0;
+      const b = ox * dx + oy * dy, discriminant = b * b - a * c;
+      if (a < 1e-12 || discriminant < 0) return null;
+      const t = (-b - Math.sqrt(discriminant)) / a; return t >= 0 && t <= 1 ? t : null;
+    }
+    // A single, read-only query drives both precision preview and the actual tool.
+    // Only a diagnosed, available treatment endpoint can admit a ray into its own clot.
+    function resolveToolRay() {
+      const from = { x: state.player.x, y: state.player.y }, dx = state.aim.x - from.x, dy = state.aim.y - from.y, length = Math.hypot(dx, dy), direction = length > 1e-8 ? { x: dx / length, y: dy / length } : state.aimDirection;
+      const far = { x: from.x + direction.x * TOOL_RANGE, y: from.y + direction.y * TOOL_RANGE }, candidates = [];
+      const structures = state.room === 'main' && !state.flowRestored ? state.weakpoints.filter(p => !p.complete).map(p => ({ p, t: circleHit(from, far, p, 25) })).filter(p => p.t !== null).sort((a, b) => a.t - b.t) : [];
+      const treatment = structures.length && structures[0].p.scanned && state.stage === 'clot' ? structures[0] : null;
+      const wall = wallHit(from, far, 0, treatment ? 'clot' : '');
+      if (wall) candidates.push({ t: wall.t, priority: 0, hitType: wall.rect.kind === 'clot' ? 'clot' : 'wall', targetId: wall.rect.id, weakpoint: false, blocked: true, label: wall.rect.kind === 'clot' ? state.stage !== 'clot' ? '血栓坚硬 · 先分流降压并处理干扰' : structures.some(item => !item.p.scanned) ? '结构尚未诊断 · Q 扫描后再治疗' : '血栓实体 · 瞄准已识别的纤维结构' : '实体组织阻挡射线' });
+      // The world boundary is solid tissue as well, rather than an invisible range extension.
+      const b = bounds();
+      for (const [delta, origin, edge] of [[far.x - from.x, from.x, b.left], [far.x - from.x, from.x, b.right], [far.y - from.y, from.y, b.top], [far.y - from.y, from.y, b.bottom]]) {
+        if (Math.abs(delta) < 1e-8) continue; const t = (edge - origin) / delta;
+        if (t >= 0 && t <= 1) candidates.push({ t, priority: 0, hitType: 'wall', targetId: 'boundary', weakpoint: false, blocked: true, label: '外围组织阻挡射线' });
+      }
+      if (treatment) candidates.push({ t: treatment.t, priority: 2, hitType: 'treatment', targetId: treatment.p.id, weakpoint: false, blocked: false, label: treatment.p.label + ' · 持续照射软化' });
+      if (state.room === 'heart' && state.stage === 'escape' && state.crossedBarrier) {
+        const t = circleHit(from, far, GROWTH, GROWTH.radius);
+        if (t !== null) candidates.push({ t, priority: 2, hitType: state.growth.scanned ? 'treatment' : 'undiagnosed', targetId: GROWTH.id, weakpoint: false, blocked: false, label: state.growth.scanned ? '异常组织 · 持续照射暂时压制' : '异常组织尚未诊断 · 先用 Q 扫描' });
+      }
+      if (state.room === 'main') state.enemies.filter(e => e.hp > 0).forEach(enemy => {
+        const bodyT = circleHit(from, far, enemy, 22), weakT = state.scanner ? circleHit(from, far, enemyWeakpoint(enemy), 11) : null;
+        // Identify the first body before considering that Hunter's exposed weakpoint.
+        // A protruding weakpoint on an overlapping rear Hunter cannot steal the hit.
+        if (bodyT === null) return;
+        const weak = weakT !== null && (!wall || weakT < wall.t - 1e-8);
+        candidates.push({ t: bodyT, endpointT: weak ? weakT : bodyT, priority: 1, hitType: 'hunter', targetId: enemy.id, weakpoint: weak, blocked: false, label: weak ? 'Hunter 显露弱点 · 3 点伤害' : 'Hunter 身体 · 1 点伤害' });
+      });
+      candidates.sort((a, b) => Math.abs(a.t - b.t) <= 1e-8 ? a.priority - b.priority : a.t - b.t);
+      const hit = candidates[0], t = hit ? hit.endpointT === undefined ? hit.t : hit.endpointT : 1;
+      return { from, to: { x: from.x + (far.x - from.x) * t, y: from.y + (far.y - from.y) * t }, kind: hit && hit.hitType === 'treatment' ? 'treatment' : hit && ['clot', 'undiagnosed'].includes(hit.hitType) ? 'warning' : 'shot', hitType: hit ? hit.hitType : 'none', targetId: hit ? hit.targetId : null, weakpoint: hit ? hit.weakpoint : false, blocked: hit ? hit.blocked : false, label: hit ? hit.label : '射程内无目标', range: TOOL_RANGE };
+    }
     function spawnHunters(points, append = false) { const list = points.map((p, i) => ({ ...p, id: ++state.enemySerial, hp: 6, state: 'approach', timer: 1.2 + i * 0.9, target: null, hasHit: false, hitFlash: 0, telegraph: 0 })); state.enemies = append ? [...state.enemies.filter(e => e.hp > 0), ...list] : list; }
     function beginEnding() { state.growth.progress = 1; state.growth.suppressed = true; state.ending = 0.001; clearInput(); setStage('ending'); feedback('异常组织已暂时压制 · 但它的生长信号没有消失…'); call('effect', GROWTH.x, GROWTH.y, '#badbc4', 18); }
-    function useTool(dt) {
+    function useTool(dt, timing) {
       if (!state.firing || state.reloadRemaining > 0 || state.failed || state.finished || inputLocked()) return;
-      if (state.ammo <= 0) { warning('医疗介质已用尽 · 按 R 装填，无限备弹'); return; }
-      if (distance(state.player, state.aim) > TOOL_RANGE + 25) { warning('目标超出工具射程 · 请靠近一些'); return; }
-      const aimedEnemy = state.room === 'main' ? state.enemies.filter(e => e.hp > 0).sort((a, b) => distance(a, state.aim) - distance(b, state.aim)).find(e => distance(e, state.aim) <= 31 && distance(e, state.player) <= TOOL_RANGE) : null;
-      if (state.room === 'heart' && state.stage === 'escape' && state.crossedBarrier && distance(state.aim, GROWTH) <= 40) {
-        if (!state.growth.scanned || !state.scanner) { warning('先开启 Q 扫描，读取异常组织，再持续照射'); return; }
-        if (distance(state.player, GROWTH) > TOOL_RANGE || !recordShot(GROWTH, 'treatment')) return;
-        consumeTreatment(dt, state.growth, 1.5); if (state.growth.progress >= 1) beginEnding(); return;
+      // Integrate the dose over the part of this frame before and after a shot.
+      // Carry the 200 ms boundary through frames instead of rounding every shot up
+      // to the next frame; a final, partial lease must contribute its actual time.
+      const inactive = Math.min(dt, timing.reloadRemaining), active = dt - inactive;
+      if (active <= 1e-10) return;
+      const cooldown = Math.max(0, timing.cooldown - inactive), lease = Math.max(0, timing.lease - inactive), ray = resolveToolRay(), oldTreatment = ray.hitType === 'treatment' && timing.targetId === ray.targetId;
+      let treatmentTime = oldTreatment ? Math.min(active, lease) : 0;
+      if (state.ammo > 0 && cooldown <= active + 1e-8) {
+        const beforeShot = Math.min(active, cooldown), afterShot = active - beforeShot;
+        treatmentTime = (oldTreatment ? Math.min(beforeShot, lease) : 0) + (ray.hitType === 'treatment' ? afterShot : 0);
+        state.shotCooldown = 0.2 - afterShot; state.ammo--; state.shot = { ...ray, age: afterShot }; state.treatmentTargetId = ray.hitType === 'treatment' ? ray.targetId : null; state.treatmentLease = ray.hitType === 'treatment' ? 0.2 - afterShot : 0; call('sound', 'shot');
+        if (ray.hitType === 'hunter') {
+          const enemy = state.enemies.find(e => e.id === ray.targetId);
+          enemy.hp = Math.max(0, enemy.hp - (ray.weakpoint ? 3 : 1)); enemy.hitFlash = 0.18; call('sound', ray.weakpoint ? 'hitWeak' : 'hit'); call('effect', ray.to.x, ray.to.y, ray.weakpoint ? '#fae3a7' : '#dbc5d7', ray.weakpoint ? 12 : 5);
+          if (enemy.hp === 0) { feedback('异常细胞已净化' + (ray.weakpoint ? ' · 弱点命中' : ''), 'good'); call('effect', enemy.x, enemy.y, '#b5dbb6', 18); }
+        } else if (ray.hitType === 'treatment') { call('sound', 'treatment'); call('effect', ray.to.x, ray.to.y, '#c3e4c1', 3); }
+        else if (ray.blocked) { call('sound', 'wall'); call('effect', ray.to.x, ray.to.y, '#b8aa99', 3); }
+        if (ray.hitType === 'undiagnosed' || ray.hitType === 'clot') warning(ray.label);
       }
-      if (state.room === 'main' && !state.flowRestored) {
-        const weak = state.weakpoints.find(p => !p.complete && distance(p, state.aim) <= 25);
-        if (weak && state.stage === 'clot' && weak.scanned && state.scanner && distance(weak, state.player) <= TOOL_RANGE) {
-          // Medical rays enter their target clot, while other solid tissue still blocks them.
-          if (!recordShot(weak, 'treatment', 'clot')) { warning('组织遮住了治疗射线 · 调整照射位置'); return; }
-          consumeTreatment(dt, weak, 3.2);
-          if (weak.progress >= 1) { weak.complete = true; call('effect', weak.x, weak.y, '#f4df9c', 22); if (state.combatWave < 2) { state.combatWave = 2; spawnHunters([{ x: 490, y: 235 }, { x: 1170, y: 420 }], true); feedback('第一处纤维松解 · 两只异常细胞逼近，治疗进度会保留'); } else feedback(state.weakpoints.every(p => p.complete) ? '三处结构全部软化 · 可直接启动主流阀，血流会带走干扰者' : '一处纤维结构已经软化', 'good'); }
-          return;
-        }
-        if (!aimedEnemy && distance(state.aim, CLOT) <= CLOT.radius + 15) { warning(state.stage === 'clot' ? '开启 Q，分别扫描并照射尚未软化的结构' : '直接击碎会产生碎屑 · 先分流降压，再处理血栓'); recordShot(state.aim, 'warning'); return; }
-      }
-      if (state.shotCooldown > 0) return;
-      state.shotCooldown = 0.2; state.ammo--; call('sound', 'tap');
-      const enemy = aimedEnemy;
-      if (!recordShot(state.aim, 'shot') || !enemy || blockedSegment(state.player, enemy, 0)) return;
-      const weakHit = state.scanner && distance(enemyWeakpoint(enemy), state.aim) <= 11;
-      enemy.hp = Math.max(0, enemy.hp - (weakHit ? 3 : 1)); enemy.hitFlash = 0.18; call('effect', state.aim.x, state.aim.y, weakHit ? '#fae3a7' : '#dbc5d7', weakHit ? 12 : 5);
-      if (enemy.hp === 0) { feedback('异常细胞已净化' + (weakHit ? ' · 弱点命中' : ''), 'good'); call('effect', enemy.x, enemy.y, '#b5dbb6', 18); }
+      if (ray.hitType !== 'treatment' || treatmentTime <= 0) { if (state.ammo <= 0) warning('医疗介质已用尽 · 按 R 装填，无限备弹'); return; }
+      const weak = state.weakpoints.find(p => p.id === ray.targetId), target = weak || state.growth, duration = weak ? 3.2 : 1.5;
+      target.progress = clamp(target.progress + treatmentTime / duration, 0, 1);
+      if (target.progress < 1 - 1e-8) return;
+      target.progress = 1;
+      if (!weak) { beginEnding(); return; }
+      weak.complete = true; state.treatmentLease = 0; call('effect', weak.x, weak.y, '#f4df9c', 22);
+      if (state.combatWave < 2) { state.combatWave = 2; spawnHunters([{ x: 490, y: 235 }, { x: 1170, y: 420 }], true); feedback('第一处纤维松解 · 两只异常细胞逼近，治疗进度会保留'); }
+      else feedback(state.weakpoints.every(p => p.complete) ? '三处结构全部软化 · 可直接启动主流阀，血流会带走干扰者' : '一处纤维结构已经软化', 'good');
     }
     function hurt() {
       if (state.invulnerable > 0 || state.failed || state.finished) return;
@@ -1051,7 +1331,8 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     function advanceHeartbeat(dt) { const b = beat(), previous = Math.floor(state.heartbeatClock / b.period); state.heartbeatClock += dt; if (!b.silent && !playedHeartbeatThisUpdate && Math.floor(state.heartbeatClock / b.period) > previous) { playedHeartbeatThisUpdate = true; call('sound', 'heartbeat'); } }
     function step(dt) {
       state.elapsed += dt; advanceHeartbeat(dt); updateValve(); state.hudTimer -= dt;
-      for (const key of ['shotCooldown', 'dashCooldown', 'invulnerable', 'damageFlash', 'noticeTime', 'warningCooldown']) state[key] = Math.max(0, state[key] - dt);
+      const toolTiming = { cooldown: state.shotCooldown, lease: state.treatmentLease, targetId: state.treatmentTargetId, reloadRemaining: state.reloadRemaining };
+      for (const key of ['shotCooldown', 'treatmentLease', 'dashCooldown', 'invulnerable', 'damageFlash', 'noticeTime', 'warningCooldown']) state[key] = Math.max(0, state[key] - dt);
       if (state.shot) { state.shot.age += dt; if (state.shot.age > 0.16) state.shot = null; }
       if (state.reloadRemaining > 0) { state.reloadRemaining = Math.max(0, state.reloadRemaining - dt); if (state.reloadRemaining === 0) { state.ammo = MAGAZINE; feedback('装填完成 · 医疗介质 24/24', 'good'); } }
       if (state.revealRemaining > 0) state.revealRemaining = Math.max(0, state.revealRemaining - dt);
@@ -1065,7 +1346,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
         if (state.ending >= 1.8 && previous < 1.8) { state.growth.regrowing = true; feedback('刚被压制的异常组织再次生长 · 信号延伸到肺叶深处'); }
         if (state.ending >= 3.8 && previous < 3.8) feedback('巨人的胸口重新起伏 · 肺部的求救信号仍然微弱');
         if (state.ending >= ENDING_TIME) { state.finished = true; clearInput(); setStage('complete'); call('success'); }
-      } else { updateMovement(dt); updateScanner(dt); useTool(dt); updateEnemies(dt); }
+      } else { updateMovement(dt); updateScanner(dt); useTool(dt, toolTiming); updateEnemies(dt); }
       const wasDashing = state.dashRemaining > 0; state.dashRemaining = Math.max(0, state.dashRemaining - dt); if (wasDashing && state.dashRemaining === 0) resolveDashOverlap(); publish(false);
     }
     function update(dt) { if (!Number.isFinite(dt) || dt <= 0 || state.failed || state.finished) return; playedHeartbeatThisUpdate = false; let remaining = dt; while (remaining > 1e-8 && !state.failed && !state.finished) { const slice = Math.min(remaining, 1 / 60); step(slice); remaining -= slice; } }
@@ -1077,7 +1358,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     }
     function keyDown(code, repeat = false) { if (state.failed || state.finished || inputLocked()) return; state.keys.add(code); if (repeat) return; if (code === 'KeyQ') { state.scanner = !state.scanner; feedback(state.scanner ? '扫描已开启 · 靠近组织读取症状，敌人弱点将显现' : '扫描已关闭'); publish(true); } else if (code === 'KeyE') interact(); else if (code === 'KeyR') startReload(); else if (code === 'Space') dash(); }
     function keyUp(code) { state.keys.delete(code); }
-    function pointerMove(point) { if (point && Number.isFinite(point.x) && Number.isFinite(point.y)) state.aim = { x: point.x, y: point.y }; }
+    function pointerMove(point) { if (point && Number.isFinite(point.x) && Number.isFinite(point.y)) { state.aim = { x: point.x, y: point.y }; const dx = point.x - state.player.x, dy = point.y - state.player.y, length = Math.hypot(dx, dy); if (length > 1e-8) state.aimDirection = { x: dx / length, y: dy / length }; } }
     function pointerDown(point) { if (state.failed || state.finished || inputLocked() || !point) return; pointerMove(point); if (point.button === 2) state.precision = true; else state.firing = true; }
     function pointerUp(point) { pointerMove(point); if (point && point.button === 2) state.precision = false; else state.firing = false; }
     function retryFromCheckpoint() {
@@ -1098,7 +1379,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     function cameraCue() {
       if (state.revealRemaining > 0) return { kind: 'reveal', target: { x: 900, y: 640 }, progress: 1 - state.revealRemaining / REVEAL_TIME };
       if (state.stage === 'burst') return { kind: 'burst', target: { ...CLOT }, progress: Math.min(1, state.burst / BURST_TIME) };
-      if (state.stage === 'recovery') return { kind: 'recovery', target: { x: 900, y: 640 }, progress: Math.min(1, state.recovery / RECOVERY_TIME) };
+      if (state.stage === 'recovery') return { kind: 'recovery', target: { x: 850, y: 690 }, progress: Math.min(1, state.recovery / RECOVERY_TIME) };
       if (state.stage === 'ending') return { kind: 'ending', target: { ...GROWTH }, progress: Math.min(1, state.ending / ENDING_TIME) };
       return { kind: 'follow', target: { x: state.player.x, y: state.player.y }, progress: 0 };
     }
@@ -1107,13 +1388,19 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       if (state.scanner) {
         if (state.room === 'entry') GEOMETRY.entry.nodes.filter(n => distance(n, state.player) <= SCAN_RANGE).forEach(n => info.push(state.scanned[n.id] ? diagnosticText(n.id) : n.label + '读取中…'));
         else if (state.room === 'main') { info.push('流量：' + (state.flowRestored ? '畅通' : state.bypassA || state.bypassB ? '部分恢复' : '低流量')); info.push('压力：' + (state.bypassA && state.bypassB ? '安全' : state.bypassA || state.bypassB ? '下降中' : '过高')); if (state.scanned.clot) info.push('结构：' + state.weakpoints.filter(p => p.complete).length + '/3 处已软化'); }
-        else info.push(state.crossedBarrier ? state.growth.scanned ? '异常组织：生长紊乱 · 可暂时压制' : '异常组织：等待近距离扫描' : state.scanned['heart-signal'] ? diagnosticText('heart-signal') : '心跳：局部搏动存在 · 信号尚未诊断');
+        else {
+          info.push(state.scanned['heart-signal'] ? diagnosticText('heart-signal') : '心跳：局部搏动存在 · 信号尚未诊断');
+          if (state.crossedBarrier) info.push(state.growth.regrowing ? '异常组织：再次生长 · 肺部出现相同信号' : state.growth.suppressed ? '异常组织：已暂时压制 · 仍有残留信号' : state.growth.scanned ? '异常组织：生长紊乱 · 扫描记录已保留，可持续照射' : '异常组织：等待近距离扫描');
+        }
+      } else {
+        if (state.room === 'heart' && state.scanned['heart-signal']) info.push(diagnosticText('heart-signal'));
+        if (state.room === 'heart' && state.crossedBarrier && state.growth.scanned && state.stage === 'escape') info.push('异常组织已识别 · 可直接照射暂时压制');
       }
       const walls = GEOMETRY[state.room].obstacles.filter(o => o.kind !== 'clot' || !state.flowRestored).map(o => ({ ...o, blocking: o.kind !== 'dashBarrier' || state.dashRemaining <= 0, dashPassable: o.kind === 'dashBarrier' && state.dashUnlocked }));
       if (state.room === 'entry') walls.push({ ...VALVE, blocking: !currentBeat.safe });
       return {
         type: 'heartJourney', area: { ...AREA }, bounds: { ...bounds() }, worldSize: { ...GEOMETRY[state.room].size }, room: state.room, roomLabel: ROOMS[state.room],
-        player: { ...state.player, dashing: state.dashRemaining > 0, invulnerable: state.invulnerable > 0 }, aim: { ...state.aim }, scanner: state.scanner, scanOn: state.scanner, precision: state.precision,
+        player: { ...state.player, dashing: state.dashRemaining > 0, invulnerable: state.invulnerable > 0 }, aim: { ...state.aim }, scanner: state.scanner, scanOn: state.scanner, precision: state.precision, toolPreview: resolveToolRay(), guidance: guidance(),
         beat: currentBeat, stage: state.stage, phase: state.stage, stageLabel: STAGES[state.stage], task: task(), integrity: state.integrity, health: state.integrity, ammo: state.ammo, reloadRemaining: state.reloadRemaining,
         nodes: nodeList(), portals: portalList(), obstacles: walls, valves: state.room === 'entry' ? [{ ...VALVE, open: currentBeat.safe, blocking: !currentBeat.safe, enteredFrom: state.valveSide }] : [],
         paths: GEOMETRY[state.room].paths.map(p => ({ ...copy(p), active: p.branch ? p.branch === 'A' ? state.bypassA : state.bypassB : true, flow: p.flow === undefined ? state.flowRestored ? 1 : p.kind === 'bypass' ? (p.branch === 'A' ? state.bypassA : state.bypassB) ? 0.7 : 0.05 : 0.14 : p.flow })),
@@ -1800,6 +2087,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
     for (const id of screens) $(id).hidden = id !== name;
     $('folio-page').textContent = { home: '001', cases: '002', treatment: '003', result: '004' }[name];
     $('app').classList.toggle('journey-mode', name === 'treatment');
+    if (name !== 'treatment') $('app').classList.remove('journey-exterior');
     document.body.classList.toggle('landscape-treatment', name === 'treatment');
     W = name === 'treatment' ? 1280 : 720; H = name === 'treatment' ? 720 : 1280;
     resize();
@@ -2098,7 +2386,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       diagnosis: '正常血流应当平稳。对比两条支路的流量与压力，沿着淤积的血河寻找上游异常；瓣膜在舒张时开放。',
       bypass: '血栓前方压力过高。先恢复两条侧支，让血流有去处，再处理血栓。第二条侧支需要留意心跳的舒张窗口。',
       combat: '观察 Hunter 扑击前的预警，躲开后瞄准发光弱点。先解除第一只 Hunter 的干扰，再开始治疗。',
-      clot: '血栓有三处结构。扫描发现后持续照射，松开照射可躲避敌人，软化进度会保留。全部软化后主血流便能带走它。',
+      clot: '血栓有三处结构。扫描发现后，关闭 Q 也能继续治疗。让射线对准结构，遇到组织或敌人遮挡时调整位置；躲避和装填都会保留软化进度。',
       burst: '两条侧支降低了上游压力，软化后的血栓正在被主血流带走。观察下游重新恢复流动。',
       conduction: '血流已恢复，但心跳信号仍然中断。扫描传导节点，接近后依次连接 A、B、C，重新建立搏动顺序。',
       recovery: '传导顺序已经接通。第一声强心跳将唤醒城市，并为医疗单位提供循环冲刺能力。',
@@ -2107,7 +2395,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       ending: '这片异常组织在被压制后重新生长。心脏已恢复，但巨人的其他部位仍需要你。'
     };
     const hint = chapter ? chapter.stage === 'escape' && chapter.crossedBarrier ? hints.growth : hints[chapter.stage] || (chapter.room === 'entry' ? hints.diagnosis : chapter.room === 'heart' ? hints.conduction : hints.bypass) : '进入诊断室，检查生命信号并定位异常，再前往巨人的身体开展巡诊。';
-    openDialog('带着好奇，进入心河', `<p class="dialog-tip">${hint}</p><div class="help-item"><strong>移动与观察</strong><p>WASD 移动，Shift 疾行，鼠标瞄准。Q 开关扫描：读取附近的流量、压力、组织和节点状态。扫描不耗能，世界仍在运转。</p></div><div class="help-item"><strong>治疗与连接</strong><p>接近节点后按 E 交互，依次选择节点建立连接。左键持续治疗或射击，右键精瞄。R 装填，备弹无限。</p></div><div class="help-item"><strong>安全与恢复</strong><p>避开扑击预警。设备耐久归零后，从最近安全节点重启。心脏恢复后，Space 使用循环冲刺。不限时，退出或刷新会清除本次检查点。</p></div><p>本章使用键盘与鼠标。声音默认关闭，可点击右上角音符开启。</p>`, [
+    openDialog('带着好奇，进入心河', `<p class="dialog-tip">${hint}</p><div class="help-item"><strong>移动与观察</strong><p>WASD 移动，Shift 疾行。组织地面和浅血流槽都可行走，高起组织墙会挡路。Q 读取附近症状，静态目标的诊断会保留；Hunter 弱点需要实时扫描。</p></div><div class="help-item"><strong>治疗与连接</strong><p>鼠标决定方向，左键沿射线治疗或射击，射程 225；前方实体会挡住射线。按住右键减速，提前查看第一命中点。R 装填，备弹无限。接近节点按 E，连接后跟随下一端提示。</p></div><div class="help-item"><strong>安全与恢复</strong><p>避开扑击预警。设备耐久归零后，从最近安全节点重启。心脏恢复后，Space 使用循环冲刺。不限时，退出或刷新会清除本次检查点。</p></div><p>本章使用键盘与鼠标。声音默认关闭，可点击右上角音符开启。</p>`, [
       { label: wasPlaying ? '继续巡诊 ↗' : '明白了 ↗', primary: true, action: wasPlaying ? resumeGame : closeModal }
     ], 'HEART JOURNEY / FIELD GUIDE');
   }
@@ -2238,12 +2526,19 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       if (!audioContext) { const Audio = window.AudioContext || window.webkitAudioContext; if (!Audio) return; audioContext = new Audio(); }
       if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
       const heartbeat = kind === 'heartbeat' || kind === 'heartbeatStrong';
-      const notes = heartbeat ? [110, 73.42] : kind === 'flow' ? [146.83, 220, 293.66, 440] : kind === 'win' ? [523.25, 659.25, 783.99, 1046.5] : kind === 'hit' ? [659.25, 880] : kind === 'miss' || kind === 'lose' ? [261.63, 220] : [440];
+      const profile = ({
+        shot: { notes: [349.23], duration: .07, volume: .018, spacing: 0, type: 'triangle' },
+        hit: { notes: [659.25], duration: .12, volume: .03, spacing: 0 },
+        hitWeak: { notes: [880, 1318.51], duration: .13, volume: .04, spacing: .055 },
+        treatment: { notes: [523.25, 659.25], duration: .09, volume: .018, spacing: .035 },
+        wall: { notes: [164.81], duration: .055, volume: .016, spacing: 0, type: 'triangle' }
+      })[kind];
+      const notes = profile?.notes || (heartbeat ? [110, 73.42] : kind === 'flow' ? [146.83, 220, 293.66, 440] : kind === 'win' ? [523.25, 659.25, 783.99, 1046.5] : kind === 'miss' || kind === 'lose' ? [261.63, 220] : [440]);
       notes.forEach((hz, i) => {
         const oscillator = audioContext.createOscillator(), gain = audioContext.createGain();
-        const time = audioContext.currentTime + i * (heartbeat ? .14 : .1), duration = heartbeat ? .24 : .65;
-        oscillator.type = 'sine'; oscillator.frequency.value = hz;
-        gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(kind === 'heartbeatStrong' ? .07 : heartbeat ? .035 : .045, time + .015); gain.gain.exponentialRampToValueAtTime(.001, time + duration);
+        const time = audioContext.currentTime + i * (profile?.spacing ?? (heartbeat ? .14 : .1)), duration = profile?.duration ?? (heartbeat ? .24 : .65);
+        oscillator.type = profile?.type || 'sine'; oscillator.frequency.value = hz;
+        gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(profile?.volume ?? (kind === 'heartbeatStrong' ? .07 : heartbeat ? .035 : .045), time + .015); gain.gain.exponentialRampToValueAtTime(.001, time + duration);
         oscillator.connect(gain); gain.connect(audioContext.destination); oscillator.start(time); oscillator.stop(time + duration + .05);
       });
     } catch { soundEnabled = false; $('sound').setAttribute('aria-pressed', 'false'); toast('此浏览器暂不支持声音，可继续游玩'); }
@@ -2276,6 +2571,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
   function updateCamera(dt, snap = false) {
     if (!state.game) return;
     const g = state.game.getDebugState(), roomChanged = state.cameraRoom !== g.room;
+    $('app').classList.toggle('journey-exterior', g.endingScene === 'exterior');
     const size = g.worldSize || { width: g.room === 'heart' ? 1800 : 1600, height: g.room === 'heart' ? 1200 : 1000 };
     const cue = g.cameraCue || { kind: 'follow' };
     const progress = Math.max(0, Math.min(1, cue.progress || 0));
@@ -2286,7 +2582,7 @@ body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .
       zoom = .74 + .36 * blend;
     } else if (cue.kind !== 'follow') {
       target = cue.target || g.player;
-      zoom = cue.kind === 'burst' ? .8 : cue.kind === 'recovery' ? .65 : .72;
+      zoom = cue.zoom ?? (cue.kind === 'burst' ? .8 : cue.kind === 'recovery' ? .82 : .72);
     }
     if (reducedMotion && cue.kind === 'reveal') { target = g.player; zoom = 1.1; }
     const clampCenter = (v, total, half) => total <= half * 2 ? total / 2 : Math.max(half, Math.min(total - half, v));
