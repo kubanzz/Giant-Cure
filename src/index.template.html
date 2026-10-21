@@ -34,7 +34,7 @@
               <g class="body-reference" aria-hidden="true"><path d="M312 18v448M160 177h304M188 286h248"/><circle cx="312" cy="177" r="132"/><path d="M192 40h-22v22m262-22h22v22M192 447h-22v-22m262 22h22v-22"/></g>
               <g class="giant-outline"><ellipse cx="312" cy="66" rx="31" ry="40"/><path d="M292 105v18l-26 9c-10 4-15 10-19 22l-28 85c-4 12-1 19 8 21 9 3 15-3 19-14l22-63 5 82-4 25 6 126c0 11 6 17 16 17 11 0 16-6 17-18l4-101 4 101c1 12 6 18 17 18 10 0 16-6 16-17l6-126-4-25 5-82 22 63c4 11 10 17 19 14 9-2 12-9 8-21l-28-85c-4-12-9-18-19-22l-26-9v-18"/><path class="body-detail" d="M286 143c15 8 37 8 52 0m-26 9v131m-34-20c23 11 45 11 68 0m-61-80c15-10 39-10 54 0m-27 12c-14 13-19 31-16 48m16-48c14 13 19 31 16 48"/><path class="body-flow" d="M312 157c-1 21 7 25 15 33s10 28 9 43m-24-63c-19 4-28 13-30 27m30 44v40m-11 31-8 72m30-72 8 72"/></g>
               <circle id="diagnosis-heart-anchor" cx="338" cy="177" r="1" fill="transparent" aria-hidden="true"/>
-              <g id="diagnosis-target" transform="translate(338 177)" aria-hidden="true"><circle r="22"/><circle r="6"/><path d="M-31 0h12m38 0h12M0-31v12m0 38v12"/><path class="target-leader" d="m23-23 32-25h60"/><text x="63" y="-58">心区</text></g>
+              <g id="diagnosis-target" class="diagnosis-target" transform="translate(338 177)" aria-hidden="true"><circle r="22"/><circle r="6"/><path d="M-31 0h12m38 0h12M0-31v12m0 38v12"/><path class="target-leader" d="m23-23 32-25h60"/><text x="63" y="-58">心区</text></g>
             </svg>
             <div id="diagnosis-scan-line" class="diagnosis-scan-line" aria-hidden="true"></div>
             <div id="diagnosis-wave" class="diagnosis-wave" aria-hidden="true"><span>ECG</span><svg viewBox="0 0 500 44" preserveAspectRatio="none"><path class="wave-baseline" d="M0 25h500"/><path class="wave-trace" d="M0 25h40l10-4 10 4h26l8-10 9 24 11-37 12 23h28l9-4 11 4h38l10-4 10 4h26l8-10 9 24 11-37 12 23h28l9-4 11 4h38l10-4 10 4h26l8-10 9 24 11-37 12 23h42"/></svg><span class="signal-dot"></span></div>
@@ -66,6 +66,13 @@
       <footer class="page-folio" aria-hidden="true"><span>生命自有回响</span><span>✧</span><span id="folio-page">001</span></footer>
     </div>
   </main>
+  <div id="entry-transition" class="entry-transition" hidden aria-busy="false">
+    <div id="entry-transition-ghost" class="entry-transition-ghost" aria-hidden="true"></div>
+    <div id="entry-transition-veil" class="entry-transition-veil" aria-hidden="true"></div>
+    <div id="entry-transition-focus" class="entry-transition-focus" aria-hidden="true"></div>
+    <p id="entry-transition-status" class="entry-transition-status" role="status" aria-live="polite"></p>
+    <button id="entry-transition-home" class="entry-transition-home" type="button">返回封面</button>
+  </div>
   <noscript>请启用浏览器 JavaScript 后打开《万物生：巨人的病历簿》。</noscript>
   <script>
   'use strict';

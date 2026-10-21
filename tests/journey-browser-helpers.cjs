@@ -14,6 +14,19 @@ async function ready(page) {
 }
 async function click(page, selector, ms = 32) { await page.locator(selector).click(); if (ms) await tick(page, ms); }
 const primary = page => click(page, '#dialog-actions .primary-button');
+async function waitForEntry(page, limit = 6000) {
+  for (let elapsed = 0; elapsed <= limit; elapsed += 16) {
+    const s = await snapshot(page);
+    if (s.phase === 'playing') {
+      assert.deepEqual(s.transition, { phase: 'idle', caseId: null });
+      assert.equal(await page.locator('#entry-transition').isHidden(), true);
+      assert(s.elapsed <= .05 && s.activeTime <= .05 && s.game.elapsed <= .05, 'entry presentation cannot advance treatment time');
+      return s;
+    }
+    assert.equal(s.phase, 'entering'); await tick(page, 16);
+  }
+  assert.fail('entry did not reach playing within ' + limit + ' ms');
+}
 async function setup(context, errors, requests, frameGap = 0) {
   const page = await context.newPage();
   page.on('pageerror', e => errors.push(e.stack || e.message));
@@ -38,8 +51,8 @@ async function start(page) {
   if ((await snapshot(page)).diagnosis.phase === 'scanning') await tick(page, 3000);
   diagnosis = (await snapshot(page)).diagnosis;
   assert.deepEqual(diagnosis, { phase: 'ready', caseId: 'heartJourney' });
-  await click(page, '#diagnosis-action'); await ready(page);
-  const s = await snapshot(page); assert.equal(s.id, 'heartJourney'); assert.equal(s.phase, 'playing');
+  await click(page, '#diagnosis-action');
+  const s = await waitForEntry(page); assert.equal(s.id, 'heartJourney'); assert.equal(s.phase, 'playing');
   assert.deepEqual(s.game.scanned, {}, 'room inspection does not write near-field chapter scan discoveries');
   assert.equal(s.game.stage, 'diagnosis'); assert.equal(s.game.checkpoint, 'entry');
   assert.equal(await page.locator('#modal').isHidden(), true, 'inspection confirmation enters directly without a preparation dialog');
@@ -146,4 +159,4 @@ async function inspectFit(page) {
   const fit = await page.evaluate(() => { const r = document.querySelector('#app').getBoundingClientRect(); return { x: r.x, y: r.y, right: r.right, bottom: r.bottom, w: innerWidth, h: innerHeight, scroll: document.documentElement.scrollWidth }; });
   assert(fit.x >= -.5 && fit.y >= -.5 && fit.right <= fit.w + .5 && fit.bottom <= fit.h + .5, 'game fits viewport'); assert(fit.scroll <= fit.w, 'no horizontal overflow');
 }
-module.exports = { snapshot, game, tick, ready, click, primary, setup, start, project, mouseScreen, mouseAt, moveTo, scan, node, portal, interact, discover, diagnose, connectBypasses, fightTutorial, soften, restoreFlow, enterHeart, connectHeart, capture, inspectFit };
+module.exports = { snapshot, game, tick, ready, click, primary, waitForEntry, setup, start, project, mouseScreen, mouseAt, moveTo, scan, node, portal, interact, discover, diagnose, connectBypasses, fightTutorial, soften, restoreFlow, enterHeart, connectHeart, capture, inspectFit };

@@ -72,7 +72,7 @@ async function exitAndSuppress(page) {
     await interact(page, await portal(page, 'to-main')); const hunter = (await game(page)).enemies.find(e => e.hp > 0); await moveTo(page, { x: hunter.x, y: hunter.y + 80 });
     for (let i = 0; i < 180 && (await snapshot(page)).phase === 'playing'; i++) await tick(page, 500);
     let s = await snapshot(page); assert.equal(s.result.won, false); await tick(page, 1200); s = await snapshot(page); assert.equal(s.screen, 'result'); const elapsed = s.elapsed;
-    await click(page, '#result-next'); s = await snapshot(page); assert.equal(s.phase, 'playing'); assert.equal(s.game.checkpoint, 'bypass'); assert(s.game.bypassA && s.game.bypassB); assert.equal(s.game.ammo, 24); assert.equal(s.game.health, 100); assert.equal(s.game.retries, 1); assert(s.elapsed >= elapsed && s.elapsed < elapsed + .1);
+    await click(page, '#result-next'); s = await snapshot(page); assert.equal(s.phase, 'playing'); assert.deepEqual(s.transition, { phase: 'idle', caseId: null }); assert.equal(await page.locator('#entry-transition').isHidden(), true); assert.equal(s.game.checkpoint, 'bypass'); assert(s.game.bypassA && s.game.bypassB); assert.equal(s.game.ammo, 24); assert.equal(s.game.health, 100); assert.equal(s.game.retries, 1); assert(s.elapsed >= elapsed && s.elapsed < elapsed + .1);
     const c = s.view.camera; assert(distance(c, s.game.player) < 700, 'retry repositions the camera to the checkpoint');
   });
   await mark('Hunter tutorial opens treatment; living interferers do not prevent flushing; burst pauses correctly', async () => {

@@ -33,6 +33,8 @@
     caseId: 'heartJourney', finding: '心区血流信号减弱', detail: '具体病因待近距离确认'
   });
   const diagnosis = { phase: 'idle', caseId: null, token: 0, frame: null };
+  const transition = { phase: 'idle', caseId: null, token: 0, frame: null, settle: null, abort: null, context: null };
+  const forwardedGameKeys = new Set();
   function readRecord(key) {
     try {
       const record = JSON.parse(localStorage.getItem(key) || '{}') || {};
@@ -54,7 +56,7 @@
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function openCaseArchive() {
-    if (state.screen !== 'cases' || state.modal || diagnosis.phase === 'scanning') return;
+    if (state.screen !== 'cases' || state.modal || diagnosis.phase === 'scanning' || transition.phase !== 'idle') return;
     const playable = playableCaseIds();
     const completed = caseIds.filter(id => records[id].wins > 0).length;
     const cards = entryCatalog.map(entry => {
@@ -74,9 +76,9 @@
     const scanning = diagnosis.phase === 'scanning', ready = diagnosis.phase === 'ready';
     $('diagnosis-panel').dataset.diagnosisPhase = diagnosis.phase;
     $('diagnosis-panel').setAttribute('aria-busy', String(scanning));
-    $('diagnosis-action').disabled = scanning || !playableCaseIds().includes(screeningCase.caseId);
+    $('diagnosis-action').disabled = scanning || transition.phase !== 'idle' || !playableCaseIds().includes(screeningCase.caseId);
     $('diagnosis-action-label').textContent = scanning ? '检查中…' : ready ? '前往治疗' : '开始检查';
-    $('case-archive').disabled = scanning;
+    $('case-archive').disabled = scanning || transition.phase !== 'idle';
     $('diagnosis-report').hidden = !ready;
   }
   function resetDiagnosis() {
@@ -89,7 +91,7 @@
     updateDiagnosisControls();
   }
   function beginScreening() {
-    if (state.screen !== 'cases' || state.modal || diagnosis.phase !== 'idle' || !playableCaseIds().includes(screeningCase.caseId)) return;
+    if (state.screen !== 'cases' || state.modal || diagnosis.phase !== 'idle' || transition.phase !== 'idle' || !playableCaseIds().includes(screeningCase.caseId)) return;
     const token = ++diagnosis.token, startedAt = performance.now(), duration = reducedMotion ? 160 : 2800;
     diagnosis.phase = 'scanning';
     $('diagnosis-status').textContent = '采集生命信号';
@@ -137,7 +139,7 @@
   if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
   resize();
 
-  function clearInput() { if (state.game) state.game.clearInput(); }
+  function clearInput() { forwardedGameKeys.clear(); if (state.game) state.game.clearInput(); }
   function showScreen(name) {
     if (state.screen === 'cases' || name === 'cases') resetDiagnosis();
     clearInput(); state.screen = name;
@@ -148,8 +150,8 @@
     W = name === 'treatment' ? 1280 : 720; H = name === 'treatment' ? 720 : 1280;
     resize();
   }
-  function goHome() { loadToken++; closeModal(); clearInput(); state.phase = 'idle'; state.game = null; particles = []; showScreen('home'); }
-  function goCases() { loadToken++; closeModal(); clearInput(); state.phase = 'idle'; state.game = null; particles = []; showScreen('cases'); }
+  function goHome() { cancelEntry(false); loadToken++; closeModal(); clearInput(); state.phase = 'idle'; state.game = null; particles = []; showScreen('home'); }
+  function goCases() { cancelEntry(false); loadToken++; closeModal(); clearInput(); state.phase = 'idle'; state.game = null; particles = []; showScreen('cases'); }
   function requestHome() {
     if (state.screen === 'treatment' && ['playing', 'paused'].includes(state.phase)) {
       pauseGame();
@@ -160,12 +162,9 @@
     } else if (state.phase !== 'finishing') goHome();
   }
 
-  async function startGame(id) {
-    const info = cases[id], factory = window.GiantCureGames[id];
-    if (!info || !factory || diagnosis.phase === 'scanning' || !playableCaseIds().includes(id)) return;
-    closeModal(); clearInput();
-    const token = ++loadToken;
-    Object.assign(state, { id, game: null, progress: 0, elapsed: 0, activeTime: 0, result: null, finishWait: 0, feedbackTime: 0, phase: 'loading', hud: {}, cameraRoom: null });
+  function prepareChapter(id, phase) {
+    const info = cases[id];
+    Object.assign(state, { id, game: null, progress: 0, elapsed: 0, activeTime: 0, result: null, finishWait: 0, feedbackTime: 0, phase, hud: {}, cameraRoom: null });
     pointerScreen = null; pointerClient = null;
     particles = [];
     $('case-number').textContent = `CASE ${info.number} / ${info.en}`;
@@ -175,7 +174,23 @@
     $('progress-label').textContent = '治疗进程';
     feedback('正在展开巨人的心河…');
     $('journey-task').textContent = '正在准备巡诊';
-    showScreen('treatment'); updateStats();
+    updateStats();
+  }
+  function createChapter(id) {
+    state.game = window.GiantCureGames[id]({
+      progress: value => { state.progress = Math.max(0, Math.min(1, value)); updateStats(); },
+      feedback, success: () => finishGame(true), fail: reason => finishGame(false, reason),
+      effect: spawnParticles, sound: playSound, hud: updateHUD,
+      setTask: text => { state.hud.task = text; $('journey-task').textContent = text; }
+    });
+    updateCamera(0, true); updateStats();
+  }
+  async function startGame(id, entryMode = 'direct') {
+    if (!cases[id] || diagnosis.phase === 'scanning' || transition.phase !== 'idle' || !playableCaseIds().includes(id)) return;
+    if (entryMode !== 'direct') return enterTreatment(id, entryMode);
+    closeModal(); clearInput();
+    const token = ++loadToken;
+    prepareChapter(id, 'loading'); showScreen('treatment');
     try { if (window.GiantCureAssets) await window.GiantCureAssets.ready; }
     catch {
       if (token !== loadToken) return;
@@ -187,14 +202,147 @@
       return;
     }
     if (token !== loadToken) return;
-    state.phase = 'playing'; feedback(info.instruction);
-    state.game = factory({
-      progress: value => { state.progress = Math.max(0, Math.min(1, value)); updateStats(); },
-      feedback, success: () => finishGame(true), fail: reason => finishGame(false, reason),
-      effect: spawnParticles, sound: playSound, hud: updateHUD,
-      setTask: text => { state.hud.task = text; $('journey-task').textContent = text; }
+    createChapter(id); state.phase = 'playing'; feedback(cases[id].instruction); lastFrame = null;
+  }
+  const clamp01 = value => Math.max(0, Math.min(1, value));
+  const smooth = value => { const p = clamp01(value); return p * p * (3 - 2 * p); };
+  function entryFrame(duration, draw) {
+    const token = transition.token, start = performance.now();
+    return new Promise((resolve, reject) => {
+      transition.settle = resolve;
+      draw(0);
+      function animate(now) {
+        if (token !== transition.token) { resolve(false); return; }
+        const p = clamp01((now - start) / duration);
+        try { draw(p); }
+        catch (error) { transition.frame = null; transition.settle = null; reject(error); return; }
+        if (p < 1) transition.frame = requestAnimationFrame(animate);
+        else { transition.frame = null; transition.settle = null; resolve(true); }
+      }
+      transition.frame = requestAnimationFrame(animate);
     });
-    updateCamera(0, true); updateStats(); lastFrame = null;
+  }
+  function captureEntrySource() {
+    const monitor = $('diagnosis-monitor'), rect = monitor.getBoundingClientRect();
+    const heart = $('diagnosis-heart-anchor').getBoundingClientRect();
+    const ghost = $('entry-transition-ghost');
+    Object.assign(ghost.style, { left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px`, transformOrigin: `${heart.x + heart.width / 2 - rect.left}px ${heart.y + heart.height / 2 - rect.top}px` });
+    const clone = ghost.firstElementChild;
+    if (clone) Object.assign(clone.style, { width: `${monitor.offsetWidth}px`, height: `${monitor.offsetHeight}px`, transform: `scale(${rect.width / monitor.offsetWidth})` });
+    return { x: heart.x + heart.width / 2, y: heart.y + heart.height / 2 };
+  }
+  function entryFocus(point, opacity, scale = 1) {
+    Object.assign($('entry-transition-focus').style, { left: `${point.x}px`, top: `${point.y}px`, opacity: String(opacity), transform: `scale(${scale})` });
+  }
+  function releaseEntryUI() {
+    $('entry-transition').hidden = true;
+    $('entry-transition').setAttribute('aria-busy', 'false');
+    $('entry-transition-ghost').replaceChildren();
+    $('entry-transition-status').textContent = '';
+    $('diagnosis-monitor').style.visibility = '';
+    document.body.classList.remove('entry-in-progress');
+    $('app').style.removeProperty('--entry-hud-opacity');
+    $('cases').style.removeProperty('--entry-source-opacity');
+    for (const id of screens) $(id).inert = state.modal;
+    document.querySelector('.app-header').inert = state.modal;
+    $('help').disabled = false;
+    updateDiagnosisControls();
+  }
+  function cancelEntry(restore = true) {
+    if (transition.phase === 'idle') return;
+    const context = transition.context;
+    loadToken++; transition.token++;
+    if (transition.frame !== null) cancelAnimationFrame(transition.frame);
+    transition.settle?.(false); transition.abort?.({ canceled: true });
+    Object.assign(transition, { phase: 'idle', caseId: null, frame: null, settle: null, abort: null, context: null });
+    clearInput(); Object.assign(state, { phase: 'idle', game: null, id: null, progress: 0, elapsed: 0, activeTime: 0, cameraRoom: null, hud: {} });
+    particles = []; lastFrame = null;
+    if (restore) {
+      showScreen('cases');
+      if (context.diagnosis.phase === 'ready') {
+        Object.assign(diagnosis, { phase: 'ready', caseId: context.diagnosis.caseId });
+        $('diagnosis-panel').style.setProperty('--scan-progress', '1');
+        $('diagnosis-status').textContent = '异常已定位';
+        $('diagnosis-finding').textContent = screeningCase.finding; $('diagnosis-detail').textContent = screeningCase.detail;
+      }
+    }
+    releaseEntryUI();
+    if (restore) $(context.mode === 'diagnosis' ? 'diagnosis-action' : 'case-archive').focus({ preventScroll: true });
+  }
+  async function enterTreatment(id, mode) {
+    const context = { mode, diagnosis: { phase: diagnosis.phase, caseId: diagnosis.caseId } };
+    closeModal(); clearInput();
+    const load = ++loadToken, token = ++transition.token;
+    const current = () => load === loadToken && token === transition.token;
+    Object.assign(transition, { phase: 'departing', caseId: id, context });
+    try {
+    prepareChapter(id, 'entering');
+    const full = mode === 'diagnosis' && !reducedMotion;
+    const coverDuration = full ? 500 : reducedMotion ? 100 : 100;
+    const arriveDuration = full ? 900 : reducedMotion ? 100 : 150;
+    const resource = Promise.resolve(window.GiantCureAssets?.ready).then(() => ({ ready: true }), error => ({ error }));
+    const aborted = new Promise(resolve => { transition.abort = resolve; });
+    const ghost = $('entry-transition-ghost'), veil = $('entry-transition-veil');
+    ghost.replaceChildren(); ghost.style.transform = ''; ghost.style.opacity = full ? '1' : '0';
+    if (full) {
+      const clone = $('diagnosis-monitor').cloneNode(true);
+      clone.removeAttribute('id'); for (const element of clone.querySelectorAll('[id]')) element.removeAttribute('id');
+      clone.style.visibility = ''; ghost.append(clone); captureEntrySource();
+      $('diagnosis-monitor').style.visibility = 'hidden';
+    }
+    veil.style.opacity = '0'; $('entry-transition-focus').style.opacity = '0';
+    $('entry-transition-status').textContent = '';
+    $('entry-transition').hidden = false; $('entry-transition').setAttribute('aria-busy', 'true');
+    document.body.classList.add('entry-in-progress'); $('app').style.setProperty('--entry-hud-opacity', '0');
+    $('cases').style.setProperty('--entry-source-opacity', '1');
+    for (const screen of screens) $(screen).inert = true;
+    document.querySelector('.app-header').inert = true; $('help').disabled = true;
+    updateDiagnosisControls();
+    $('entry-transition').tabIndex = -1; $('entry-transition').focus({ preventScroll: true });
+    if (!await entryFrame(coverDuration, p => {
+      if (full) {
+        const point = captureEntrySource(), push = smooth(p / .7), scale = 1 + .9 * push;
+        ghost.style.transform = `translate(${(innerWidth / 2 - point.x) * push}px, ${(innerHeight / 2 - point.y) * push}px) scale(${scale})`;
+        $('cases').style.setProperty('--entry-source-opacity', String(1 - push));
+        veil.style.opacity = String(smooth((p - .7) / .3));
+      } else veil.style.opacity = String(smooth(p));
+    }) || !current()) return;
+    transition.phase = 'waiting'; veil.style.opacity = '1';
+    $('entry-transition-status').textContent = '正在准备治疗场景…';
+    const outcome = await Promise.race([resource, aborted]);
+    if (!current() || outcome.canceled) return;
+    if (!outcome.ready) throw outcome.error;
+    $('entry-transition-status').textContent = ''; ghost.style.opacity = '0';
+    showScreen('treatment'); $('treatment').inert = true;
+    createChapter(id);
+    const end = { ...view.camera }, g = state.game.getDebugState(), size = g.worldSize;
+    const center = (value, total, half) => total <= half * 2 ? total / 2 : Math.max(half, Math.min(total - half, value));
+    const start = { x: center(g.player.x, size.width, viewport.w / 2 / .88), y: center(g.player.y, size.height, viewport.h / 2 / .88), zoom: .88 };
+    transition.phase = 'arriving';
+    if (!await entryFrame(arriveDuration, p => {
+      const cameraProgress = full ? smooth(p * 1.5) : 1;
+      for (const key of ['x', 'y', 'zoom']) view.camera[key] = start[key] + (end[key] - start[key]) * cameraProgress;
+      if (p === 0) drawPage(0);
+      veil.style.opacity = String(1 - (full ? smooth(p * 1.5) : smooth(p)));
+      $('app').style.setProperty('--entry-hud-opacity', String(full ? clamp01((p - 2 / 3) * 3) : p));
+      if (full) {
+        const rect = canvas.getBoundingClientRect();
+        entryFocus({ x: rect.x + (viewport.x + viewport.w / 2 + (g.player.x - view.camera.x) * view.camera.zoom) * rect.width / W, y: rect.y + (viewport.y + viewport.h / 2 + (g.player.y - view.camera.y) * view.camera.zoom) * rect.height / H }, .65 * (1 - cameraProgress), 1.8 - .8 * cameraProgress);
+      }
+    }) || !current()) return;
+    Object.assign(view.camera, end);
+    Object.assign(transition, { phase: 'idle', caseId: null, context: null, abort: null });
+    clearInput(); lastFrame = null; releaseEntryUI();
+    state.phase = 'playing'; feedback(cases[id].instruction);
+    canvas.tabIndex = -1; canvas.focus({ preventScroll: true });
+    } catch {
+      if (!current()) return;
+      cancelEntry();
+      openDialog('心河还没有展开', '<p>治疗场景未能准备完成，请重试或返回诊断室。</p>', [
+        { label: '重新载入', primary: true, action: () => { window.GiantCureAssets?.retry?.(); startGame(id, mode); } },
+        { label: '返回诊断室', action: closeModal }
+      ]);
+    }
   }
   function updateHUD(data) {
     Object.assign(state.hud, data);
@@ -282,7 +430,7 @@
   }
   function resumeGame() { closeModal(); if (state.phase === 'paused') { state.phase = 'playing'; lastFrame = null; } }
   function showHelp() {
-    if (state.phase === 'finishing') return;
+    if (state.phase === 'finishing' || transition.phase !== 'idle') return;
     if (state.screen === 'cases') {
       openDialog('听见生命的求救', '<p>点击“开始检查”，等待监测屏定位异常，再选择“前往治疗”。</p><p class="dialog-tip">初筛只定位异常区域。进入身体后，再近距离检查具体病因。</p><p>病例档案可查看巡诊记录和后续病例。标注“待开放”的内容暂不可出诊。</p>', [
         { label: '明白了 ↗', primary: true, action: closeModal }
@@ -344,7 +492,7 @@
   const toPoint = event => { const rect = canvas.getBoundingClientRect(); return { x: (event.clientX - rect.left) * W / rect.width, y: (event.clientY - rect.top) * H / rect.height }; };
   const inWorld = p => p.x >= viewport.x && p.x <= viewport.x + viewport.w && p.y >= viewport.y && p.y <= viewport.y + viewport.h;
   const toWorld = p => ({ x: view.camera.x + (p.x - viewport.x - viewport.w / 2) / view.camera.zoom, y: view.camera.y + (p.y - viewport.y - viewport.h / 2) / view.camera.zoom });
-  const acceptsInput = () => state.screen === 'treatment' && state.phase === 'playing' && !state.modal;
+  const acceptsInput = () => state.screen === 'treatment' && state.phase === 'playing' && !state.modal && transition.phase === 'idle';
   const gameKeys = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ShiftLeft', 'ShiftRight', 'KeyQ', 'KeyE', 'KeyR', 'Space']);
   canvas.addEventListener('pointermove', event => { pointerClient = { clientX: event.clientX, clientY: event.clientY }; pointerScreen = toPoint(pointerClient); if (acceptsInput()) state.game.pointerMove(toWorld(pointerScreen)); });
   canvas.addEventListener('pointerdown', event => {
@@ -361,12 +509,22 @@
   document.addEventListener('pointerup', event => { if (state.game) state.game.pointerUp({ ...toWorld(toPoint(event)), button: event.button }); });
   canvas.addEventListener('contextmenu', event => { if (state.screen === 'treatment') event.preventDefault(); });
   document.addEventListener('keydown', event => {
+    if (transition.phase !== 'idle') {
+      if (event.code === 'Escape') { event.preventDefault(); cancelEntry(); }
+      else if (event.key === 'Tab') { event.preventDefault(); $('entry-transition-home').focus({ preventScroll: true }); }
+      else if (gameKeys.has(event.code) && !(event.code === 'Space' && !event.repeat && event.target === $('entry-transition-home'))
+        || event.repeat && ['Enter', 'Space'].includes(event.code)) event.preventDefault();
+      return;
+    }
     if (event.code === 'Escape') {
       event.preventDefault();
       if (state.phase === 'playing') showPause(); else if (state.phase === 'paused') resumeGame(); else if (state.modal) closeModal();
       return;
     }
-    if (acceptsInput() && gameKeys.has(event.code)) { event.preventDefault(); state.game.keyDown(event.code, event.repeat); }
+    if (acceptsInput() && gameKeys.has(event.code)) {
+      event.preventDefault();
+      if (!event.repeat || forwardedGameKeys.has(event.code)) { forwardedGameKeys.add(event.code); state.game.keyDown(event.code, event.repeat); }
+    }
     if (event.key === 'Tab' && state.modal) {
       const controls = dialogControls(), first = controls[0], last = controls[controls.length - 1];
       if (!first) { event.preventDefault(); return; }
@@ -374,13 +532,15 @@
       else if ((!event.shiftKey && document.activeElement === last) || !controls.includes(document.activeElement)) { event.preventDefault(); first.focus(); }
     }
   });
-  document.addEventListener('keyup', event => { if (state.game) state.game.keyUp(event.code); });
+  document.addEventListener('keyup', event => { forwardedGameKeys.delete(event.code); if (state.game) state.game.keyUp(event.code); });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) return;
+    if (transition.phase !== 'idle') { cancelEntry(); return; }
     if (diagnosis.phase === 'scanning') resetDiagnosis();
     if (state.phase === 'playing') showPause();
   });
   window.addEventListener('blur', () => {
+    if (transition.phase !== 'idle') { cancelEntry(); return; }
     if (diagnosis.phase === 'scanning') resetDiagnosis();
     if (state.phase === 'playing') showPause(); else clearInput();
   });
@@ -391,16 +551,17 @@
   $('result-cases').onclick = goCases;
   $('diagnosis-action').onclick = () => {
     if (state.screen !== 'cases' || state.modal) return;
-    if (diagnosis.phase === 'ready' && playableCaseIds().includes(diagnosis.caseId)) startGame(diagnosis.caseId);
+    if (diagnosis.phase === 'ready' && playableCaseIds().includes(diagnosis.caseId)) startGame(diagnosis.caseId, 'diagnosis');
     else beginScreening();
   };
   $('diagnosis-action').addEventListener('keydown', event => {
     if (event.repeat && ['Enter', 'Space'].includes(event.code)) event.preventDefault();
   });
   $('case-archive').onclick = openCaseArchive;
+  $('entry-transition-home').onclick = goHome;
   $('dialog-body').addEventListener('click', event => {
     const card = event.target.closest('button[data-case]');
-    if (card && state.modal && $('modal').querySelector('.dialog').classList.contains('archive-dialog')) startGame(card.dataset.case);
+    if (card && state.modal && $('modal').querySelector('.dialog').classList.contains('archive-dialog')) startGame(card.dataset.case, 'archive');
   });
   for (const [id, key] of [['journey-scan', 'KeyQ'], ['journey-interact', 'KeyE'], ['journey-reload-button', 'KeyR']]) $(id).onclick = () => {
     if (acceptsInput()) { state.game.keyDown(key, false); state.game.keyUp(key); }
@@ -565,6 +726,7 @@
     remaining: null, elapsed: state.elapsed, modal: state.modal,
     result: state.result ? { ...state.result } : null,
     diagnosis: { phase: diagnosis.phase, caseId: diagnosis.caseId },
+    transition: { phase: transition.phase, caseId: transition.caseId },
     game: state.game ? state.game.getDebugState() : null,
     view: { viewport: { ...view.viewport }, camera: { ...view.camera } },
     logicalSize: { width: W, height: H }, reducedMotion,

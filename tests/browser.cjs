@@ -20,6 +20,20 @@ const primary = page => click(page, '#dialog-actions .primary-button');
 async function ready(page) {
   await page.evaluate(async () => { if (window.GiantCureAssets) await window.GiantCureAssets.ready; }); await tick(page, 32);
 }
+async function waitForEntry(page, limit = 6000) {
+  for (let elapsed = 0; elapsed <= limit; elapsed += 16) {
+    const s = await snapshot(page);
+    if (s.phase === 'playing') {
+      assert.deepEqual(s.transition, { phase: 'idle', caseId: null });
+      assert.equal(await page.locator('#entry-transition').isHidden(), true);
+      assert.equal(await page.locator('body').evaluate(el => el.classList.contains('entry-in-progress')), false);
+      return s;
+    }
+    assert.equal(s.phase, 'entering', 'entry remains in its loading/arrival phase until play begins');
+    await tick(page, 16);
+  }
+  assert.fail('entry did not reach playing within ' + limit + ' ms');
+}
 async function setup(context, seed, storage = {}) {
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(error.stack || error.message));
@@ -80,6 +94,8 @@ async function painted(page, selector) {
 }
 async function assertDiagnosis(page, phase = 'idle') {
   const s = await expectState(page, 'cases', 'idle');
+  assert.deepEqual(s.transition, { phase: 'idle', caseId: null });
+  assert.equal(await page.locator('#entry-transition').isHidden(), true);
   assert.equal('selector' in s, false, 'random selector diagnostics are retired');
   assert.deepEqual(s.diagnosis, { phase, caseId: phase === 'ready' ? 'heartJourney' : null });
   assert.equal(s.game, null, 'diagnosis presentation does not instantiate a game');
@@ -123,8 +139,8 @@ async function openArchive(page, cured = 0) {
   await inspectFit(page);
 }
 async function assertFreshChapter(page) {
-  await ready(page); await tick(page, 16);
-  const s = await expectState(page, 'treatment', 'playing');
+  const s = await waitForEntry(page); assert.equal(s.screen, 'treatment');
+  assert(s.elapsed <= .05 && s.activeTime <= .05 && s.game.elapsed <= .05, 'entry presentation does not count as active treatment time');
   assert.equal(s.id, 'heartJourney'); assert.equal(s.remaining, null);
   assert.equal(s.game.stage, 'diagnosis'); assert.equal(s.game.checkpoint, 'entry'); assert.deepEqual(s.game.scanned, {});
   assert.equal(s.game.health, 100); assert.equal(s.game.retries, 0); assert.equal(s.game.scanner, false);
@@ -139,6 +155,63 @@ async function scanToReady(page) {
 }
 async function returnFromChapter(page) {
   await click(page, '#pause'); await click(page, '#dialog-actions button:last-child'); await assertDiagnosis(page);
+}
+const opacity = (page, selector) => page.locator(selector).evaluate(el => Number(getComputedStyle(el).opacity));
+const hudOpacity = page => page.locator('#app').evaluate(el => Number(getComputedStyle(el).getPropertyValue('--entry-hud-opacity')));
+async function assertEntering(page, phase) {
+  const s = await snapshot(page); assert.equal(s.phase, 'entering');
+  assert.equal(s.transition.caseId, 'heartJourney');
+  assert(['departing', 'waiting', 'arriving'].includes(s.transition.phase));
+  if (phase) assert.equal(s.transition.phase, phase);
+  assert.equal(await page.locator('#entry-transition').isVisible(), true);
+  assert.equal(await page.locator('#entry-transition').getAttribute('aria-busy'), 'true');
+  assert.equal(await page.locator('body').evaluate(el => el.classList.contains('entry-in-progress')), true);
+  for (const selector of ['#help', '#case-archive', '#diagnosis-action']) assert.equal(await page.locator(selector).isDisabled(), true, 'entry disables ' + selector);
+  for (const id of ['cases', 'treatment']) assert.equal(await page.locator('#' + id).evaluate(el => el.inert), true);
+  assert.equal(await page.locator('#entry-transition-home').isEnabled(), true);
+  assert.equal(s.elapsed, 0); assert.equal(s.activeTime, 0);
+  if (s.game) { assert.equal(s.game.elapsed, 0); assert.deepEqual(s.game.scanned, {}); assert.deepEqual(s.game.keys, []); }
+  await inspectFit(page); return s;
+}
+async function cancelEntry(page, reason) {
+  if (reason === 'Escape') await page.keyboard.press('Escape');
+  else if (reason === 'home') await click(page, '#entry-transition-home', 0);
+  else if (reason === 'homeSpace') {
+    await page.keyboard.press('Tab'); assert.equal(await page.locator('#entry-transition-home').evaluate(el => document.activeElement === el), true);
+    await page.keyboard.press('Space');
+  }
+  else if (reason === 'blur') await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+  else await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
+  await tick(page, 16);
+  if (reason === 'visibility') await page.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); });
+  assert.deepEqual((await snapshot(page)).transition, { phase: 'idle', caseId: null });
+  assert.equal(await page.locator('#entry-transition').isHidden(), true);
+  if (['home', 'homeSpace'].includes(reason)) await expectState(page, 'home', 'idle'); else await assertReady(page);
+}
+async function ensureReady(page) {
+  if ((await snapshot(page)).screen === 'home') await click(page, '#begin');
+  if ((await snapshot(page)).diagnosis.phase === 'idle') await scanToReady(page); else await assertReady(page);
+}
+async function withEntryPage(run, options = {}) {
+  const context = await browser.newContext({ viewport: { width: 1100, height: 1000 }, ...options });
+  const p = await setup(context);
+  try { await click(p, '#begin'); await scanToReady(p); await run(p); }
+  catch (error) { console.error('Entry scenario snapshot:', JSON.stringify(await snapshot(p)).slice(0, 14000)); await capture(p, 'entry-failure'); throw error; }
+  finally { await context.close(); }
+}
+async function deferAssets(page) {
+  await page.evaluate(() => {
+    const assets = window.GiantCureAssets, original = { ready: assets.ready, retry: assets.retry };
+    let resolve, reject;
+    const pending = new Promise((yes, no) => { resolve = yes; reject = no; }); pending.catch(() => {});
+    // Resource provider controls simulate delayed decoding; game and transition diagnostics stay read-only.
+    window.__entryAssetHarness = { original, resolve, reject, retryCount: 0 };
+    assets.ready = pending;
+    assets.retry = () => { window.__entryAssetHarness.retryCount++; assets.ready = Promise.resolve(); return assets.ready; };
+  });
+}
+async function restoreAssets(page) {
+  await page.evaluate(() => { const harness = window.__entryAssetHarness; Object.assign(window.GiantCureAssets, harness.original); delete window.__entryAssetHarness; });
 }
 
 (async () => {
@@ -325,6 +398,171 @@ async function returnFromChapter(page) {
       await click(mobile, '#case-back'); await expectState(mobile, 'home', 'idle'); await mobileContext.close();
     });
   }
+
+  await mark('main entry moves through a covered layout switch, camera arrival and HUD reveal with frozen gameplay', async () => {
+    await withEntryPage(async p => {
+      await p.keyboard.down('KeyD');
+      const started = await p.evaluate(() => performance.now()); await click(p, '#diagnosis-action', 0); await assertEntering(p, 'departing');
+      assert.equal(await p.locator('#entry-transition-ghost [id]').count(), 0, 'monitor clone cannot duplicate document IDs');
+      const initialGhost = await p.locator('#entry-transition-ghost').boundingBox(); assert(initialGhost);
+      await mouseClick(p, '#diagnosis-action', 4); await mouseClick(p, '#case-archive'); await mouseClick(p, '#help');
+      await p.keyboard.down('KeyQ'); await tick(p, 240); await assertEntering(p, 'departing');
+      assert.equal((await snapshot(p)).screen, 'cases');
+      assert((await p.locator('#entry-transition-ghost').boundingBox()).width > initialGhost.width + 5, 'departure pushes into the heart region');
+      await capture(p, 'entry-departing');
+      await tick(p, 280); const covered = await assertEntering(p);
+      assert.equal(covered.screen, 'treatment'); assert(await opacity(p, '#entry-transition-veil') >= .97, 'layout switches underneath a fully covered veil');
+      assert.equal(await hudOpacity(p), 0); await capture(p, 'entry-covered');
+      await tick(p, 280); const arrived = await assertEntering(p, 'arriving');
+      assert(arrived.game); assert(arrived.view.camera.zoom > .88 && arrived.view.camera.zoom < 1.1);
+      assert.equal(await painted(p, '#entry-transition-focus'), true);
+      assert.equal(await hudOpacity(p), 0); await capture(p, 'entry-arriving');
+      await tick(p, 400); const revealing = await assertEntering(p, 'arriving');
+      assert.deepEqual(revealing.game, arrived.game, 'camera arrival cannot update chapter simulation');
+      assert(Math.abs(revealing.view.camera.zoom - 1.1) < 1e-6); const hud = await hudOpacity(p); assert(hud > 0 && hud < 1);
+      await capture(p, 'entry-hud'); await tick(p, 176); await assertEntering(p);
+      await assertFreshChapter(p); const ended = await p.evaluate(() => performance.now());
+      assert(ended - started >= 1400 && ended - started <= 1432, 'full entry lasts about 1400 ms');
+      const player = (await snapshot(p)).game.player;
+      await p.keyboard.down('KeyD'); await p.keyboard.down('KeyQ'); await tick(p, 200);
+      assert.deepEqual((await snapshot(p)).game.player, player, 'held/repeated movement cannot cross into play');
+      assert.equal((await snapshot(p)).game.scanner, false, 'held scan key cannot cross into play');
+      await p.keyboard.up('KeyD'); await p.keyboard.up('KeyQ'); await p.keyboard.down('KeyD'); await tick(p, 160); await p.keyboard.up('KeyD');
+      assert((await snapshot(p)).game.player.x > player.x + 1, 'a fresh movement press works after releasing the held key');
+      await p.keyboard.press('KeyQ'); await tick(p, 16); assert.equal((await snapshot(p)).game.scanner, true);
+    });
+  });
+
+  await mark('Escape, focus loss, backgrounding and home cancel every main entry stage without late starts', async () => {
+    await withEntryPage(async p => {
+      for (const reason of ['Escape', 'blur', 'visibility', 'home', 'homeSpace']) for (const at of [200, 800, 1250]) {
+        await ensureReady(p); await click(p, '#diagnosis-action', 0); await tick(p, at); await assertEntering(p);
+        await cancelEntry(p, reason); await tick(p, 1800);
+        if (['home', 'homeSpace'].includes(reason)) await expectState(p, 'home', 'idle'); else await assertReady(p);
+        assert.equal((await snapshot(p)).game, null);
+      }
+    });
+  });
+
+  await mark('resizing during departure and arrival keeps the overlay usable and reveals a fitted entry world', async () => {
+    await withEntryPage(async p => {
+      await click(p, '#diagnosis-action', 0); await tick(p, 200);
+      await resizeViewport(p, { width: 680, height: 840 }); await assertEntering(p);
+      const focus = await p.locator('#entry-transition-focus').boundingBox(); assert(focus);
+      assert(focus.x + focus.width / 2 >= 0 && focus.x + focus.width / 2 <= 680 && focus.y + focus.height / 2 >= 0 && focus.y + focus.height / 2 <= 840, 'heart focus is repositioned inside resized viewport');
+      await tick(p, 500); await resizeViewport(p, { width: 1100, height: 1000 }); await assertEntering(p);
+      await assertFreshChapter(p); await inspectFit(p);
+    });
+  });
+
+  await mark('archive entry uses a 250 ms fade and archive cancellation preserves the original diagnosis state', async () => {
+    await withEntryPage(async p => {
+      await click(p, '#case-back'); await click(p, '#begin'); await assertDiagnosis(p);
+      for (const phase of ['idle', 'ready']) {
+        if (phase === 'ready') await scanToReady(p);
+        await openArchive(p); await click(p, card, 0); await tick(p, 80); await assertEntering(p);
+        assert.equal(await painted(p, '#entry-transition-ghost'), false); assert.equal(await painted(p, '#entry-transition-focus'), false);
+        await p.keyboard.press('Escape'); await tick(p, 16); await assertDiagnosis(p, phase);
+        assert.equal(await p.locator('#modal').isHidden(), true, 'archive cancellation returns to diagnosis rather than reopening the archive');
+      }
+      await openArchive(p); const started = await p.evaluate(() => performance.now()); await click(p, card, 0);
+      await tick(p, 128); const s = await assertEntering(p);
+      assert.equal(await painted(p, '#entry-transition-ghost'), false); assert.equal(await painted(p, '#entry-transition-focus'), false);
+      if (s.game) assert.equal(s.view.camera.zoom, 1.1, 'archive entry has no camera push');
+      await tick(p, 112); await assertEntering(p); await assertFreshChapter(p);
+      const ended = await p.evaluate(() => performance.now()); assert(ended - started >= 250 && ended - started <= 282);
+    });
+  });
+
+  await mark('reduced motion enters in 200 ms using only a fade without a focus ring or camera travel', async () => {
+    await withEntryPage(async p => {
+      const started = await p.evaluate(() => performance.now()); await click(p, '#diagnosis-action', 0); await tick(p, 96);
+      const s = await assertEntering(p);
+      assert.equal(await painted(p, '#entry-transition-ghost'), false); assert.equal(await painted(p, '#entry-transition-focus'), false);
+      if (s.game) assert.equal(s.view.camera.zoom, 1.1);
+      await tick(p, 80); await assertEntering(p); await assertFreshChapter(p);
+      const ended = await p.evaluate(() => performance.now()); assert(ended - started >= 200 && ended - started <= 232);
+      await capture(p, 'entry-reduced-motion');
+    }, { reducedMotion: 'reduce' });
+  });
+
+  await mark('a delayed resource promise waits behind an opaque cover and begins no gameplay before resolving', async () => {
+    await withEntryPage(async p => {
+      await deferAssets(p); await click(p, '#diagnosis-action', 0); await tick(p, 700); await assertEntering(p, 'waiting');
+      assert.equal(await opacity(p, '#entry-transition-veil'), 1); assert.match(await p.locator('#entry-transition-status').innerText(), /准备|展开|载入/);
+      await capture(p, 'entry-waiting'); const held = await snapshot(p); await tick(p, 2400); const waiting = await assertEntering(p, 'waiting');
+      assert.deepEqual(waiting.game, held.game); assert.equal(waiting.elapsed, 0); assert.equal(await opacity(p, '#entry-transition-veil'), 1);
+      await p.evaluate(() => window.__entryAssetHarness.resolve()); await assertFreshChapter(p); await restoreAssets(p);
+    });
+  });
+
+  await mark('canceling a covered resource wait ignores late resolution for Escape, blur, visibility and home', async () => {
+    await withEntryPage(async p => {
+      for (const reason of ['Escape', 'blur', 'visibility', 'home', 'homeSpace']) {
+        await ensureReady(p); await deferAssets(p); await click(p, '#diagnosis-action', 0); await tick(p, 700); await assertEntering(p, 'waiting');
+        await cancelEntry(p, reason); await p.evaluate(() => window.__entryAssetHarness.resolve()); await tick(p, 1800); await restoreAssets(p);
+        if (['home', 'homeSpace'].includes(reason)) await expectState(p, 'home', 'idle'); else await assertReady(p);
+        assert.equal((await snapshot(p)).game, null); assert.deepEqual((await snapshot(p)).transition, { phase: 'idle', caseId: null });
+      }
+    });
+  });
+
+  await mark('resource rejection restores the ready report; retry repeats entry without scanning and return stays in diagnosis', async () => {
+    await withEntryPage(async p => {
+      for (const action of ['retry', 'return']) {
+        await ensureReady(p); await deferAssets(p); await click(p, '#diagnosis-action', 0); await tick(p, 700); await assertEntering(p, 'waiting');
+        await p.evaluate(() => window.__entryAssetHarness.reject(new Error('Simulated image decoding failure'))); await tick(p, 16);
+        assert.equal(await p.locator('#modal').isVisible(), true); assert.deepEqual((await snapshot(p)).transition, { phase: 'idle', caseId: null });
+        assert.deepEqual((await snapshot(p)).diagnosis, { phase: 'ready', caseId: 'heartJourney' });
+        assert.equal(await p.locator('#diagnosis-report').isVisible(), true); assert.equal(await p.locator('#entry-transition').isHidden(), true);
+        if (action === 'retry') {
+          await primary(p); await assertEntering(p); assert.equal(await p.evaluate(() => window.__entryAssetHarness.retryCount), 1);
+          await assertFreshChapter(p); await restoreAssets(p); await returnFromChapter(p); await scanToReady(p);
+        } else { await click(p, '#dialog-actions .secondary-button'); await assertReady(p); await restoreAssets(p); }
+      }
+    });
+  });
+
+  await mark('restarting an active chapter skips the entry presentation', async () => {
+    await withEntryPage(async p => {
+      await click(p, '#diagnosis-action'); await assertFreshChapter(p); await click(p, '#pause');
+      await click(p, '#dialog-actions button:nth-child(2)', 0); await tick(p, 16);
+      const s = await snapshot(p); assert.equal(s.phase, 'playing'); assert.deepEqual(s.transition, { phase: 'idle', caseId: null });
+      assert.equal(await p.locator('#entry-transition').isHidden(), true); assert.deepEqual(s.game.scanned, {});
+    });
+  });
+
+  await mark('chapter construction or frozen first-frame failure restores diagnosis and can retry without a runtime error', async () => {
+    for (const failure of ['factory', 'draw']) await withEntryPage(async p => {
+      await p.evaluate(kind => {
+        const original = window.GiantCureGames.heartJourney;
+        const harness = window.__entryFactoryHarness = { original, attempts: 0 };
+        // Simulate a failing registered provider, keeping the original chapter implementation intact.
+        window.GiantCureGames.heartJourney = services => {
+          const attempt = ++harness.attempts;
+          if (kind === 'factory' && attempt === 1) throw new Error('Simulated chapter construction failure');
+          const game = original(services);
+          if (kind === 'draw' && attempt === 1) {
+            const draw = game.draw; let first = true;
+            game.draw = function (...args) { if (first) { first = false; throw new Error('Simulated frozen first-frame failure'); } return draw.apply(this, args); };
+          }
+          return game;
+        };
+      }, failure);
+      try {
+        await click(p, '#diagnosis-action', 0); await tick(p, 700);
+        const failed = await snapshot(p); assert.equal(failed.screen, 'cases'); assert.equal(failed.phase, 'idle'); assert.equal(failed.game, null);
+        assert.deepEqual(failed.transition, { phase: 'idle', caseId: null }); assert.deepEqual(failed.diagnosis, { phase: 'ready', caseId: 'heartJourney' });
+        assert.equal(await p.locator('#entry-transition').isHidden(), true); assert.equal(await p.locator('#diagnosis-report').isVisible(), true);
+        assert.equal(await p.locator('#modal').isVisible(), true); assert.deepEqual(errors, [], 'provider failure is handled without a pageerror');
+        await primary(p); await assertEntering(p);
+        await p.evaluate(async () => { if (window.GiantCureAssets) await window.GiantCureAssets.ready; });
+        await assertFreshChapter(p); assert.equal(await p.evaluate(() => window.__entryFactoryHarness.attempts), 2, 'retry creates one fresh chapter');
+      } finally {
+        await p.evaluate(() => { window.GiantCureGames.heartJourney = window.__entryFactoryHarness.original; delete window.__entryFactoryHarness; });
+      }
+    });
+  });
 
   assert.deepEqual(errors, [], 'no browser runtime errors'); assert.deepEqual(remoteRequests, [], 'no external resource requests');
   assert.equal(entryHash(), testedEntry, 'offline entry remains identical throughout the suite');
