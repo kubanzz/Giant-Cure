@@ -28,10 +28,13 @@
       <section id="cases" class="screen" hidden aria-labelledby="cases-title">
         <div class="page-heading"><p class="eyebrow">THE CASEBOOK <span id="case-count" class="heading-number">/ 01</span></p><h2 id="cases-title">今天，治愈哪里？</h2><p>走进巨人的身体，倾听世界的求救。</p></div>
         <div class="case-summary"><span><i class="status-dot"></i> 生态巡诊中</span><span id="record-summary">已治愈 0 / 1 个病例</span></div>
-        <div class="case-list">
-          <button class="case-card heart-card" data-case="heartJourney"><span class="case-art" data-icon="heart"></span><span class="case-copy"><span class="case-kicker">CASE 01 <i>心脏生态</i></span><strong>心脏巡诊</strong><span class="case-description">循着血河找到病因，唤醒生命之城。</span><span class="case-mechanic">键盘 / 鼠标 <b>·</b> 约 3–5 分钟</span></span><span class="case-arrow">↗</span><span class="case-complete" hidden>已治愈 ✓</span></button>
+        <div id="case-selector" class="case-selector" data-draw-phase="idle" aria-busy="false">
+          <p id="case-pool-count" class="case-pool-count">当前可抽取 1 种玩法</p>
+          <div id="case-reel-window" class="case-reel-window" inert aria-hidden="true"><div id="case-reel-track" class="case-reel-track"></div><div class="case-reel-frame"><i></i><i></i></div></div>
+          <p id="case-draw-status" class="case-draw-status" role="status" aria-live="polite">让心跳，指引下一站。</p>
+          <div class="case-draw-actions"><button id="selected-case-start" class="primary-button" hidden disabled><span>进入玩法</span><span aria-hidden="true">↗</span></button><button id="random-case" class="primary-button"><span id="random-label">随机抽取</span><span class="button-arrow" aria-hidden="true">↗</span></button></div>
         </div>
-        <div class="case-guidance"><p class="eyebrow">A LITTLE CARE, A WORLD REBORN</p><h3>循着心跳，慢慢探索。</h3><svg class="case-plant" viewBox="0 0 220 180" fill="none" aria-hidden="true"><ellipse cx="112" cy="153" rx="68" ry="9" fill="#dbe4ce" opacity=".7"/><path d="M110 151c-2-34 2-65 19-102m-19 87c-19-12-29-28-36-49m38 33c17-13 28-27 34-46" stroke="#9bae88" stroke-width="3" stroke-linecap="round"/><path d="M125 65c-13-22-4-41 21-48 5 22-2 39-21 48Zm-21 62C76 130 61 112 62 87c25 3 40 16 42 40Zm14-14c0-24 15-38 39-37-3 23-16 36-39 37Z" fill="#b1c4a2"/><path d="M76 96c9 12 17 20 25 27m27-64c6-11 10-21 14-33m-21 82c11-7 21-17 30-26" stroke="#f1f3e4" stroke-width="2" stroke-linecap="round"/><path d="M79 147c-5-14-14-22-28-22 1 16 10 24 28 22Zm66 2c8-16 19-22 34-18-6 15-17 21-34 18Z" fill="#c7d4b8"/><path d="M53 58v-11m-5 5h10m111-9v-9m-4 4h8" stroke="#c1ad78" stroke-width="1.7"/><circle cx="179" cy="96" r="2.5" fill="#c4b17b"/></svg></div>
+        <div class="case-choice"><div class="case-choice-heading"><h3>自己选</h3><span aria-hidden="true">YOUR NEXT LITTLE CURE</span></div><div id="case-options" class="case-options"></div></div>
         <p class="case-footnote">每个世界，都值得被温柔以待。</p><button id="case-back" class="text-button case-back">← 返回封面</button>
       </section>
       <section id="treatment" class="screen" hidden aria-labelledby="treatment-title">

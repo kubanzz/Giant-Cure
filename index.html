@@ -67,30 +67,57 @@ button:active{transform:translateY(2px)}
 .page-heading>p:last-child{font-size:19px;color:#8b9986;margin-top:17px;letter-spacing:1px}
 .case-summary{position:absolute;top:305px;left:48px;right:48px;display:flex;align-items:center;justify-content:space-between;font-size:14px;color:#83927d;letter-spacing:1px}
 .status-dot{display:inline-block;width:6px;height:6px;background:#8ba66c;border-radius:50%;margin-right:8px;vertical-align:middle}
-.case-list{position:absolute;top:350px;left:42px;right:42px;display:grid;gap:20px}
-.case-card{position:relative;display:flex;align-items:center;gap:23px;width:100%;height:191px;text-align:left;border:1px solid #d7dfd0;border-radius:15px;background:#ffffff45;color:var(--ink);padding:24px 23px;box-shadow:0 3px 0 #e8ecdf44}
-.case-card:hover{background:#edf1e5;border-color:#b3c2a9;transform:translateY(-2px)}
-.case-art{flex:none;width:115px;height:122px;display:block}
-.case-art svg{width:100%;height:100%}
-.case-copy{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
-.case-kicker{font-size:11px;color:#b79c65;letter-spacing:1.5px}
-.case-kicker i{font-style:normal;color:#8c9c84;border-left:1px solid #d0d7c7;margin-left:10px;padding-left:10px;font-size:12px;letter-spacing:1px}
-.case-copy strong{font:29px var(--serif);letter-spacing:3px}
-.case-description{font-size:15px;color:#83917e;letter-spacing:.3px}
-.case-mechanic{font-size:13px;color:#7c917a}
-.case-mechanic b{font-weight:400;padding:0 8px;color:#b4c0a7}
-.case-arrow{position:absolute;right:23px;top:48px;color:#8da388;font-size:24px}
-.case-complete{position:absolute;right:18px;bottom:18px;color:#638a66;font-size:11px;letter-spacing:1px}
+.case-selector{position:absolute;top:350px;left:0;right:0;height:470px}
+.case-pool-count{position:absolute;top:0;left:48px;font-size:15px;color:#8d9c80;letter-spacing:1px}
+.case-reel-window{position:absolute;top:32px;left:0;width:100%;height:304px;overflow:hidden;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
+.case-reel-track{position:relative;top:12px;left:0;display:flex;gap:20px;width:max-content;height:280px;will-change:transform}
+.reel-card{position:relative;flex:none;width:360px;height:280px;border:1px solid #d6dfcd;border-radius:16px;background:#fafbf3d9;text-align:center;color:var(--ink);box-shadow:0 4px 18px #5c775008;opacity:.8;transition:background .3s,border-color .3s,opacity .3s}
+.reel-art{position:absolute;top:19px;left:calc(50% - 58px);width:116px;height:116px;display:block}
+.reel-art svg{display:block;width:100%;height:100%}
+.reel-kicker{position:absolute;top:144px;left:16px;right:16px;font-size:11px;letter-spacing:2px;color:#b79b63}
+.reel-card strong{position:absolute;top:166px;left:16px;right:16px;font:30px var(--serif);font-weight:500;letter-spacing:4px}
+.reel-mechanic{position:absolute;top:211px;left:16px;right:16px;font-size:16px;letter-spacing:1px;color:#87997d;display:flex;align-items:center;justify-content:center;gap:6px}
+.reel-mechanic svg{width:21px;height:21px;flex:none}
+.reel-badge{position:absolute;top:246px;left:16px;right:16px;font-size:12px;letter-spacing:2px;color:#95a086}
+.reel-card.is-selected{border-color:#8ea782;background:#edf3e4;opacity:1}
+.reel-card.is-selected .reel-badge{color:#537e5b}
+.case-reel-frame{position:absolute;top:6px;left:calc(50% - 186px);width:372px;height:292px;border:1px solid #b1c0a1;border-radius:20px;pointer-events:none}
+.case-reel-frame i{position:absolute;top:-5px;left:calc(50% - 4px);width:8px;height:8px;background:#bca46d;transform:rotate(45deg);box-shadow:0 0 0 5px var(--paper)}
+.case-reel-frame i:last-child{top:auto;bottom:-5px}
+.case-draw-status{position:absolute;top:350px;left:48px;right:48px;text-align:center;color:#85987a;font:20px var(--serif);letter-spacing:2px;line-height:28px}
+.case-draw-actions{position:absolute;top:392px;left:48px;right:48px;display:flex;gap:16px}
+.case-draw-actions .primary-button{height:76px;font-size:24px;flex:1;min-width:0;padding:0 27px}
+.case-selector[data-draw-phase=selected] #random-case{background:transparent;color:#6c8867;border-color:#c2cfb5;box-shadow:none}
+.case-selector[data-draw-phase=selected] #random-case:hover{background:#e8eedf}
+.case-selector[data-draw-phase=drawing] .case-reel-frame{border-color:#8ca17c}
+.case-draw-actions button:disabled{opacity:.65}
+.case-choice{position:absolute;top:850px;left:48px;right:48px}
+.case-choice-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.case-choice-heading h3{margin:0;font:21px var(--serif);font-weight:400;letter-spacing:3px;color:#7c9476}
+.case-choice-heading>span{font-size:9px;letter-spacing:2px;color:#a4ad92}
+.case-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.case-option{position:relative;display:flex;align-items:center;gap:12px;min-width:0;min-height:110px;margin:0;padding:15px 12px;border:1px solid #d6dfcb;border-radius:11px;background:#ffffff40;color:var(--ink);text-align:left}
+button.case-option:hover{background:#eaf0e1;border-color:#a5b997;transform:translateY(-2px)}
+.case-option:disabled{opacity:.62}
+.option-art{display:block;flex:none;width:54px;height:62px}
+.option-art svg{display:block;width:100%;height:100%}
+.case-copy{display:flex;flex:1;min-width:0;flex-direction:column;align-items:flex-start;gap:6px}
+.case-copy strong{font:23px var(--serif);font-weight:400;letter-spacing:1px;white-space:nowrap}
+.case-mechanic{font-size:14px;line-height:1.45;color:#8a9b80;letter-spacing:0;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.case-mechanic svg{width:16px;height:16px;flex:none}
+.case-mechanic b{font-weight:400;color:#afbaa3}
+.option-state{position:absolute;right:12px;top:11px;font-size:10px;letter-spacing:1px;color:#94a088}
+button.case-option .option-state{font-size:18px;color:#7f9b76;top:10px}
+.case-complete{font-size:10px;letter-spacing:1px;color:#638a66}
+.case-option.is-coming-soon{background:#f2f3e966;border-color:#e0e5d7;color:#94a18a}
+.case-option.is-coming-soon .option-art{opacity:.65}
+.case-option.is-coming-soon .case-mechanic{color:#a0ab94}
 .secondary-button{height:74px;border:1px solid #c8d3be;border-radius:12px;background:#edf1e5;color:var(--green);font-size:20px;letter-spacing:2px}
 .secondary-button:hover{background:#e1e9d9}
-.case-guidance{position:absolute;top:610px;left:62px;right:62px;padding-top:31px;border-top:1px solid #dfe5d8;text-align:center;color:#8b9b80}
-.case-guidance .eyebrow{font-size:11px;letter-spacing:2px;color:#a8ac8d}
-.case-guidance h3{font:28px var(--serif);font-weight:400;letter-spacing:3px;margin:27px 0 18px;color:#73906f}
-.case-plant{width:240px;height:196px;margin-top:64px;opacity:.9}
-.case-footnote{position:absolute;top:1105px;width:100%;text-align:center;color:#96a18d;font:17px var(--serif);letter-spacing:2px}
+.case-footnote{position:absolute;top:1140px;width:100%;text-align:center;color:#96a18d;font:17px var(--serif);letter-spacing:2px}
 .text-button{border:0;background:none;color:#69856e;font-size:17px;letter-spacing:1px;min-height:48px;padding:10px}
 .text-button:hover{color:#2c6754;background:#e4eada77;border-radius:8px}
-.case-back{position:absolute;top:1165px;left:38px}
+.case-back{position:absolute;top:1175px;left:38px}
 .treatment-heading{position:absolute;top:157px;left:48px;right:48px}
 .small-back{position:absolute;right:0;top:0;color:#6b886f;background:#e8eddf;border:1px solid #dce3d3;border-radius:20px;font-size:16px;padding:9px 14px;letter-spacing:2px}
 .small-back span{font-size:13px;letter-spacing:1px;margin-left:3px}
@@ -156,7 +183,7 @@ button:active{transform:translateY(2px)}
 .note-orbit{font:52px Georgia;color:#a7b89a}
 @media(max-width:1100px){.desktop-note{display:none}
 }
-@media(prefers-reduced-motion:reduce){button,#progress-fill{transition:none}
+@media(prefers-reduced-motion:reduce){button,#progress-fill,.reel-card{transition:none}
 }
 @media(max-width:600px){#app{border-radius:0;box-shadow:none}
 }
@@ -171,12 +198,9 @@ body{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
 .sound-slash{left:39px;top:27px;height:26px}
 .small-back{top:-12px;min-height:76px;min-width:110px;border-radius:13px}
 .text-button{min-height:70px}
-.case-back{top:1150px}
+.case-back{top:1170px}
 .result-actions>div{margin-top:4px}
 
-.case-description{font-size:18px}
-.case-mechanic{font-size:16px}
-.case-copy{gap:9px}
 .journey-note{font-size:19px}
 .game-feedback{font-size:20px}
 .dialog p{font-size:22px}
@@ -184,9 +208,7 @@ body{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
 .dialog .help-item p{font-size:20px}
 .result-heading>p{font-size:21px}
 .case-summary{font-size:18px}
-.case-footnote{font-size:20px}
-.case-kicker{font-size:13px}
-.case-kicker i{font-size:14px}
+.case-footnote{font-size:18px}
 .time-label>span,.progress-label>span{font-size:17px}
 
 /* The chapter shares the casebook card layout with future organ chapters. */
@@ -289,10 +311,13 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
       <section id="cases" class="screen" hidden aria-labelledby="cases-title">
         <div class="page-heading"><p class="eyebrow">THE CASEBOOK <span id="case-count" class="heading-number">/ 01</span></p><h2 id="cases-title">今天，治愈哪里？</h2><p>走进巨人的身体，倾听世界的求救。</p></div>
         <div class="case-summary"><span><i class="status-dot"></i> 生态巡诊中</span><span id="record-summary">已治愈 0 / 1 个病例</span></div>
-        <div class="case-list">
-          <button class="case-card heart-card" data-case="heartJourney"><span class="case-art" data-icon="heart"></span><span class="case-copy"><span class="case-kicker">CASE 01 <i>心脏生态</i></span><strong>心脏巡诊</strong><span class="case-description">循着血河找到病因，唤醒生命之城。</span><span class="case-mechanic">键盘 / 鼠标 <b>·</b> 约 3–5 分钟</span></span><span class="case-arrow">↗</span><span class="case-complete" hidden>已治愈 ✓</span></button>
+        <div id="case-selector" class="case-selector" data-draw-phase="idle" aria-busy="false">
+          <p id="case-pool-count" class="case-pool-count">当前可抽取 1 种玩法</p>
+          <div id="case-reel-window" class="case-reel-window" inert aria-hidden="true"><div id="case-reel-track" class="case-reel-track"></div><div class="case-reel-frame"><i></i><i></i></div></div>
+          <p id="case-draw-status" class="case-draw-status" role="status" aria-live="polite">让心跳，指引下一站。</p>
+          <div class="case-draw-actions"><button id="selected-case-start" class="primary-button" hidden disabled><span>进入玩法</span><span aria-hidden="true">↗</span></button><button id="random-case" class="primary-button"><span id="random-label">随机抽取</span><span class="button-arrow" aria-hidden="true">↗</span></button></div>
         </div>
-        <div class="case-guidance"><p class="eyebrow">A LITTLE CARE, A WORLD REBORN</p><h3>循着心跳，慢慢探索。</h3><svg class="case-plant" viewBox="0 0 220 180" fill="none" aria-hidden="true"><ellipse cx="112" cy="153" rx="68" ry="9" fill="#dbe4ce" opacity=".7"/><path d="M110 151c-2-34 2-65 19-102m-19 87c-19-12-29-28-36-49m38 33c17-13 28-27 34-46" stroke="#9bae88" stroke-width="3" stroke-linecap="round"/><path d="M125 65c-13-22-4-41 21-48 5 22-2 39-21 48Zm-21 62C76 130 61 112 62 87c25 3 40 16 42 40Zm14-14c0-24 15-38 39-37-3 23-16 36-39 37Z" fill="#b1c4a2"/><path d="M76 96c9 12 17 20 25 27m27-64c6-11 10-21 14-33m-21 82c11-7 21-17 30-26" stroke="#f1f3e4" stroke-width="2" stroke-linecap="round"/><path d="M79 147c-5-14-14-22-28-22 1 16 10 24 28 22Zm66 2c8-16 19-22 34-18-6 15-17 21-34 18Z" fill="#c7d4b8"/><path d="M53 58v-11m-5 5h10m111-9v-9m-4 4h8" stroke="#c1ad78" stroke-width="1.7"/><circle cx="179" cy="96" r="2.5" fill="#c4b17b"/></svg></div>
+        <div class="case-choice"><div class="case-choice-heading"><h3>自己选</h3><span aria-hidden="true">YOUR NEXT LITTLE CURE</span></div><div id="case-options" class="case-options"></div></div>
         <p class="case-footnote">每个世界，都值得被温柔以待。</p><button id="case-back" class="text-button case-back">← 返回封面</button>
       </section>
       <section id="treatment" class="screen" hidden aria-labelledby="treatment-title">
@@ -1587,7 +1612,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
   const $ = id => document.getElementById(id);
   const canvas = $('world'), ctx = canvas.getContext('2d');
   const screens = ['home', 'cases', 'treatment', 'result'];
-  // Only implemented chapters belong in the catalog. New chapters can use this contract.
+  // Only implemented chapters own gameplay and saved treatment records.
   const cases = {
     heartJourney: {
       title: '心脏巡诊', number: '01', world: '生命之城', en: 'HEART JOURNEY',
@@ -1600,6 +1625,15 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
     }
   };
   const caseIds = Object.keys(cases);
+  const entryCatalog = [
+    { id: 'heartJourney', title: '心脏巡诊', icon: 'heart', operation: '探索 · 键盘与鼠标', status: 'available' },
+    { id: 'blood', title: '血河淤堵', icon: 'river', operation: '拖拽 · 疏通血河', status: 'comingSoon' },
+    { id: 'spore', title: '孢子侵染', icon: 'forest', operation: '点击 · 净化孢子', status: 'comingSoon' },
+    { id: 'heart', title: '心跳失序', icon: 'rhythm', operation: '节奏 · 校准心跳', status: 'comingSoon' }
+  ];
+  const playableCaseIds = () => entryCatalog.filter(entry => entry.status === 'available'
+    && cases[entry.id] && typeof window.GiantCureGames[entry.id] === 'function').map(entry => entry.id);
+  const selector = { phase: 'idle', selectedId: null, token: 0, frame: null, reelIndex: entryCatalog.length };
   function readRecord(key) {
     try {
       const record = JSON.parse(localStorage.getItem(key) || '{}') || {};
@@ -1620,6 +1654,82 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
   let pointerScreen = null, pointerClient = null;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  function renderEntrySelector() {
+    const playable = playableCaseIds();
+    $('case-options').innerHTML = entryCatalog.map(entry => {
+      const available = playable.includes(entry.id);
+      const content = `<span class="option-art">${entryIcon(entry.icon)}</span><span class="case-copy"><strong>${entry.title}</strong><span class="case-mechanic">${available ? cases[entry.id].mechanic : operationIcon(entry.icon) + entry.operation}</span>${available ? '<span class="case-complete" hidden>已治愈 ✓</span>' : ''}</span><span class="option-state">${available ? '↗' : '待开放'}</span>`;
+      return available
+        ? `<button type="button" class="case-option" data-case="${entry.id}">${content}</button>`
+        : `<div class="case-option is-coming-soon" data-preview-case="${entry.id}" role="group" aria-label="${entry.title}，待开放">${content}</div>`;
+    }).join('');
+    // Decorative copies never share the playable cards' event or record attributes.
+    $('case-reel-track').innerHTML = Array.from({ length: 6 }, () => entryCatalog.map((entry, index) =>
+      `<div class="reel-card" data-reel-case="${entry.id}"><span class="reel-kicker">CASE ${String(index + 1).padStart(2, '0')}</span><span class="reel-art">${entryIcon(entry.icon)}</span><strong>${entry.title}</strong><span class="reel-mechanic">${operationIcon(entry.icon)}${entry.operation}</span><span class="reel-badge">${playable.includes(entry.id) ? '可游玩' : '待开放'}</span></div>`
+    ).join('')).join('');
+    updateSelectorControls();
+  }
+  function updateSelectorControls() {
+    const playable = playableCaseIds(), drawing = selector.phase === 'drawing', selected = selector.phase === 'selected';
+    $('case-selector').dataset.drawPhase = selector.phase;
+    $('case-selector').setAttribute('aria-busy', String(drawing));
+    $('case-pool-count').textContent = `当前可抽取 ${playable.length} 种玩法`;
+    $('random-case').disabled = drawing || !playable.length;
+    $('random-label').textContent = drawing ? '抽取中…' : selected ? '再抽一次' : '随机抽取';
+    $('selected-case-start').hidden = !selected;
+    $('selected-case-start').disabled = !selected || !playable.includes(selector.selectedId);
+    for (const button of $('case-options').querySelectorAll('[data-case]')) button.disabled = drawing || !playable.includes(button.dataset.case);
+  }
+  function reelOffset(index) {
+    const card = $('case-reel-track').children[index];
+    return $('case-reel-window').clientWidth / 2 - card.offsetLeft - card.offsetWidth / 2;
+  }
+  function positionReel(index) {
+    if ($('case-reel-window').clientWidth) $('case-reel-track').style.transform = `translateX(${reelOffset(index)}px)`;
+  }
+  function resetSelector() {
+    selector.token++;
+    if (selector.frame !== null) cancelAnimationFrame(selector.frame);
+    Object.assign(selector, { phase: 'idle', selectedId: null, frame: null, reelIndex: entryCatalog.length });
+    $('case-reel-track').style.opacity = '';
+    for (const card of $('case-reel-track').children) card.classList.remove('is-selected');
+    $('case-draw-status').textContent = playableCaseIds().length ? '让心跳，指引下一站。' : '玩法正在准备中';
+    positionReel(selector.reelIndex); updateSelectorControls();
+  }
+  function drawCase() {
+    if (state.screen !== 'cases' || state.modal || selector.phase === 'drawing') return;
+    const playable = playableCaseIds();
+    if (!playable.length) return;
+    const chosenId = playable[Math.floor(Math.random() * playable.length)];
+    resetSelector();
+    const startIndex = entryCatalog.length;
+    const targetIndex = entryCatalog.length * 4 + entryCatalog.findIndex(entry => entry.id === chosenId);
+    const token = ++selector.token, startedAt = performance.now(), duration = reducedMotion ? 160 : 2800;
+    selector.phase = 'drawing';
+    $('case-draw-status').textContent = '正在寻找下一份求救…';
+    updateSelectorControls();
+    if (reducedMotion) { positionReel(targetIndex); $('case-reel-track').style.opacity = '.35'; }
+    function animate(now) {
+      if (selector.token !== token || selector.phase !== 'drawing' || state.screen !== 'cases') return;
+      const progress = Math.min(1, Math.max(0, (now - startedAt) / duration));
+      if (reducedMotion) $('case-reel-track').style.opacity = String(.35 + .65 * progress);
+      else {
+        const eased = 1 - Math.pow(1 - progress, 4), from = reelOffset(startIndex), to = reelOffset(targetIndex);
+        $('case-reel-track').style.transform = `translateX(${from + (to - from) * eased}px)`;
+      }
+      if (progress < 1) { selector.frame = requestAnimationFrame(animate); return; }
+      if (!playableCaseIds().includes(chosenId)) { resetSelector(); return; }
+      Object.assign(selector, { phase: 'selected', selectedId: chosenId, frame: null, reelIndex: targetIndex });
+      positionReel(targetIndex); $('case-reel-track').style.opacity = '';
+      $('case-reel-track').children[targetIndex].classList.add('is-selected');
+      $('case-draw-status').textContent = `已抽中 · ${cases[chosenId].title}`;
+      updateSelectorControls();
+      $('selected-case-start').focus({ preventScroll: true });
+    }
+    selector.frame = requestAnimationFrame(animate);
+  }
+  renderEntrySelector();
+
   function resize() {
     const vw = document.documentElement.clientWidth;
     const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -1636,6 +1746,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     }
     if (pointerClient) pointerScreen = toPoint(pointerClient);
+    if (state.screen === 'cases' && selector.phase !== 'drawing') positionReel(selector.reelIndex);
   }
   window.addEventListener('resize', resize);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
@@ -1643,6 +1754,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 
   function clearInput() { if (state.game) state.game.clearInput(); }
   function showScreen(name) {
+    if (state.screen === 'cases' || name === 'cases') resetSelector();
     clearInput(); state.screen = name;
     for (const id of screens) $(id).hidden = id !== name;
     $('folio-page').textContent = { home: '001', cases: '002', treatment: '003', result: '004' }[name];
@@ -1677,7 +1789,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 
   async function startGame(id) {
     const info = cases[id], factory = window.GiantCureGames[id];
-    if (!info || !factory) return;
+    if (!info || !factory || selector.phase === 'drawing' || !playableCaseIds().includes(id)) return;
     closeModal(); clearInput();
     const token = ++loadToken;
     Object.assign(state, { id, game: null, progress: 0, elapsed: 0, activeTime: 0, result: null, finishWait: 0, feedbackTime: 0, phase: 'loading', hud: {}, cameraRoom: null });
@@ -1798,6 +1910,12 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
   function resumeGame() { closeModal(); if (state.phase === 'paused') { state.phase = 'playing'; lastFrame = null; } }
   function showHelp() {
     if (state.phase === 'finishing') return;
+    if (state.screen === 'cases') {
+      openDialog('让心跳，指引下一站', '<p>点击“随机抽取”，等卡片停稳后选择“进入玩法”，也可以再抽一次。</p><p>想自己挑选？点击下方可玩的卡片，即可开始巡诊。</p><p class="dialog-tip">标注“待开放”的玩法仅作预告，不参与抽取。</p>', [
+        { label: '明白了 ↗', primary: true, action: closeModal }
+      ], 'THE CASEBOOK / FIELD GUIDE');
+      return;
+    }
     const wasPlaying = ['playing', 'paused'].includes(state.phase);
     if (wasPlaying) pauseGame();
     const chapter = state.game?.getDebugState();
@@ -1819,6 +1937,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
     ], 'HEART JOURNEY / FIELD GUIDE');
   }
   function openDialog(title, body, buttons, kicker = 'A MOMENT OF CARE') {
+    if (selector.phase === 'drawing') resetSelector();
     if ($('modal').hidden) previousFocus = document.activeElement;
     state.modal = true; $('dialog-title').textContent = title; $('dialog-kicker').textContent = kicker;
     $('dialog-body').innerHTML = body; $('dialog-actions').replaceChildren();
@@ -1872,13 +1991,24 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
     }
   });
   document.addEventListener('keyup', event => { if (state.game) state.game.keyUp(event.code); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden && state.phase === 'playing') showPause(); });
-  window.addEventListener('blur', () => { if (state.phase === 'playing') showPause(); else clearInput(); });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) return;
+    if (selector.phase === 'drawing') resetSelector();
+    if (state.phase === 'playing') showPause();
+  });
+  window.addEventListener('blur', () => {
+    if (selector.phase === 'drawing') resetSelector();
+    if (state.phase === 'playing') showPause(); else clearInput();
+  });
   $('brand').onclick = requestHome;
   $('begin').onclick = goCases; $('case-back').onclick = goHome;
   $('help').onclick = showHelp; $('pause').onclick = showPause;
   $('retry').onclick = () => state.result && !state.result.won ? retryCheckpoint() : startGame(state.id);
   $('result-cases').onclick = goCases;
+  $('random-case').onclick = drawCase;
+  $('selected-case-start').onclick = () => {
+    if (state.screen === 'cases' && !state.modal && selector.phase === 'selected' && playableCaseIds().includes(selector.selectedId)) startGame(selector.selectedId);
+  };
   document.querySelectorAll('[data-case]').forEach(card => { card.onclick = () => startGame(card.dataset.case); });
   for (const [id, key] of [['journey-scan', 'KeyQ'], ['journey-interact', 'KeyE'], ['journey-reload-button', 'KeyR']]) $(id).onclick = () => {
     if (acceptsInput()) { state.game.keyDown(key, false); state.game.keyUp(key); }
@@ -2014,16 +2144,35 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
     drawPage(now / 1000); if (state.screen === 'treatment') drawParticles(active ? dt : 0); requestAnimationFrame(frame);
   }
 
+  function operationIcon(kind) {
+    const paths = {
+      heart: '<circle cx="12" cy="12" r="8"/><path d="m15 9-2 4-4 2 2-4Z"/>',
+      river: '<path d="M4 12h16m-4-4 4 4-4 4M8 8l-4 4 4 4"/>',
+      forest: '<path d="m8 6 1 14 4-5 6-1Zm-4-1L2 3m6-1V0m5 4 2-2M3 9H0"/>',
+      rhythm: '<path d="M2 12h4l3-7 5 14 3-7h5"/>'
+    };
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[kind] || paths.heart}</svg>`;
+  }
+  function entryIcon(kind) {
+    if (kind === 'heart') return heartIcon();
+    const art = {
+      river: '<path d="M22 43c14-11 26-9 38-2s23 7 40-3M19 89c16-10 27-8 40-1s24 6 42-2" stroke="#b9c9a7" stroke-width="2"/><path d="M57 20c-35 26 23 33 0 55s-8 28-1 35h27c-25-19-5-22 3-38S48 42 79 21" fill="#a9c9bd"/><path d="M64 28c-17 18 27 28 5 49s-4 23 1 27" stroke="#eff5e7" stroke-width="2"/><path d="m36 60 12-10 15 5 3 14-16 6-15-6Z" fill="#c2b096"/><path d="m68 82 9-7 11 4 1 11-13 4-8-5Z" fill="#cdbda0"/><path d="M22 35v-8m-4 4h8" stroke="#bca46d"/>',
+      forest: '<path d="M25 98c23-12 51-12 74 0" fill="#d0dcbc"/><path d="M43 91V48m34 46V40" stroke="#92a981" stroke-width="2"/><path d="M22 68c0-17 6-34 21-42 16 9 22 26 22 42-15 9-29 9-43 0Z" fill="#b0c79e"/><path d="M59 62c0-20 7-37 18-46 14 11 21 28 21 46-12 8-26 9-39 0Z" fill="#91b29a"/><path d="m43 57-9-8m43-1 9-8" stroke="#f0f4e4" stroke-width="2"/><circle cx="63" cy="82" r="9" fill="#c1b2c7"/><circle cx="62" cy="80" r="3" fill="#e4dbe4"/><path d="M28 89v-7m-3 3h6m64-7v-7m-3 3h6" stroke="#bda773"/>',
+      rhythm: '<path d="M23 101c26-10 49-10 74 0" stroke="#c9d6ba"/><path d="M59 94C24 71 21 43 37 36c12-6 23 6 23 6s10-12 23-6c18 8 12 36-24 58Z" fill="#cfb99e"/><path d="M26 66h21l7-14 12 29 9-17h20" stroke="#f8f5e8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="75" cy="64" r="4" fill="#bf9f60"/><path d="M89 24v-9m-4 4h8" stroke="#bca46d"/>'
+    };
+    return `<svg viewBox="0 0 120 130" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><ellipse cx="60" cy="66" rx="55" ry="55" fill="#e8edde"/>${art[kind] || art.river}</svg>`;
+  }
   function heartIcon() {
     return '<svg viewBox="0 0 120 130" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><ellipse cx="60" cy="66" rx="55" ry="55" fill="#e8edde"/><path d="M14 92Q50 109 105 91" stroke="#c7d4b9"/><circle cx="96" cy="28" r="3" fill="#c2a96e"/><path d="M60 108C8 74 19 33 43 39c11 1 17 12 17 12s7-16 22-12c35 9 12 48-22 69Z" fill="#c7aa8b" opacity=".6"/><path d="M30 91c20-19 40-18 60-2l-5 17H36Z" fill="#a3b68e"/><path d="M39 78V51h15v27m5 1V40h16v39m5 5V58h13v26" fill="#dce2c8" stroke="#8da580" stroke-width="1.5"/><path d="m37 51 10-12 9 12m1-11 10-17 10 17m0 18 10-14 8 14" fill="#81a48b"/><path d="M46 60v5m20-15v6m20 9v5" stroke="#bd9f59" stroke-width="3"/><path d="M18 91h19l6-9 9 19 9-25 8 15h35" stroke="#6e997e" stroke-width="2"/><path d="M67 16v-8m-4 4h8" stroke="#c0a35e"/></svg>';
   }
   function leafIcon() { return '<svg viewBox="0 0 120 130" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M30 103C12 51 45 23 98 23c3 58-15 88-68 80Z" fill="#cedbc1" stroke="#90aa83" stroke-width="1.5"/><path d="m31 103 48-60m-33 43-6-26m19 10 26-1" stroke="#88a17d" stroke-width="1.5"/><path d="M29 107c-2 7-4 10-9 14" stroke="#88a17d" stroke-width="2"/></svg>'; }
-  for (const element of document.querySelectorAll('[data-icon]')) element.innerHTML = heartIcon();
+  for (const element of document.querySelectorAll('[data-icon]')) element.innerHTML = entryIcon(element.dataset.icon);
   // Read-only diagnostics locate visible objects for input-driven tests.
   window.GiantCure = Object.freeze({ snapshot: () => ({
     screen: state.screen, phase: state.phase, id: state.id, progress: state.progress,
     remaining: null, elapsed: state.elapsed, modal: state.modal,
     result: state.result ? { ...state.result } : null,
+    selector: { phase: selector.phase, selectedId: selector.selectedId, playableIds: playableCaseIds() },
     game: state.game ? state.game.getDebugState() : null,
     view: { viewport: { ...view.viewport }, camera: { ...view.camera } },
     logicalSize: { width: W, height: H }, reducedMotion,

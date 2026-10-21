@@ -58,30 +58,57 @@ button:active{transform:translateY(2px)}
 .page-heading>p:last-child{font-size:19px;color:#8b9986;margin-top:17px;letter-spacing:1px}
 .case-summary{position:absolute;top:305px;left:48px;right:48px;display:flex;align-items:center;justify-content:space-between;font-size:14px;color:#83927d;letter-spacing:1px}
 .status-dot{display:inline-block;width:6px;height:6px;background:#8ba66c;border-radius:50%;margin-right:8px;vertical-align:middle}
-.case-list{position:absolute;top:350px;left:42px;right:42px;display:grid;gap:20px}
-.case-card{position:relative;display:flex;align-items:center;gap:23px;width:100%;height:191px;text-align:left;border:1px solid #d7dfd0;border-radius:15px;background:#ffffff45;color:var(--ink);padding:24px 23px;box-shadow:0 3px 0 #e8ecdf44}
-.case-card:hover{background:#edf1e5;border-color:#b3c2a9;transform:translateY(-2px)}
-.case-art{flex:none;width:115px;height:122px;display:block}
-.case-art svg{width:100%;height:100%}
-.case-copy{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
-.case-kicker{font-size:11px;color:#b79c65;letter-spacing:1.5px}
-.case-kicker i{font-style:normal;color:#8c9c84;border-left:1px solid #d0d7c7;margin-left:10px;padding-left:10px;font-size:12px;letter-spacing:1px}
-.case-copy strong{font:29px var(--serif);letter-spacing:3px}
-.case-description{font-size:15px;color:#83917e;letter-spacing:.3px}
-.case-mechanic{font-size:13px;color:#7c917a}
-.case-mechanic b{font-weight:400;padding:0 8px;color:#b4c0a7}
-.case-arrow{position:absolute;right:23px;top:48px;color:#8da388;font-size:24px}
-.case-complete{position:absolute;right:18px;bottom:18px;color:#638a66;font-size:11px;letter-spacing:1px}
+.case-selector{position:absolute;top:350px;left:0;right:0;height:470px}
+.case-pool-count{position:absolute;top:0;left:48px;font-size:15px;color:#8d9c80;letter-spacing:1px}
+.case-reel-window{position:absolute;top:32px;left:0;width:100%;height:304px;overflow:hidden;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
+.case-reel-track{position:relative;top:12px;left:0;display:flex;gap:20px;width:max-content;height:280px;will-change:transform}
+.reel-card{position:relative;flex:none;width:360px;height:280px;border:1px solid #d6dfcd;border-radius:16px;background:#fafbf3d9;text-align:center;color:var(--ink);box-shadow:0 4px 18px #5c775008;opacity:.8;transition:background .3s,border-color .3s,opacity .3s}
+.reel-art{position:absolute;top:19px;left:calc(50% - 58px);width:116px;height:116px;display:block}
+.reel-art svg{display:block;width:100%;height:100%}
+.reel-kicker{position:absolute;top:144px;left:16px;right:16px;font-size:11px;letter-spacing:2px;color:#b79b63}
+.reel-card strong{position:absolute;top:166px;left:16px;right:16px;font:30px var(--serif);font-weight:500;letter-spacing:4px}
+.reel-mechanic{position:absolute;top:211px;left:16px;right:16px;font-size:16px;letter-spacing:1px;color:#87997d;display:flex;align-items:center;justify-content:center;gap:6px}
+.reel-mechanic svg{width:21px;height:21px;flex:none}
+.reel-badge{position:absolute;top:246px;left:16px;right:16px;font-size:12px;letter-spacing:2px;color:#95a086}
+.reel-card.is-selected{border-color:#8ea782;background:#edf3e4;opacity:1}
+.reel-card.is-selected .reel-badge{color:#537e5b}
+.case-reel-frame{position:absolute;top:6px;left:calc(50% - 186px);width:372px;height:292px;border:1px solid #b1c0a1;border-radius:20px;pointer-events:none}
+.case-reel-frame i{position:absolute;top:-5px;left:calc(50% - 4px);width:8px;height:8px;background:#bca46d;transform:rotate(45deg);box-shadow:0 0 0 5px var(--paper)}
+.case-reel-frame i:last-child{top:auto;bottom:-5px}
+.case-draw-status{position:absolute;top:350px;left:48px;right:48px;text-align:center;color:#85987a;font:20px var(--serif);letter-spacing:2px;line-height:28px}
+.case-draw-actions{position:absolute;top:392px;left:48px;right:48px;display:flex;gap:16px}
+.case-draw-actions .primary-button{height:76px;font-size:24px;flex:1;min-width:0;padding:0 27px}
+.case-selector[data-draw-phase=selected] #random-case{background:transparent;color:#6c8867;border-color:#c2cfb5;box-shadow:none}
+.case-selector[data-draw-phase=selected] #random-case:hover{background:#e8eedf}
+.case-selector[data-draw-phase=drawing] .case-reel-frame{border-color:#8ca17c}
+.case-draw-actions button:disabled{opacity:.65}
+.case-choice{position:absolute;top:850px;left:48px;right:48px}
+.case-choice-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.case-choice-heading h3{margin:0;font:21px var(--serif);font-weight:400;letter-spacing:3px;color:#7c9476}
+.case-choice-heading>span{font-size:9px;letter-spacing:2px;color:#a4ad92}
+.case-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.case-option{position:relative;display:flex;align-items:center;gap:12px;min-width:0;min-height:110px;margin:0;padding:15px 12px;border:1px solid #d6dfcb;border-radius:11px;background:#ffffff40;color:var(--ink);text-align:left}
+button.case-option:hover{background:#eaf0e1;border-color:#a5b997;transform:translateY(-2px)}
+.case-option:disabled{opacity:.62}
+.option-art{display:block;flex:none;width:54px;height:62px}
+.option-art svg{display:block;width:100%;height:100%}
+.case-copy{display:flex;flex:1;min-width:0;flex-direction:column;align-items:flex-start;gap:6px}
+.case-copy strong{font:23px var(--serif);font-weight:400;letter-spacing:1px;white-space:nowrap}
+.case-mechanic{font-size:14px;line-height:1.45;color:#8a9b80;letter-spacing:0;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.case-mechanic svg{width:16px;height:16px;flex:none}
+.case-mechanic b{font-weight:400;color:#afbaa3}
+.option-state{position:absolute;right:12px;top:11px;font-size:10px;letter-spacing:1px;color:#94a088}
+button.case-option .option-state{font-size:18px;color:#7f9b76;top:10px}
+.case-complete{font-size:10px;letter-spacing:1px;color:#638a66}
+.case-option.is-coming-soon{background:#f2f3e966;border-color:#e0e5d7;color:#94a18a}
+.case-option.is-coming-soon .option-art{opacity:.65}
+.case-option.is-coming-soon .case-mechanic{color:#a0ab94}
 .secondary-button{height:74px;border:1px solid #c8d3be;border-radius:12px;background:#edf1e5;color:var(--green);font-size:20px;letter-spacing:2px}
 .secondary-button:hover{background:#e1e9d9}
-.case-guidance{position:absolute;top:610px;left:62px;right:62px;padding-top:31px;border-top:1px solid #dfe5d8;text-align:center;color:#8b9b80}
-.case-guidance .eyebrow{font-size:11px;letter-spacing:2px;color:#a8ac8d}
-.case-guidance h3{font:28px var(--serif);font-weight:400;letter-spacing:3px;margin:27px 0 18px;color:#73906f}
-.case-plant{width:240px;height:196px;margin-top:64px;opacity:.9}
-.case-footnote{position:absolute;top:1105px;width:100%;text-align:center;color:#96a18d;font:17px var(--serif);letter-spacing:2px}
+.case-footnote{position:absolute;top:1140px;width:100%;text-align:center;color:#96a18d;font:17px var(--serif);letter-spacing:2px}
 .text-button{border:0;background:none;color:#69856e;font-size:17px;letter-spacing:1px;min-height:48px;padding:10px}
 .text-button:hover{color:#2c6754;background:#e4eada77;border-radius:8px}
-.case-back{position:absolute;top:1165px;left:38px}
+.case-back{position:absolute;top:1175px;left:38px}
 .treatment-heading{position:absolute;top:157px;left:48px;right:48px}
 .small-back{position:absolute;right:0;top:0;color:#6b886f;background:#e8eddf;border:1px solid #dce3d3;border-radius:20px;font-size:16px;padding:9px 14px;letter-spacing:2px}
 .small-back span{font-size:13px;letter-spacing:1px;margin-left:3px}
@@ -147,7 +174,7 @@ button:active{transform:translateY(2px)}
 .note-orbit{font:52px Georgia;color:#a7b89a}
 @media(max-width:1100px){.desktop-note{display:none}
 }
-@media(prefers-reduced-motion:reduce){button,#progress-fill{transition:none}
+@media(prefers-reduced-motion:reduce){button,#progress-fill,.reel-card{transition:none}
 }
 @media(max-width:600px){#app{border-radius:0;box-shadow:none}
 }
@@ -162,12 +189,9 @@ body{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
 .sound-slash{left:39px;top:27px;height:26px}
 .small-back{top:-12px;min-height:76px;min-width:110px;border-radius:13px}
 .text-button{min-height:70px}
-.case-back{top:1150px}
+.case-back{top:1170px}
 .result-actions>div{margin-top:4px}
 
-.case-description{font-size:18px}
-.case-mechanic{font-size:16px}
-.case-copy{gap:9px}
 .journey-note{font-size:19px}
 .game-feedback{font-size:20px}
 .dialog p{font-size:22px}
@@ -175,9 +199,7 @@ body{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
 .dialog .help-item p{font-size:20px}
 .result-heading>p{font-size:21px}
 .case-summary{font-size:18px}
-.case-footnote{font-size:20px}
-.case-kicker{font-size:13px}
-.case-kicker i{font-size:14px}
+.case-footnote{font-size:18px}
 .time-label>span,.progress-label>span{font-size:17px}
 
 /* The chapter shares the casebook card layout with future organ chapters. */

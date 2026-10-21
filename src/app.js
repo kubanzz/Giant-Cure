@@ -7,7 +7,7 @@
   const $ = id => document.getElementById(id);
   const canvas = $('world'), ctx = canvas.getContext('2d');
   const screens = ['home', 'cases', 'treatment', 'result'];
-  // Only implemented chapters belong in the catalog. New chapters can use this contract.
+  // Only implemented chapters own gameplay and saved treatment records.
   const cases = {
     heartJourney: {
       title: '心脏巡诊', number: '01', world: '生命之城', en: 'HEART JOURNEY',
@@ -20,6 +20,15 @@
     }
   };
   const caseIds = Object.keys(cases);
+  const entryCatalog = [
+    { id: 'heartJourney', title: '心脏巡诊', icon: 'heart', operation: '探索 · 键盘与鼠标', status: 'available' },
+    { id: 'blood', title: '血河淤堵', icon: 'river', operation: '拖拽 · 疏通血河', status: 'comingSoon' },
+    { id: 'spore', title: '孢子侵染', icon: 'forest', operation: '点击 · 净化孢子', status: 'comingSoon' },
+    { id: 'heart', title: '心跳失序', icon: 'rhythm', operation: '节奏 · 校准心跳', status: 'comingSoon' }
+  ];
+  const playableCaseIds = () => entryCatalog.filter(entry => entry.status === 'available'
+    && cases[entry.id] && typeof window.GiantCureGames[entry.id] === 'function').map(entry => entry.id);
+  const selector = { phase: 'idle', selectedId: null, token: 0, frame: null, reelIndex: entryCatalog.length };
   function readRecord(key) {
     try {
       const record = JSON.parse(localStorage.getItem(key) || '{}') || {};
@@ -40,6 +49,82 @@
   let pointerScreen = null, pointerClient = null;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  function renderEntrySelector() {
+    const playable = playableCaseIds();
+    $('case-options').innerHTML = entryCatalog.map(entry => {
+      const available = playable.includes(entry.id);
+      const content = `<span class="option-art">${entryIcon(entry.icon)}</span><span class="case-copy"><strong>${entry.title}</strong><span class="case-mechanic">${available ? cases[entry.id].mechanic : operationIcon(entry.icon) + entry.operation}</span>${available ? '<span class="case-complete" hidden>已治愈 ✓</span>' : ''}</span><span class="option-state">${available ? '↗' : '待开放'}</span>`;
+      return available
+        ? `<button type="button" class="case-option" data-case="${entry.id}">${content}</button>`
+        : `<div class="case-option is-coming-soon" data-preview-case="${entry.id}" role="group" aria-label="${entry.title}，待开放">${content}</div>`;
+    }).join('');
+    // Decorative copies never share the playable cards' event or record attributes.
+    $('case-reel-track').innerHTML = Array.from({ length: 6 }, () => entryCatalog.map((entry, index) =>
+      `<div class="reel-card" data-reel-case="${entry.id}"><span class="reel-kicker">CASE ${String(index + 1).padStart(2, '0')}</span><span class="reel-art">${entryIcon(entry.icon)}</span><strong>${entry.title}</strong><span class="reel-mechanic">${operationIcon(entry.icon)}${entry.operation}</span><span class="reel-badge">${playable.includes(entry.id) ? '可游玩' : '待开放'}</span></div>`
+    ).join('')).join('');
+    updateSelectorControls();
+  }
+  function updateSelectorControls() {
+    const playable = playableCaseIds(), drawing = selector.phase === 'drawing', selected = selector.phase === 'selected';
+    $('case-selector').dataset.drawPhase = selector.phase;
+    $('case-selector').setAttribute('aria-busy', String(drawing));
+    $('case-pool-count').textContent = `当前可抽取 ${playable.length} 种玩法`;
+    $('random-case').disabled = drawing || !playable.length;
+    $('random-label').textContent = drawing ? '抽取中…' : selected ? '再抽一次' : '随机抽取';
+    $('selected-case-start').hidden = !selected;
+    $('selected-case-start').disabled = !selected || !playable.includes(selector.selectedId);
+    for (const button of $('case-options').querySelectorAll('[data-case]')) button.disabled = drawing || !playable.includes(button.dataset.case);
+  }
+  function reelOffset(index) {
+    const card = $('case-reel-track').children[index];
+    return $('case-reel-window').clientWidth / 2 - card.offsetLeft - card.offsetWidth / 2;
+  }
+  function positionReel(index) {
+    if ($('case-reel-window').clientWidth) $('case-reel-track').style.transform = `translateX(${reelOffset(index)}px)`;
+  }
+  function resetSelector() {
+    selector.token++;
+    if (selector.frame !== null) cancelAnimationFrame(selector.frame);
+    Object.assign(selector, { phase: 'idle', selectedId: null, frame: null, reelIndex: entryCatalog.length });
+    $('case-reel-track').style.opacity = '';
+    for (const card of $('case-reel-track').children) card.classList.remove('is-selected');
+    $('case-draw-status').textContent = playableCaseIds().length ? '让心跳，指引下一站。' : '玩法正在准备中';
+    positionReel(selector.reelIndex); updateSelectorControls();
+  }
+  function drawCase() {
+    if (state.screen !== 'cases' || state.modal || selector.phase === 'drawing') return;
+    const playable = playableCaseIds();
+    if (!playable.length) return;
+    const chosenId = playable[Math.floor(Math.random() * playable.length)];
+    resetSelector();
+    const startIndex = entryCatalog.length;
+    const targetIndex = entryCatalog.length * 4 + entryCatalog.findIndex(entry => entry.id === chosenId);
+    const token = ++selector.token, startedAt = performance.now(), duration = reducedMotion ? 160 : 2800;
+    selector.phase = 'drawing';
+    $('case-draw-status').textContent = '正在寻找下一份求救…';
+    updateSelectorControls();
+    if (reducedMotion) { positionReel(targetIndex); $('case-reel-track').style.opacity = '.35'; }
+    function animate(now) {
+      if (selector.token !== token || selector.phase !== 'drawing' || state.screen !== 'cases') return;
+      const progress = Math.min(1, Math.max(0, (now - startedAt) / duration));
+      if (reducedMotion) $('case-reel-track').style.opacity = String(.35 + .65 * progress);
+      else {
+        const eased = 1 - Math.pow(1 - progress, 4), from = reelOffset(startIndex), to = reelOffset(targetIndex);
+        $('case-reel-track').style.transform = `translateX(${from + (to - from) * eased}px)`;
+      }
+      if (progress < 1) { selector.frame = requestAnimationFrame(animate); return; }
+      if (!playableCaseIds().includes(chosenId)) { resetSelector(); return; }
+      Object.assign(selector, { phase: 'selected', selectedId: chosenId, frame: null, reelIndex: targetIndex });
+      positionReel(targetIndex); $('case-reel-track').style.opacity = '';
+      $('case-reel-track').children[targetIndex].classList.add('is-selected');
+      $('case-draw-status').textContent = `已抽中 · ${cases[chosenId].title}`;
+      updateSelectorControls();
+      $('selected-case-start').focus({ preventScroll: true });
+    }
+    selector.frame = requestAnimationFrame(animate);
+  }
+  renderEntrySelector();
+
   function resize() {
     const vw = document.documentElement.clientWidth;
     const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -56,6 +141,7 @@
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     }
     if (pointerClient) pointerScreen = toPoint(pointerClient);
+    if (state.screen === 'cases' && selector.phase !== 'drawing') positionReel(selector.reelIndex);
   }
   window.addEventListener('resize', resize);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
@@ -63,6 +149,7 @@
 
   function clearInput() { if (state.game) state.game.clearInput(); }
   function showScreen(name) {
+    if (state.screen === 'cases' || name === 'cases') resetSelector();
     clearInput(); state.screen = name;
     for (const id of screens) $(id).hidden = id !== name;
     $('folio-page').textContent = { home: '001', cases: '002', treatment: '003', result: '004' }[name];
@@ -97,7 +184,7 @@
 
   async function startGame(id) {
     const info = cases[id], factory = window.GiantCureGames[id];
-    if (!info || !factory) return;
+    if (!info || !factory || selector.phase === 'drawing' || !playableCaseIds().includes(id)) return;
     closeModal(); clearInput();
     const token = ++loadToken;
     Object.assign(state, { id, game: null, progress: 0, elapsed: 0, activeTime: 0, result: null, finishWait: 0, feedbackTime: 0, phase: 'loading', hud: {}, cameraRoom: null });
@@ -218,6 +305,12 @@
   function resumeGame() { closeModal(); if (state.phase === 'paused') { state.phase = 'playing'; lastFrame = null; } }
   function showHelp() {
     if (state.phase === 'finishing') return;
+    if (state.screen === 'cases') {
+      openDialog('让心跳，指引下一站', '<p>点击“随机抽取”，等卡片停稳后选择“进入玩法”，也可以再抽一次。</p><p>想自己挑选？点击下方可玩的卡片，即可开始巡诊。</p><p class="dialog-tip">标注“待开放”的玩法仅作预告，不参与抽取。</p>', [
+        { label: '明白了 ↗', primary: true, action: closeModal }
+      ], 'THE CASEBOOK / FIELD GUIDE');
+      return;
+    }
     const wasPlaying = ['playing', 'paused'].includes(state.phase);
     if (wasPlaying) pauseGame();
     const chapter = state.game?.getDebugState();
@@ -239,6 +332,7 @@
     ], 'HEART JOURNEY / FIELD GUIDE');
   }
   function openDialog(title, body, buttons, kicker = 'A MOMENT OF CARE') {
+    if (selector.phase === 'drawing') resetSelector();
     if ($('modal').hidden) previousFocus = document.activeElement;
     state.modal = true; $('dialog-title').textContent = title; $('dialog-kicker').textContent = kicker;
     $('dialog-body').innerHTML = body; $('dialog-actions').replaceChildren();
@@ -292,13 +386,24 @@
     }
   });
   document.addEventListener('keyup', event => { if (state.game) state.game.keyUp(event.code); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden && state.phase === 'playing') showPause(); });
-  window.addEventListener('blur', () => { if (state.phase === 'playing') showPause(); else clearInput(); });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) return;
+    if (selector.phase === 'drawing') resetSelector();
+    if (state.phase === 'playing') showPause();
+  });
+  window.addEventListener('blur', () => {
+    if (selector.phase === 'drawing') resetSelector();
+    if (state.phase === 'playing') showPause(); else clearInput();
+  });
   $('brand').onclick = requestHome;
   $('begin').onclick = goCases; $('case-back').onclick = goHome;
   $('help').onclick = showHelp; $('pause').onclick = showPause;
   $('retry').onclick = () => state.result && !state.result.won ? retryCheckpoint() : startGame(state.id);
   $('result-cases').onclick = goCases;
+  $('random-case').onclick = drawCase;
+  $('selected-case-start').onclick = () => {
+    if (state.screen === 'cases' && !state.modal && selector.phase === 'selected' && playableCaseIds().includes(selector.selectedId)) startGame(selector.selectedId);
+  };
   document.querySelectorAll('[data-case]').forEach(card => { card.onclick = () => startGame(card.dataset.case); });
   for (const [id, key] of [['journey-scan', 'KeyQ'], ['journey-interact', 'KeyE'], ['journey-reload-button', 'KeyR']]) $(id).onclick = () => {
     if (acceptsInput()) { state.game.keyDown(key, false); state.game.keyUp(key); }
@@ -434,16 +539,35 @@
     drawPage(now / 1000); if (state.screen === 'treatment') drawParticles(active ? dt : 0); requestAnimationFrame(frame);
   }
 
+  function operationIcon(kind) {
+    const paths = {
+      heart: '<circle cx="12" cy="12" r="8"/><path d="m15 9-2 4-4 2 2-4Z"/>',
+      river: '<path d="M4 12h16m-4-4 4 4-4 4M8 8l-4 4 4 4"/>',
+      forest: '<path d="m8 6 1 14 4-5 6-1Zm-4-1L2 3m6-1V0m5 4 2-2M3 9H0"/>',
+      rhythm: '<path d="M2 12h4l3-7 5 14 3-7h5"/>'
+    };
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[kind] || paths.heart}</svg>`;
+  }
+  function entryIcon(kind) {
+    if (kind === 'heart') return heartIcon();
+    const art = {
+      river: '<path d="M22 43c14-11 26-9 38-2s23 7 40-3M19 89c16-10 27-8 40-1s24 6 42-2" stroke="#b9c9a7" stroke-width="2"/><path d="M57 20c-35 26 23 33 0 55s-8 28-1 35h27c-25-19-5-22 3-38S48 42 79 21" fill="#a9c9bd"/><path d="M64 28c-17 18 27 28 5 49s-4 23 1 27" stroke="#eff5e7" stroke-width="2"/><path d="m36 60 12-10 15 5 3 14-16 6-15-6Z" fill="#c2b096"/><path d="m68 82 9-7 11 4 1 11-13 4-8-5Z" fill="#cdbda0"/><path d="M22 35v-8m-4 4h8" stroke="#bca46d"/>',
+      forest: '<path d="M25 98c23-12 51-12 74 0" fill="#d0dcbc"/><path d="M43 91V48m34 46V40" stroke="#92a981" stroke-width="2"/><path d="M22 68c0-17 6-34 21-42 16 9 22 26 22 42-15 9-29 9-43 0Z" fill="#b0c79e"/><path d="M59 62c0-20 7-37 18-46 14 11 21 28 21 46-12 8-26 9-39 0Z" fill="#91b29a"/><path d="m43 57-9-8m43-1 9-8" stroke="#f0f4e4" stroke-width="2"/><circle cx="63" cy="82" r="9" fill="#c1b2c7"/><circle cx="62" cy="80" r="3" fill="#e4dbe4"/><path d="M28 89v-7m-3 3h6m64-7v-7m-3 3h6" stroke="#bda773"/>',
+      rhythm: '<path d="M23 101c26-10 49-10 74 0" stroke="#c9d6ba"/><path d="M59 94C24 71 21 43 37 36c12-6 23 6 23 6s10-12 23-6c18 8 12 36-24 58Z" fill="#cfb99e"/><path d="M26 66h21l7-14 12 29 9-17h20" stroke="#f8f5e8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="75" cy="64" r="4" fill="#bf9f60"/><path d="M89 24v-9m-4 4h8" stroke="#bca46d"/>'
+    };
+    return `<svg viewBox="0 0 120 130" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><ellipse cx="60" cy="66" rx="55" ry="55" fill="#e8edde"/>${art[kind] || art.river}</svg>`;
+  }
   function heartIcon() {
     return '<svg viewBox="0 0 120 130" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><ellipse cx="60" cy="66" rx="55" ry="55" fill="#e8edde"/><path d="M14 92Q50 109 105 91" stroke="#c7d4b9"/><circle cx="96" cy="28" r="3" fill="#c2a96e"/><path d="M60 108C8 74 19 33 43 39c11 1 17 12 17 12s7-16 22-12c35 9 12 48-22 69Z" fill="#c7aa8b" opacity=".6"/><path d="M30 91c20-19 40-18 60-2l-5 17H36Z" fill="#a3b68e"/><path d="M39 78V51h15v27m5 1V40h16v39m5 5V58h13v26" fill="#dce2c8" stroke="#8da580" stroke-width="1.5"/><path d="m37 51 10-12 9 12m1-11 10-17 10 17m0 18 10-14 8 14" fill="#81a48b"/><path d="M46 60v5m20-15v6m20 9v5" stroke="#bd9f59" stroke-width="3"/><path d="M18 91h19l6-9 9 19 9-25 8 15h35" stroke="#6e997e" stroke-width="2"/><path d="M67 16v-8m-4 4h8" stroke="#c0a35e"/></svg>';
   }
   function leafIcon() { return '<svg viewBox="0 0 120 130" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M30 103C12 51 45 23 98 23c3 58-15 88-68 80Z" fill="#cedbc1" stroke="#90aa83" stroke-width="1.5"/><path d="m31 103 48-60m-33 43-6-26m19 10 26-1" stroke="#88a17d" stroke-width="1.5"/><path d="M29 107c-2 7-4 10-9 14" stroke="#88a17d" stroke-width="2"/></svg>'; }
-  for (const element of document.querySelectorAll('[data-icon]')) element.innerHTML = heartIcon();
+  for (const element of document.querySelectorAll('[data-icon]')) element.innerHTML = entryIcon(element.dataset.icon);
   // Read-only diagnostics locate visible objects for input-driven tests.
   window.GiantCure = Object.freeze({ snapshot: () => ({
     screen: state.screen, phase: state.phase, id: state.id, progress: state.progress,
     remaining: null, elapsed: state.elapsed, modal: state.modal,
     result: state.result ? { ...state.result } : null,
+    selector: { phase: selector.phase, selectedId: selector.selectedId, playableIds: playableCaseIds() },
     game: state.game ? state.game.getDebugState() : null,
     view: { viewport: { ...view.viewport }, camera: { ...view.camera } },
     logicalSize: { width: W, height: H }, reducedMotion,
