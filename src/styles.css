@@ -74,8 +74,10 @@ button:active{transform:translateY(2px)}
 .case-complete{position:absolute;right:18px;bottom:18px;color:#638a66;font-size:11px;letter-spacing:1px}
 .secondary-button{height:74px;border:1px solid #c8d3be;border-radius:12px;background:#edf1e5;color:var(--green);font-size:20px;letter-spacing:2px}
 .secondary-button:hover{background:#e1e9d9}
-.random-button{position:absolute;top:1005px;left:48px;width:624px;display:flex;justify-content:space-between;align-items:center;padding:0 27px}
-.random-button>span:first-child{font-size:33px;color:#83946e}
+.case-guidance{position:absolute;top:610px;left:62px;right:62px;padding-top:31px;border-top:1px solid #dfe5d8;text-align:center;color:#8b9b80}
+.case-guidance .eyebrow{font-size:11px;letter-spacing:2px;color:#a8ac8d}
+.case-guidance h3{font:28px var(--serif);font-weight:400;letter-spacing:3px;margin:27px 0 18px;color:#73906f}
+.case-plant{width:240px;height:196px;margin-top:64px;opacity:.9}
 .case-footnote{position:absolute;top:1105px;width:100%;text-align:center;color:#96a18d;font:17px var(--serif);letter-spacing:2px}
 .text-button{border:0;background:none;color:#69856e;font-size:17px;letter-spacing:1px;min-height:48px;padding:10px}
 .text-button:hover{color:#2c6754;background:#e4eada77;border-radius:8px}
@@ -97,18 +99,6 @@ button:active{transform:translateY(2px)}
 .game-feedback{position:absolute;top:972px;left:48px;right:48px;text-align:center;font-size:17px;letter-spacing:1px;color:#809275;height:30px;transition:color .2s}
 .game-feedback[data-kind=good]{color:#43805b}
 .game-feedback[data-kind=bad]{color:#b47b6c}
-.treatment-instructions{position:absolute;left:49px;right:49px;top:1033px;display:flex;align-items:center;gap:22px;min-height:88px;border-top:1px solid #dfe5d6;padding-top:25px}
-.control-glyph{width:57px;height:57px;flex:none;border:1px solid #cbd8bd;border-radius:50%;display:grid;place-items:center;font-size:28px;color:#8b9c71;background:#edf1e4}
-.treatment-instructions strong{font-size:20px;font-weight:500;letter-spacing:1px}
-.treatment-instructions p{margin-top:10px;font-size:15px;line-height:1.65;color:#8b9982}
-.beat-button{position:absolute;top:1030px;left:48px;width:624px;height:86px;font-size:23px}
-.heart-mode .treatment-instructions{top:1131px;min-height:46px;padding-top:0;border:0;gap:12px}
-.heart-mode .control-glyph{width:32px;height:32px;font-size:18px}
-.heart-mode .treatment-instructions strong{font-size:15px}
-.heart-mode .treatment-instructions p{display:none}
-.heart-mode .treatment-footer{top:1190px}
-.treatment-footer{position:absolute;left:48px;right:48px;top:1160px;display:flex;justify-content:space-between;color:#9aa58c;font-size:13px;letter-spacing:1px}
-.treatment-footer i{font-style:normal;color:#b8a573;padding-left:6px}
 .result-topline{position:absolute;top:173px;left:48px;right:48px;display:flex;justify-content:space-between;align-items:center}
 .result-topline>span{font-size:12px;color:#91a084;letter-spacing:1px}
 .result-medallion{position:absolute;top:272px;left:235px;width:250px;height:250px;border:1px solid #c9d5ba;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#e6edda 0,#e9eedf77 60%,transparent 70%)}
@@ -179,8 +169,6 @@ body{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
 .case-mechanic{font-size:16px}
 .case-copy{gap:9px}
 .journey-note{font-size:19px}
-.treatment-instructions p{font-size:20px;line-height:1.65}
-.treatment-instructions strong{font-size:22px}
 .game-feedback{font-size:20px}
 .dialog p{font-size:22px}
 .dialog .dialog-tip{font-size:20px}
@@ -190,6 +178,84 @@ body{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
 .case-footnote{font-size:20px}
 .case-kicker{font-size:13px}
 .case-kicker i{font-size:14px}
-.treatment-footer{font-size:16px}
-.heart-mode .treatment-instructions strong{font-size:18px}
 .time-label>span,.progress-label>span{font-size:17px}
+
+/* The chapter shares the casebook card layout with future organ chapters. */
+.journey-mode #world{cursor:crosshair}
+.journey-mode .treatment-heading h2{font-size:37px}
+.journey-hud{position:absolute;left:48px;right:48px;top:1016px;border-top:1px solid #dce3d1;padding-top:17px}
+.journey-vitals{display:flex;align-items:center;justify-content:space-between;font-size:17px;color:#86977d}
+.journey-vitals strong{font:23px Georgia,serif;color:#386f5c;margin-left:8px}
+.journey-vitals small{font-size:13px;margin-left:10px;color:#a2a986}
+.integrity-track{display:inline-block;vertical-align:middle;margin-left:12px;width:93px;height:5px;border-radius:3px;background:#e0e6d7;overflow:hidden}
+#integrity-fill{display:block;height:100%;width:100%;background:#91ae7d;transition:width .15s}
+.journey-tools{display:flex;gap:10px;margin-top:16px}
+.journey-tools button{flex:1;height:49px;border-radius:8px;border:1px solid #cedac1;background:#edf2e3;color:#688767;font-size:16px;letter-spacing:1px}
+.journey-tools button:hover,.journey-tools button[aria-pressed=true]{background:#d9e6cd;color:#346e60;border-color:#9eb58d}
+kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px 5px;color:#79906e;background:#f3f5e9;display:inline-block;line-height:1.3;letter-spacing:0}
+.journey-tools kbd{font-size:15px;margin-right:5px}
+.journey-hud>p{margin-top:11px;font-size:13px;letter-spacing:1px;color:#9aa88b}
+.journey-keys{position:absolute;left:48px;right:48px;top:1175px;color:#91a083;font-size:12px;letter-spacing:.4px}
+.journey-keys p{display:flex;gap:7px;align-items:center;margin:0 0 9px}
+.journey-keys p>span:last-child{margin-left:auto}
+.journey-mode .game-feedback{font-size:18px}
+.result-stars.journey-status{font-size:12px;letter-spacing:4px}
+
+/* A wide treatment window sits inside the portrait casebook. */
+.landscape-treatment .desktop-note{display:none}
+.journey-mode .app-header{left:24px;right:24px;top:14px;height:42px;pointer-events:none}
+.journey-mode .app-header button,.journey-mode .app-header nav{pointer-events:auto}
+.journey-mode .brand{gap:10px}
+.journey-mode .brand-mark{width:36px;height:36px}
+.journey-mode .brand-mark svg{width:27px}
+.journey-mode .brand>span:last-child{font-size:22px;letter-spacing:3px}
+.journey-mode .brand small{font-size:7px;letter-spacing:2px;margin-top:3px}
+.journey-mode .icon-button{width:44px;height:44px;font-size:21px}
+.journey-mode .icon-button:after{inset:3px}
+.journey-mode .sound-slash{left:22px;top:12px;height:22px}
+.journey-mode .treatment-heading{left:218px;right:auto;top:17px;width:190px}
+.journey-mode .treatment-heading .eyebrow{font-size:9px;letter-spacing:1.3px}
+.journey-mode .treatment-heading h2{font-size:23px;letter-spacing:3px;margin-top:4px}
+.journey-mode .treatment-heading>p:last-child{display:none}
+.journey-mode .small-back{left:850px;right:auto;top:0;min-width:76px;min-height:40px;padding:7px 9px;font-size:15px;border-radius:8px;letter-spacing:0}
+.journey-mode .small-back span{font-size:12px;margin-left:3px}
+.journey-mode .treatment-stats{left:432px;right:auto;top:19px;width:239px;height:36px}
+.journey-mode .progress-label,.journey-mode .time-label{gap:7px}
+.journey-mode .progress-label>span,.journey-mode .time-label>span{font-size:11px;letter-spacing:0}
+.journey-mode .progress-label strong,.journey-mode .time-label strong{font-size:20px}
+.journey-mode .progress-label strong span{font-size:12px}
+.journey-mode .progress-track{height:3px}
+.journey-mode .journey-hud{position:static;border:0;padding:0}
+.journey-mode .journey-vitals{position:absolute;left:704px;right:228px;top:17px;font-size:11px;align-items:flex-start;gap:18px}
+.journey-mode .journey-vitals>span{white-space:nowrap}
+.journey-mode .journey-vitals strong{font-size:20px;margin-left:5px}
+.journey-mode .journey-vitals small{display:block;font-size:10px;margin:3px 0 0;text-align:right}
+.journey-mode .integrity-track{display:block;width:96px;height:3px;margin:4px 0 0}
+.journey-mode .journey-tools{position:absolute;right:24px;top:646px;width:326px;gap:8px;margin:0}
+.journey-mode .journey-tools button{height:34px;font-size:12px;letter-spacing:0;flex:none;padding:0 9px}
+.journey-mode .journey-tools button:nth-child(2){flex:1}
+.journey-mode .journey-tools kbd{font-size:11px;margin-right:3px;padding:1px 3px}
+.journey-mode #journey-checkpoint{position:absolute;right:25px;top:64px;font-size:10px;letter-spacing:0;margin:0;color:#8b9a80}
+.journey-telemetry{position:absolute;left:25px;right:370px;top:64px;display:flex;align-items:center;gap:17px;font-size:11px;color:#7f9177;white-space:nowrap}
+.journey-telemetry #journey-room{color:#3e7760;font-weight:600;flex:none;letter-spacing:1px}
+.journey-telemetry #journey-beat{flex:none;color:#aa8465}
+.journey-telemetry #journey-beat[data-safe=true]{color:#5e956a}
+.journey-telemetry #journey-scanner-info{overflow:hidden;text-overflow:ellipsis}
+.journey-mode .journey-task{position:absolute;left:38px;right:380px;top:645px;font-size:17px;line-height:25px;letter-spacing:.5px;color:#356d59;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.journey-mode .game-feedback{top:675px;left:38px;right:380px;height:20px;text-align:left;font-size:12px;letter-spacing:.3px;line-height:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.journey-mode .journey-keys{left:38px;right:25px;top:701px;display:flex;justify-content:space-between;font-size:9px;letter-spacing:0;color:#8b9b80}
+.journey-mode .journey-keys p{gap:6px;margin:0}
+.journey-mode .journey-keys p>span:last-child{margin-left:9px}
+.journey-mode .journey-keys kbd{font-size:8px;padding:0 3px;line-height:1.2}
+.journey-mode .page-folio{display:none}
+.journey-mode .dialog{width:660px;max-height:650px;padding:24px 32px;border-radius:15px}
+.journey-mode .dialog h2{font-size:28px;margin:14px 0}
+.journey-mode .dialog p{font-size:15px;line-height:1.65;margin:10px 0}
+.journey-mode .dialog .dialog-tip{font-size:15px;padding:10px 13px}
+.journey-mode .dialog .help-item{padding:8px 0}
+.journey-mode .dialog .help-item strong{font-size:17px}
+.journey-mode .dialog .help-item p{font-size:14px;margin:5px 0}
+.journey-mode .dialog .primary-button{height:49px;font-size:18px;margin-top:15px}
+.journey-mode .dialog .secondary-button{height:42px;font-size:15px;margin-top:9px}
+.journey-mode .dialog .text-button{font-size:14px;min-height:38px;margin-top:5px}
+.journey-mode #toast{left:auto;right:35px;bottom:108px;max-width:430px;padding:12px 22px;font-size:14px}
