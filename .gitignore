@@ -1,0 +1,13 @@
+# Optional development dependencies and generated test output
+node_modules/
+tests/screenshots/
+test-results/
+playwright-report/
+*.log
+
+# Local settings and credentials
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db

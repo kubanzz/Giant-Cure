@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#edf1e6">
+  <meta name="description" content="万物生：巨人的病历簿。一款无需联网的原创生态疗愈小游戏。">
+  <title>万物生 · 巨人的病历簿 | Giant Cure</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23346e60'/%3E%3Cpath d='M17 45C12 20 30 12 48 13c2 25-8 38-31 32Zm1-1 23-23' fill='%23e7edd8' stroke='%23c3aa71' stroke-width='3'/%3E%3C/svg%3E">
+  <style>/* STYLES */</style>
+</head>
+<body>
+  <div class="desktop-note note-left" aria-hidden="true"><span class="note-rule"></span>在微小之处<br>让生命重新发生<span class="note-small">A LITTLE CARE.<br>A WORLD REBORN.</span></div>
+  <div class="desktop-note note-right" aria-hidden="true"><span class="vertical-note">GIANT CURE / FIELD NOTES NO. 001</span><span class="note-orbit">✧</span></div>
+  <main id="viewport" aria-label="万物生游戏">
+    <div id="app">
+      <canvas id="world" width="720" height="1280" aria-label="可交互的奇幻生态世界"></canvas>
+      <header class="app-header">
+        <button id="brand" class="brand" aria-label="返回开始界面"><span class="brand-mark"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M10 29C7 13 18 8 31 8c1 17-6 25-21 21Z"/><path d="m11 28 15-15M17 22l-1-7m6 3 6 1"/></svg></span><span>万物生<small>GIANT CURE</small></span></button>
+        <nav class="header-actions" aria-label="游戏设置"><button id="sound" class="icon-button" aria-label="开启声音" title="开启声音" aria-pressed="false">♪<span class="sound-slash"></span></button><button id="help" class="icon-button" aria-label="玩法说明" title="玩法说明">?</button></nav>
+      </header>
+      <section id="home" class="screen" aria-labelledby="home-title">
+        <div class="home-heading"><p class="eyebrow"><span></span> 一份关于生命的奇幻病历 <span></span></p><h1 id="home-title">万物生<span class="title-spark">✧</span></h1><p class="home-subtitle">巨人的病历簿</p><p class="home-en">THE GIANT’S LITTLE BOOK OF CURES</p></div>
+        <div class="world-caption caption-one"><span class="caption-dot"></span>他的身体，是我们的世界</div>
+        <div class="world-caption caption-two">每一次治愈<br><span>都有万物回应</span><i></i></div>
+        <div class="home-bottom"><button id="begin" class="primary-button"><span>翻开病历簿</span><span class="button-arrow">↗</span></button><p class="journey-note"><span class="tiny-leaf">❧</span> 一场约 3–5 分钟的微观疗愈之旅</p><div class="home-footer"><span>三种微小治疗 · 一个新生世界</span><span>VOL. 01 / 2026</span></div></div>
+      </section>
+      <section id="cases" class="screen" hidden aria-labelledby="cases-title">
+        <div class="page-heading"><p class="eyebrow">THE CASEBOOK <span class="heading-number">/ 01—03</span></p><h2 id="cases-title">今天，治愈哪里？</h2><p>走进巨人的身体，倾听世界的求救。</p></div>
+        <div class="case-summary"><span><i class="status-dot"></i> 生态巡诊中</span><span id="record-summary">已治愈 0 / 3 个病例</span></div>
+        <div class="case-list">
+          <button class="case-card blood-card" data-case="blood"><span class="case-art" data-icon="blood"></span><span class="case-copy"><span class="case-kicker">CASE 01 <i>河流生态</i></span><strong>血河淤堵</strong><span class="case-description">搬走沉积的血栓，让生命再次流动。</span><span class="case-mechanic">拖拽疏通 <b>·</b> 约 1 分钟</span></span><span class="case-arrow">↗</span><span class="case-complete" hidden>已治愈 ✓</span></button>
+          <button class="case-card spore-card" data-case="spore"><span class="case-art" data-icon="spore"></span><span class="case-copy"><span class="case-kicker">CASE 02 <i>森林生态</i></span><strong>孢子侵染</strong><span class="case-description">驱散游荡的孢子，守护林间小生命。</span><span class="case-mechanic">点击净化 <b>·</b> 约 1 分钟</span></span><span class="case-arrow">↗</span><span class="case-complete" hidden>已治愈 ✓</span></button>
+          <button class="case-card heart-card" data-case="heart"><span class="case-art" data-icon="heart"></span><span class="case-copy"><span class="case-kicker">CASE 03 <i>生命之城</i></span><strong>心跳失序</strong><span class="case-description">找回心跳的节奏，点亮生命之城。</span><span class="case-mechanic">节奏共鸣 <b>·</b> 约 1 分钟</span></span><span class="case-arrow">↗</span><span class="case-complete" hidden>已治愈 ✓</span></button>
+        </div>
+        <button id="random-case" class="secondary-button random-button"><span>⚄</span> 让风选择一份病例 <span>↗</span></button><p class="case-footnote">每个世界，都值得被温柔以待。</p><button id="case-back" class="text-button case-back">← 返回封面</button>
+      </section>
+      <section id="treatment" class="screen" hidden aria-labelledby="treatment-title">
+        <div class="treatment-heading"><button id="pause" class="small-back">Ⅱ <span>暂停</span></button><p id="case-number" class="eyebrow">CASE 01 / RIVER</p><h2 id="treatment-title">血河淤堵</h2><p id="treatment-subtitle">让生命再次流动</p></div>
+        <div class="treatment-stats"><div class="progress-label"><span id="progress-label">生态恢复度</span><strong id="progress-value">0<span>%</span></strong></div><div class="time-label"><span>剩余时间</span><strong id="time-value">01:30</strong></div><div class="progress-track"><div id="progress-fill"></div></div></div>
+        <div id="game-feedback" role="status" aria-live="polite" class="game-feedback">把血栓拖到两侧的草地上</div>
+        <div class="treatment-instructions"><span id="control-glyph" class="control-glyph">↔</span><div><strong id="task-text">拖动血栓，疏通河道</strong><p id="instruction-text">按住河中的石块，拖到发光草地后松手。</p></div></div>
+        <button id="beat" class="primary-button beat-button" hidden><span>跟随心跳 · 轻点共鸣</span><span>♡</span></button>
+        <div class="treatment-footer"><span id="control-note">鼠标 / 触屏拖拽</span><span>慢一点，也没关系 <i>✧</i></span></div>
+      </section>
+      <section id="result" class="screen" hidden aria-labelledby="result-title">
+        <div class="result-topline"><p id="result-kicker" class="eyebrow">A WORLD REBORN</p><span id="result-case">CASE 01 / 河流生态</span></div>
+        <div class="result-medallion"><span id="result-emblem"></span><span class="medallion-orbit orbit-one"></span><span class="medallion-orbit orbit-two"></span><i>✧</i><i>✦</i></div>
+        <div class="result-heading"><div id="result-stars" class="result-stars">✦ ✦ ✦</div><h2 id="result-title">河流，重新呼吸。</h2><p id="result-description">你搬走的不只是石块，还有世界的疲惫。</p></div>
+        <div class="result-note"><div class="result-note-label"><span>本次治疗记录</span><span id="result-stamp">CURED ✓</span></div><div class="result-numbers"><div><strong id="result-score">1,280</strong><span>生命积分</span></div><div><strong id="result-time">48<span> 秒</span></strong><span>治疗用时</span></div><div><strong id="result-restored">100<span>%</span></strong><span>生态恢复</span></div></div><p id="result-message">一条河流醒来，一座世界重生。</p></div>
+        <div class="result-actions"><button id="result-next" class="primary-button"><span>走向下一处生命</span><span>↗</span></button><div><button id="retry" class="text-button">↻ 再次治疗</button><button id="result-cases" class="text-button">返回病历簿 →</button></div></div><p class="result-footnote">愿每一份微小的关怀，都有回声。</p>
+      </section>
+      <div id="modal" class="modal-layer" hidden><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><p id="dialog-kicker" class="eyebrow">A MOMENT OF CARE</p><h2 id="dialog-title">让世界歇一会儿</h2><div id="dialog-body"></div><div id="dialog-actions"></div></section></div>
+      <div id="toast" role="status" hidden></div>
+      <footer class="page-folio" aria-hidden="true"><span>生命自有回响</span><span>✧</span><span id="folio-page">001</span></footer>
+    </div>
+  </main>
+  <noscript>请启用浏览器 JavaScript 后打开《万物生：巨人的病历簿》。</noscript>
+  <script>
+  'use strict';
+  window.GiantCureGames = {};
+  /* GAMES */
+  /* APP */
+  </script>
+</body>
+</html>

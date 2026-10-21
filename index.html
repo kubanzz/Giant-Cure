@@ -1,0 +1,2370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#edf1e6">
+  <meta name="description" content="万物生：巨人的病历簿。一款无需联网的原创生态疗愈小游戏。">
+  <title>万物生 · 巨人的病历簿 | Giant Cure</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23346e60'/%3E%3Cpath d='M17 45C12 20 30 12 48 13c2 25-8 38-31 32Zm1-1 23-23' fill='%23e7edd8' stroke='%23c3aa71' stroke-width='3'/%3E%3C/svg%3E">
+  <style>:root{color-scheme:light;--ink:#28564b;--green:#346e60;--muted:#8c9b8e;--gold:#b99c61;--paper:#f7f6ed;--line:#dfe5d8;--serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;--sans:"Microsoft YaHei","PingFang SC",system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;overscroll-behavior:none}
+body{background:#e8eee5;color:var(--ink);font-family:var(--sans);overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;background-image:radial-gradient(ellipse at 14% 18%,#f3f4e9 0,transparent 43%),radial-gradient(ellipse at 90% 82%,#d1e1d6 0,transparent 48%)}
+button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button:focus-visible{outline:3px solid #b48b3f;outline-offset:5px}
+button:disabled{cursor:default}
+button,canvas{-webkit-user-select:none;user-select:none}
+button{transition:background .2s,box-shadow .2s,transform .15s}
+button:active{transform:translateY(2px)}
+[hidden]{display:none!important}
+#viewport{position:relative;flex:none}
+#app{position:absolute;inset:0 auto auto 0;width:720px;height:1280px;transform-origin:top left;background:var(--paper);overflow:hidden;border-radius:6px;box-shadow:0 22px 90px #2954471a,0 0 0 1px #fff9}
+#app:after{content:"";position:absolute;pointer-events:none;inset:0;opacity:.12;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='.38' filter='url(%23n)'/%3E%3C/svg%3E");z-index:6;mix-blend-mode:multiply}
+#world{position:absolute;inset:0;width:720px;height:1280px;touch-action:none;z-index:0}
+.app-header{position:absolute;left:48px;right:48px;top:42px;height:65px;display:flex;align-items:center;justify-content:space-between;z-index:4}
+.brand{border:0;background:none;display:flex;align-items:center;gap:14px;text-align:left;color:var(--ink);padding:0}
+.brand>span:last-child{font-family:var(--serif);font-size:27px;font-weight:bold;letter-spacing:5px}
+.brand small{display:block;letter-spacing:3px;font:10px var(--sans);margin-top:6px}
+.brand-mark{width:53px;height:53px;border:1px solid #b0bea9;border-radius:50%;display:grid;place-items:center;background:#e9eddd}
+.brand-mark svg{width:38px;fill:none;stroke:var(--green);stroke-width:1.2}
+.brand-mark svg path:first-child{fill:#d8e4cd}
+.header-actions{display:flex;gap:14px}
+.icon-button{width:46px;height:46px;border:1px solid #d5ddcf;background:transparent;border-radius:50%;color:var(--green);font:24px Georgia,serif;position:relative}
+.icon-button:hover{background:#e4eadf}
+.sound-slash{position:absolute;left:21px;top:11px;width:1px;height:25px;background:#7e9182;transform:rotate(40deg)}
+#sound[aria-pressed=true] .sound-slash{display:none}
+.screen{position:absolute;inset:0;z-index:2;pointer-events:none}
+.screen button{pointer-events:auto}
+.screen p,.screen h1,.screen h2{margin:0}
+.eyebrow{font-size:14px;letter-spacing:3px;color:var(--gold);font-weight:500}
+.home-heading{position:absolute;top:165px;left:0;width:100%;text-align:center}
+.home-heading .eyebrow{font-size:17px;letter-spacing:4px;display:flex;align-items:center;justify-content:center;gap:17px}
+.home-heading .eyebrow span{height:1px;width:35px;background:#c9b98e}
+.home-heading h1{font:106px/1.45 var(--serif);font-weight:500;letter-spacing:17px;margin:12px 0 0 15px;color:#2d6253;position:relative}
+.title-spark{position:absolute;right:159px;top:10px;font:37px Georgia;color:#bba26b;letter-spacing:0}
+.home-subtitle{font:29px var(--serif);letter-spacing:9px;margin-top:0!important;padding-left:9px}
+.home-en{font-size:10px;letter-spacing:3.5px;margin-top:18px!important;color:#9aab97}
+.world-caption{position:absolute;font:17px var(--serif);color:#637f6a;letter-spacing:2px}
+.caption-one{top:478px;left:77px;font-size:15px}
+.caption-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#c0a364;margin-right:11px;vertical-align:middle}
+.caption-one:after{content:"";display:block;margin:13px 0 0 13px;width:1px;height:51px;background:linear-gradient(#b3c3a6,transparent)}
+.caption-two{top:807px;right:64px;line-height:1.8;font-size:17px}
+.caption-two span{color:#94a085;font-size:14px}
+.caption-two i{display:block;width:36px;height:1px;background:#b8c6aa;margin-top:12px}
+.home-bottom{position:absolute;left:66px;right:66px;top:1012px}
+.primary-button{width:100%;height:83px;display:flex;align-items:center;justify-content:space-between;padding:0 30px;border:1px solid #346e60;border-radius:12px;background:var(--green);color:#f7f7e9;font-size:26px;letter-spacing:3px;box-shadow:0 8px 24px #346e6015}
+.primary-button:hover{background:#285c50;box-shadow:0 10px 25px #346e6025}
+.primary-button>span:last-child{font-family:Georgia,serif;font-size:32px;letter-spacing:0}
+.journey-note{text-align:center;font-size:16px;color:#82917d;margin-top:24px!important;letter-spacing:1px}
+.tiny-leaf{color:#ac985f;margin-right:5px}
+.home-footer{display:flex;justify-content:space-between;margin-top:44px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:#9aa58f;letter-spacing:1px}
+.page-folio{position:absolute;bottom:24px;left:48px;right:48px;display:flex;align-items:center;justify-content:space-between;color:#a1ae96;font-size:11px;letter-spacing:2px;z-index:3}
+.page-folio>span:nth-child(2){color:#bca66f;font-size:20px}
+.page-heading{position:absolute;top:167px;left:48px;right:48px}
+.heading-number{float:right;color:#9ba98f;letter-spacing:2px}
+.page-heading h2{font:42px var(--serif);font-weight:500;margin-top:20px}
+.page-heading>p:last-child{font-size:19px;color:#8b9986;margin-top:17px;letter-spacing:1px}
+.case-summary{position:absolute;top:305px;left:48px;right:48px;display:flex;align-items:center;justify-content:space-between;font-size:14px;color:#83927d;letter-spacing:1px}
+.status-dot{display:inline-block;width:6px;height:6px;background:#8ba66c;border-radius:50%;margin-right:8px;vertical-align:middle}
+.case-list{position:absolute;top:350px;left:42px;right:42px;display:grid;gap:20px}
+.case-card{position:relative;display:flex;align-items:center;gap:23px;width:100%;height:191px;text-align:left;border:1px solid #d7dfd0;border-radius:15px;background:#ffffff45;color:var(--ink);padding:24px 23px;box-shadow:0 3px 0 #e8ecdf44}
+.case-card:hover{background:#edf1e5;border-color:#b3c2a9;transform:translateY(-2px)}
+.case-art{flex:none;width:115px;height:122px;display:block}
+.case-art svg{width:100%;height:100%}
+.case-copy{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.case-kicker{font-size:11px;color:#b79c65;letter-spacing:1.5px}
+.case-kicker i{font-style:normal;color:#8c9c84;border-left:1px solid #d0d7c7;margin-left:10px;padding-left:10px;font-size:12px;letter-spacing:1px}
+.case-copy strong{font:29px var(--serif);letter-spacing:3px}
+.case-description{font-size:15px;color:#83917e;letter-spacing:.3px}
+.case-mechanic{font-size:13px;color:#7c917a}
+.case-mechanic b{font-weight:400;padding:0 8px;color:#b4c0a7}
+.case-arrow{position:absolute;right:23px;top:48px;color:#8da388;font-size:24px}
+.case-complete{position:absolute;right:18px;bottom:18px;color:#638a66;font-size:11px;letter-spacing:1px}
+.secondary-button{height:74px;border:1px solid #c8d3be;border-radius:12px;background:#edf1e5;color:var(--green);font-size:20px;letter-spacing:2px}
+.secondary-button:hover{background:#e1e9d9}
+.random-button{position:absolute;top:1005px;left:48px;width:624px;display:flex;justify-content:space-between;align-items:center;padding:0 27px}
+.random-button>span:first-child{font-size:33px;color:#83946e}
+.case-footnote{position:absolute;top:1105px;width:100%;text-align:center;color:#96a18d;font:17px var(--serif);letter-spacing:2px}
+.text-button{border:0;background:none;color:#69856e;font-size:17px;letter-spacing:1px;min-height:48px;padding:10px}
+.text-button:hover{color:#2c6754;background:#e4eada77;border-radius:8px}
+.case-back{position:absolute;top:1165px;left:38px}
+.treatment-heading{position:absolute;top:157px;left:48px;right:48px}
+.small-back{position:absolute;right:0;top:0;color:#6b886f;background:#e8eddf;border:1px solid #dce3d3;border-radius:20px;font-size:16px;padding:9px 14px;letter-spacing:2px}
+.small-back span{font-size:13px;letter-spacing:1px;margin-left:3px}
+.treatment-heading h2{font:40px var(--serif);letter-spacing:4px;margin-top:16px}
+.treatment-heading>p:last-child{font-size:16px;letter-spacing:1px;color:#8a9a81;margin-top:12px}
+.treatment-stats{position:absolute;left:48px;right:48px;top:279px;height:54px;display:flex;justify-content:space-between;align-items:flex-start}
+.progress-label,.time-label{display:flex;align-items:baseline;gap:12px}
+.progress-label>span,.time-label>span{font-size:14px;color:#82937c;letter-spacing:1px}
+.progress-label strong{font:24px Georgia,serif;color:#587b5f}
+.progress-label strong span{font-size:15px}
+.time-label strong{font:22px Georgia,serif;color:#849577;font-variant-numeric:tabular-nums}
+.time-label strong.urgent{color:#ba7969}
+.progress-track{position:absolute;left:0;right:0;bottom:1px;height:5px;border-radius:3px;background:#e1e8d9;overflow:hidden}
+#progress-fill{width:0;height:100%;background:#789d76;border-radius:3px;transition:width .3s}
+.game-feedback{position:absolute;top:972px;left:48px;right:48px;text-align:center;font-size:17px;letter-spacing:1px;color:#809275;height:30px;transition:color .2s}
+.game-feedback[data-kind=good]{color:#43805b}
+.game-feedback[data-kind=bad]{color:#b47b6c}
+.treatment-instructions{position:absolute;left:49px;right:49px;top:1033px;display:flex;align-items:center;gap:22px;min-height:88px;border-top:1px solid #dfe5d6;padding-top:25px}
+.control-glyph{width:57px;height:57px;flex:none;border:1px solid #cbd8bd;border-radius:50%;display:grid;place-items:center;font-size:28px;color:#8b9c71;background:#edf1e4}
+.treatment-instructions strong{font-size:20px;font-weight:500;letter-spacing:1px}
+.treatment-instructions p{margin-top:10px;font-size:15px;line-height:1.65;color:#8b9982}
+.beat-button{position:absolute;top:1030px;left:48px;width:624px;height:86px;font-size:23px}
+.heart-mode .treatment-instructions{top:1131px;min-height:46px;padding-top:0;border:0;gap:12px}
+.heart-mode .control-glyph{width:32px;height:32px;font-size:18px}
+.heart-mode .treatment-instructions strong{font-size:15px}
+.heart-mode .treatment-instructions p{display:none}
+.heart-mode .treatment-footer{top:1190px}
+.treatment-footer{position:absolute;left:48px;right:48px;top:1160px;display:flex;justify-content:space-between;color:#9aa58c;font-size:13px;letter-spacing:1px}
+.treatment-footer i{font-style:normal;color:#b8a573;padding-left:6px}
+.result-topline{position:absolute;top:173px;left:48px;right:48px;display:flex;justify-content:space-between;align-items:center}
+.result-topline>span{font-size:12px;color:#91a084;letter-spacing:1px}
+.result-medallion{position:absolute;top:272px;left:235px;width:250px;height:250px;border:1px solid #c9d5ba;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#e6edda 0,#e9eedf77 60%,transparent 70%)}
+#result-emblem{width:155px;height:155px}
+#result-emblem svg{width:100%;height:100%}
+.medallion-orbit{position:absolute;border:1px solid #d9dfcc;border-radius:50%;inset:-23px}
+.orbit-two{inset:-48px;border-style:dashed;opacity:.6}
+.result-medallion>i{position:absolute;top:18px;right:-23px;color:#c0a467;background:var(--paper);font:35px Georgia,serif;line-height:1}
+.result-medallion>i:last-child{top:auto;bottom:4px;right:auto;left:-28px;font-size:21px;color:#96ae7c}
+.result-heading{position:absolute;top:584px;width:100%;text-align:center}
+.result-stars{font-size:23px;color:#bd9e63;letter-spacing:12px;padding-left:12px}
+.result-heading h2{font:42px var(--serif);letter-spacing:3px;margin-top:25px}
+.result-heading>p{font:18px var(--serif);letter-spacing:1px;line-height:1.9;color:#84947c;margin:20px 50px 0}
+.result-note{position:absolute;left:48px;right:48px;top:783px;background:#ebf0e3;border:1px solid #d7dfcc;border-radius:12px;padding:22px 25px}
+.result-note-label{display:flex;justify-content:space-between;font-size:13px;color:#8a997c;letter-spacing:1px}
+#result-stamp{font-size:12px;color:#78946a;letter-spacing:2px}
+.result-numbers{display:flex;text-align:center;justify-content:space-between;margin-top:24px}
+.result-numbers>div{width:33.33%;display:flex;align-items:center;flex-direction:column;border-right:1px solid #d5dfc9}
+.result-numbers>div:last-child{border:0}
+.result-numbers strong{font:37px Georgia,serif;font-variant-numeric:tabular-nums}
+.result-numbers strong span{font:15px var(--sans)}
+.result-numbers>div>span{font-size:12px;letter-spacing:1px;color:#8c9b7d;margin-top:8px}
+.result-note>p{margin-top:23px;padding-top:18px;border-top:1px solid #d7e0cb;font:15px var(--serif);color:#8b9a7d;text-align:center;letter-spacing:1px}
+.result-actions{position:absolute;left:48px;right:48px;top:1048px}
+.result-actions>div{display:flex;justify-content:space-between;margin-top:13px}
+.result-footnote{position:absolute;top:1195px;width:100%;text-align:center;font-size:12px;letter-spacing:2px;color:#a4af95}
+.modal-layer{position:absolute;inset:0;background:#23483f55;backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;z-index:8;pointer-events:auto}
+.dialog{width:592px;padding:42px 38px;background:#f7f6ed;border:1px solid #ffffff;border-radius:22px;box-shadow:0 20px 90px #163a3733;max-height:1080px;overflow:auto}
+.dialog h2{font:35px var(--serif);letter-spacing:2px;margin:22px 0}
+.dialog .eyebrow{font-size:12px}
+.dialog p{font-size:18px;line-height:1.9;color:#7f9078;margin:14px 0}
+.dialog .dialog-tip{font-size:15px;background:#eaf0e1;border-radius:10px;padding:15px 18px}
+.dialog .help-item{padding:12px 0;border-top:1px solid #e0e6d7}
+.dialog .help-item strong{font-size:20px;font-weight:500;letter-spacing:1px}
+.dialog .help-item p{font-size:16px;margin:8px 0}
+.dialog .primary-button{height:73px;margin-top:24px;font-size:22px}
+.dialog .secondary-button{width:100%;height:64px;margin-top:13px;font-size:18px}
+.dialog .text-button{width:100%;margin-top:10px}
+#toast{position:absolute;bottom:100px;left:75px;right:75px;background:#315e52ee;color:#f7f7ec;border-radius:30px;padding:18px;text-align:center;z-index:10;font-size:18px}
+.desktop-note{position:fixed;color:#8b9c8c;font:15px/2.3 var(--serif);letter-spacing:3px;pointer-events:none}
+.note-left{left:calc(50% - 520px);top:37%}
+.note-rule{display:block;width:32px;height:1px;background:#b5c4b1;margin-bottom:26px}
+.note-small{display:block;font:9px/1.9 var(--sans);letter-spacing:2px;margin-top:24px;color:#a4af9c}
+.note-right{right:calc(50% - 500px);top:23%;height:50%;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
+.vertical-note{writing-mode:vertical-rl;font:10px var(--sans);letter-spacing:4px;color:#a8b59f}
+.note-orbit{font:52px Georgia;color:#a7b89a}
+@media(max-width:1100px){.desktop-note{display:none}
+}
+@media(prefers-reduced-motion:reduce){button,#progress-fill{transition:none}
+}
+@media(max-width:600px){#app{border-radius:0;box-shadow:none}
+}
+
+:root{--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
+body{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
+.header-actions{gap:0}
+.icon-button{width:80px;height:80px;border:0;display:grid;place-items:center;background:none}
+.icon-button:after{content:"";position:absolute;inset:16px;border:1px solid #d5ddcf;border-radius:50%;pointer-events:none}
+.icon-button:hover{background:transparent}
+.icon-button:hover:after{background:#d9e3d133}
+.sound-slash{left:39px;top:27px;height:26px}
+.small-back{top:-12px;min-height:76px;min-width:110px;border-radius:13px}
+.text-button{min-height:70px}
+.case-back{top:1150px}
+.result-actions>div{margin-top:4px}
+
+.case-description{font-size:18px}
+.case-mechanic{font-size:16px}
+.case-copy{gap:9px}
+.journey-note{font-size:19px}
+.treatment-instructions p{font-size:20px;line-height:1.65}
+.treatment-instructions strong{font-size:22px}
+.game-feedback{font-size:20px}
+.dialog p{font-size:22px}
+.dialog .dialog-tip{font-size:20px}
+.dialog .help-item p{font-size:20px}
+.result-heading>p{font-size:21px}
+.case-summary{font-size:18px}
+.case-footnote{font-size:20px}
+.case-kicker{font-size:13px}
+.case-kicker i{font-size:14px}
+.treatment-footer{font-size:16px}
+.heart-mode .treatment-instructions strong{font-size:18px}
+.time-label>span,.progress-label>span{font-size:17px}
+</style>
+</head>
+<body>
+  <div class="desktop-note note-left" aria-hidden="true"><span class="note-rule"></span>在微小之处<br>让生命重新发生<span class="note-small">A LITTLE CARE.<br>A WORLD REBORN.</span></div>
+  <div class="desktop-note note-right" aria-hidden="true"><span class="vertical-note">GIANT CURE / FIELD NOTES NO. 001</span><span class="note-orbit">✧</span></div>
+  <main id="viewport" aria-label="万物生游戏">
+    <div id="app">
+      <canvas id="world" width="720" height="1280" aria-label="可交互的奇幻生态世界"></canvas>
+      <header class="app-header">
+        <button id="brand" class="brand" aria-label="返回开始界面"><span class="brand-mark"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M10 29C7 13 18 8 31 8c1 17-6 25-21 21Z"/><path d="m11 28 15-15M17 22l-1-7m6 3 6 1"/></svg></span><span>万物生<small>GIANT CURE</small></span></button>
+        <nav class="header-actions" aria-label="游戏设置"><button id="sound" class="icon-button" aria-label="开启声音" title="开启声音" aria-pressed="false">♪<span class="sound-slash"></span></button><button id="help" class="icon-button" aria-label="玩法说明" title="玩法说明">?</button></nav>
+      </header>
+      <section id="home" class="screen" aria-labelledby="home-title">
+        <div class="home-heading"><p class="eyebrow"><span></span> 一份关于生命的奇幻病历 <span></span></p><h1 id="home-title">万物生<span class="title-spark">✧</span></h1><p class="home-subtitle">巨人的病历簿</p><p class="home-en">THE GIANT’S LITTLE BOOK OF CURES</p></div>
+        <div class="world-caption caption-one"><span class="caption-dot"></span>他的身体，是我们的世界</div>
+        <div class="world-caption caption-two">每一次治愈<br><span>都有万物回应</span><i></i></div>
+        <div class="home-bottom"><button id="begin" class="primary-button"><span>翻开病历簿</span><span class="button-arrow">↗</span></button><p class="journey-note"><span class="tiny-leaf">❧</span> 一场约 3–5 分钟的微观疗愈之旅</p><div class="home-footer"><span>三种微小治疗 · 一个新生世界</span><span>VOL. 01 / 2026</span></div></div>
+      </section>
+      <section id="cases" class="screen" hidden aria-labelledby="cases-title">
+        <div class="page-heading"><p class="eyebrow">THE CASEBOOK <span class="heading-number">/ 01—03</span></p><h2 id="cases-title">今天，治愈哪里？</h2><p>走进巨人的身体，倾听世界的求救。</p></div>
+        <div class="case-summary"><span><i class="status-dot"></i> 生态巡诊中</span><span id="record-summary">已治愈 0 / 3 个病例</span></div>
+        <div class="case-list">
+          <button class="case-card blood-card" data-case="blood"><span class="case-art" data-icon="blood"></span><span class="case-copy"><span class="case-kicker">CASE 01 <i>河流生态</i></span><strong>血河淤堵</strong><span class="case-description">搬走沉积的血栓，让生命再次流动。</span><span class="case-mechanic">拖拽疏通 <b>·</b> 约 1 分钟</span></span><span class="case-arrow">↗</span><span class="case-complete" hidden>已治愈 ✓</span></button>
+          <button class="case-card spore-card" data-case="spore"><span class="case-art" data-icon="spore"></span><span class="case-copy"><span class="case-kicker">CASE 02 <i>森林生态</i></span><strong>孢子侵染</strong><span class="case-description">驱散游荡的孢子，守护林间小生命。</span><span class="case-mechanic">点击净化 <b>·</b> 约 1 分钟</span></span><span class="case-arrow">↗</span><span class="case-complete" hidden>已治愈 ✓</span></button>
+          <button class="case-card heart-card" data-case="heart"><span class="case-art" data-icon="heart"></span><span class="case-copy"><span class="case-kicker">CASE 03 <i>生命之城</i></span><strong>心跳失序</strong><span class="case-description">找回心跳的节奏，点亮生命之城。</span><span class="case-mechanic">节奏共鸣 <b>·</b> 约 1 分钟</span></span><span class="case-arrow">↗</span><span class="case-complete" hidden>已治愈 ✓</span></button>
+        </div>
+        <button id="random-case" class="secondary-button random-button"><span>⚄</span> 让风选择一份病例 <span>↗</span></button><p class="case-footnote">每个世界，都值得被温柔以待。</p><button id="case-back" class="text-button case-back">← 返回封面</button>
+      </section>
+      <section id="treatment" class="screen" hidden aria-labelledby="treatment-title">
+        <div class="treatment-heading"><button id="pause" class="small-back">Ⅱ <span>暂停</span></button><p id="case-number" class="eyebrow">CASE 01 / RIVER</p><h2 id="treatment-title">血河淤堵</h2><p id="treatment-subtitle">让生命再次流动</p></div>
+        <div class="treatment-stats"><div class="progress-label"><span id="progress-label">生态恢复度</span><strong id="progress-value">0<span>%</span></strong></div><div class="time-label"><span>剩余时间</span><strong id="time-value">01:30</strong></div><div class="progress-track"><div id="progress-fill"></div></div></div>
+        <div id="game-feedback" role="status" aria-live="polite" class="game-feedback">把血栓拖到两侧的草地上</div>
+        <div class="treatment-instructions"><span id="control-glyph" class="control-glyph">↔</span><div><strong id="task-text">拖动血栓，疏通河道</strong><p id="instruction-text">按住河中的石块，拖到发光草地后松手。</p></div></div>
+        <button id="beat" class="primary-button beat-button" hidden><span>跟随心跳 · 轻点共鸣</span><span>♡</span></button>
+        <div class="treatment-footer"><span id="control-note">鼠标 / 触屏拖拽</span><span>慢一点，也没关系 <i>✧</i></span></div>
+      </section>
+      <section id="result" class="screen" hidden aria-labelledby="result-title">
+        <div class="result-topline"><p id="result-kicker" class="eyebrow">A WORLD REBORN</p><span id="result-case">CASE 01 / 河流生态</span></div>
+        <div class="result-medallion"><span id="result-emblem"></span><span class="medallion-orbit orbit-one"></span><span class="medallion-orbit orbit-two"></span><i>✧</i><i>✦</i></div>
+        <div class="result-heading"><div id="result-stars" class="result-stars">✦ ✦ ✦</div><h2 id="result-title">河流，重新呼吸。</h2><p id="result-description">你搬走的不只是石块，还有世界的疲惫。</p></div>
+        <div class="result-note"><div class="result-note-label"><span>本次治疗记录</span><span id="result-stamp">CURED ✓</span></div><div class="result-numbers"><div><strong id="result-score">1,280</strong><span>生命积分</span></div><div><strong id="result-time">48<span> 秒</span></strong><span>治疗用时</span></div><div><strong id="result-restored">100<span>%</span></strong><span>生态恢复</span></div></div><p id="result-message">一条河流醒来，一座世界重生。</p></div>
+        <div class="result-actions"><button id="result-next" class="primary-button"><span>走向下一处生命</span><span>↗</span></button><div><button id="retry" class="text-button">↻ 再次治疗</button><button id="result-cases" class="text-button">返回病历簿 →</button></div></div><p class="result-footnote">愿每一份微小的关怀，都有回声。</p>
+      </section>
+      <div id="modal" class="modal-layer" hidden><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><p id="dialog-kicker" class="eyebrow">A MOMENT OF CARE</p><h2 id="dialog-title">让世界歇一会儿</h2><div id="dialog-body"></div><div id="dialog-actions"></div></section></div>
+      <div id="toast" role="status" hidden></div>
+      <footer class="page-folio" aria-hidden="true"><span>生命自有回响</span><span>✧</span><span id="folio-page">001</span></footer>
+    </div>
+  </main>
+  <noscript>请启用浏览器 JavaScript 后打开《万物生：巨人的病历簿》。</noscript>
+  <script>
+  'use strict';
+  window.GiantCureGames = {};
+
+// ===== BLOOD TREATMENT =====
+(function () {
+  'use strict';
+
+  const AREA = { x: 36, y: 340, w: 648, h: 620 };
+  const BANKS = [
+    { x: 65, y: 438, w: 132, h: 464, side: -1 },
+    { x: 523, y: 438, w: 132, h: 464, side: 1 }
+  ];
+  const WAVES = [
+    [{ y: 495, offset: -10 }, { y: 652, offset: 13 }, { y: 813, offset: -7 }],
+    [{ y: 469, offset: 20 }, { y: 619, offset: -20 }, { y: 784, offset: 19 }],
+    [{ y: 514, offset: 7 }, { y: 680, offset: -15 }, { y: 847, offset: 11 }]
+  ];
+  const TOTAL = WAVES.reduce((sum, wave) => sum + wave.length, 0);
+  const FONT = '"Microsoft YaHei", "PingFang SC", sans-serif';
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  const rgb = value => 'rgb(' + value.join(',') + ')';
+  const riverX = y => 357 + Math.sin((y - 343) / 104) * 83 + Math.sin(y / 61) * 13;
+
+  function roundRect(ctx, x, y, w, h, radius) {
+    const r = Math.min(radius, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function riverPath(ctx, shift) {
+    ctx.beginPath();
+    for (let y = AREA.y - 40; y <= AREA.y + AREA.h + 40; y += 5) {
+      const x = riverX(y) + (shift || 0);
+      if (y === AREA.y - 40) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+  }
+
+  function seedRandom(seed) {
+    return function () {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+  }
+
+  function makeScenery() {
+    const random = seedRandom(20814);
+    return {
+      specks: Array.from({ length: 190 }, () => ({
+        x: 48 + random() * 624, y: 352 + random() * 596,
+        r: 0.4 + random() * 1.1, alpha: 0.03 + random() * 0.08
+      })),
+      plants: Array.from({ length: 35 }, (_, i) => {
+        const left = i % 2 === 0;
+        const y = 398 + random() * 520;
+        return {
+          x: left ? 48 + random() * 30 : 643 + random() * 29,
+          y, size: 9 + random() * 15, phase: random() * Math.PI * 2,
+          flower: random() > 0.45
+        };
+      }),
+      blooms: Array.from({ length: 25 }, () => ({
+        x: random() > 0.5 ? 76 + random() * 108 : 536 + random() * 108,
+        y: 487 + random() * 393, phase: random() * Math.PI * 2,
+        size: 3 + random() * 4
+      })),
+      sparks: Array.from({ length: 20 }, () => ({
+        x: 70 + random() * 580, y: 405 + random() * 510,
+        phase: random() * Math.PI * 2, r: 1 + random() * 2
+      }))
+    };
+  }
+
+  window.GiantCureGames = window.GiantCureGames || {};
+  window.GiantCureGames.blood = function createBloodGame(api) {
+    const scenery = makeScenery();
+    const state = {
+      wave: 0, removed: 0, mistakes: 0, clots: [], dragging: null,
+      dragStart: null, dragOffset: null, dragDistance: 0,
+      transition: 0, healTimer: -1, life: 0, healthFlash: 0,
+      finished: false, displayProgress: 0, floating: [], lastTime: 0
+    };
+
+    function task() {
+      api.setTask('拖走血栓 · ' + state.removed + '/' + TOTAL + '　河流耐受 ' + (5 - state.mistakes) + '/5');
+    }
+
+    function activateWave(index) {
+      state.wave = index;
+      state.clots = WAVES[index].map((item, i) => {
+        const x = riverX(item.y) + item.offset;
+        return {
+          id: index * 3 + i, x, y: item.y, homeX: x, homeY: item.y,
+          radius: 36 + (i % 2) * 3, phase: i * 1.7 + index,
+          born: 0, returning: false, removed: false
+        };
+      });
+      task();
+    }
+
+    function insideBank(p) {
+      return BANKS.some(bank =>
+        p.x >= bank.x + 5 && p.x <= bank.x + bank.w - 5 &&
+        p.y >= bank.y + 10 && p.y <= bank.y + bank.h - 10
+      );
+    }
+
+    function resetDrag(clot) {
+      if (clot) clot.returning = true;
+      state.dragging = null;
+      state.dragStart = null;
+      state.dragOffset = null;
+      state.dragDistance = 0;
+    }
+
+    function release(p, cancelled) {
+      const clot = state.dragging;
+      if (!clot || state.finished) return;
+      if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) pointerMove(p);
+      const moved = state.dragDistance > 15;
+      if (!cancelled && moved && insideBank(clot)) {
+        clot.removed = true;
+        state.removed += 1;
+        state.floating.push({ x: clot.x, y: clot.y, age: 0, text: '河流舒畅了', good: true });
+        api.progress(state.removed / TOTAL);
+        api.feedback('血栓已化作养分 · ' + state.removed + '/' + TOTAL, 'good');
+        api.effect(clot.x, clot.y, '#d9bf78', 20);
+        api.sound('hit');
+        resetDrag(null);
+        task();
+        if (state.removed === TOTAL) {
+          state.healTimer = 1.6;
+          state.finished = true;
+          api.feedback('河流重新流动，生命正在归来', 'good');
+          api.success();
+        } else if (state.clots.every(item => item.removed)) {
+          state.transition = 1.25;
+          api.feedback('支流已经疏通 · 继续清理下游', 'good');
+        }
+        return;
+      }
+      resetDrag(clot);
+      if (cancelled || !moved) return;
+      state.mistakes += 1;
+      state.healthFlash = 0.6;
+      state.floating.push({ x: clot.x, y: clot.y - 30, age: 0, text: '请移到发光草地', good: false });
+      api.feedback('放到两侧的发光草地上，河水才不会再次淤堵', 'bad');
+      api.sound('miss');
+      task();
+      if (state.mistakes >= 5) {
+        state.finished = true;
+        api.fail('河道受到过多扰动。下次把血栓放在两侧发光草地上。');
+      }
+    }
+
+    function pointerDown(p) {
+      if (state.finished || state.dragging || state.transition > 0 || state.healTimer >= 0) return;
+      const hit = state.clots.slice().reverse().find(clot =>
+        !clot.removed && Math.hypot(p.x - clot.x, p.y - clot.y) <= clot.radius + 15
+      );
+      if (!hit) return;
+      hit.returning = false;
+      state.dragging = hit;
+      state.dragStart = { x: p.x, y: p.y };
+      state.dragOffset = { x: hit.x - p.x, y: hit.y - p.y };
+      state.dragDistance = 0;
+    }
+
+    function pointerMove(p) {
+      const clot = state.dragging;
+      if (!clot || state.finished) return;
+      state.dragDistance = Math.max(state.dragDistance, Math.hypot(p.x - state.dragStart.x, p.y - state.dragStart.y));
+      clot.x = clamp(p.x + state.dragOffset.x, AREA.x + clot.radius + 6, AREA.x + AREA.w - clot.radius - 6);
+      clot.y = clamp(p.y + state.dragOffset.y, AREA.y + clot.radius + 12, AREA.y + AREA.h - clot.radius - 8);
+    }
+
+    function update(dt) {
+      state.life += dt;
+      state.healthFlash = Math.max(0, state.healthFlash - dt);
+      state.displayProgress += (state.removed / TOTAL - state.displayProgress) * Math.min(1, dt * 2);
+      state.clots.forEach(clot => {
+        clot.born = Math.min(1, clot.born + dt * 2);
+        if (clot.returning) {
+          const ease = Math.min(1, dt * 13);
+          clot.x += (clot.homeX - clot.x) * ease;
+          clot.y += (clot.homeY - clot.y) * ease;
+          if (Math.hypot(clot.homeX - clot.x, clot.homeY - clot.y) < 0.8) {
+            clot.x = clot.homeX;
+            clot.y = clot.homeY;
+            clot.returning = false;
+          }
+        }
+      });
+      state.floating.forEach(item => { item.age += dt; });
+      state.floating = state.floating.filter(item => item.age < 1.5);
+      // The host freezes the deadline on success and keeps drawing the recovery.
+      if (state.finished) {
+        if (state.healTimer >= 0) state.healTimer = Math.max(0, state.healTimer - dt);
+        return;
+      }
+      if (state.transition > 0) {
+        state.transition -= dt;
+        if (state.transition <= 0) activateWave(state.wave + 1);
+      }
+    }
+
+    function drawPlant(ctx, plant, time, recovery) {
+      ctx.save();
+      ctx.translate(plant.x, plant.y);
+      ctx.rotate(Math.sin(time * 0.7 + plant.phase) * 0.05);
+      const growth = 0.62 + recovery * 0.38;
+      ctx.scale(growth, growth);
+      ctx.strokeStyle = rgb(mix([139, 153, 121], [68, 125, 93], recovery));
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(0, 5); ctx.quadraticCurveTo(-4, -9, 0, -plant.size * 1.5); ctx.stroke();
+      for (let i = 0; i < 4; i++) {
+        const y = -i * plant.size * 0.33;
+        for (const side of [-1, 1]) {
+          ctx.fillStyle = rgb(mix([151, 165, 133], [108, 160, 115], recovery));
+          ctx.beginPath();
+          ctx.ellipse(side * plant.size * 0.25, y - plant.size * 0.28, plant.size * 0.38, plant.size * 0.14, side * -0.55, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      if (plant.flower && recovery > 0.12) drawFlower(ctx, 0, -plant.size * 1.5, 4 * recovery, plant.phase);
+      ctx.restore();
+    }
+
+    function drawFlower(ctx, x, y, size, phase) {
+      ctx.fillStyle = phase > Math.PI ? '#f5e8c4' : '#f0c6b0';
+      for (let i = 0; i < 5; i++) {
+        const a = i * Math.PI * 0.4 + phase;
+        ctx.beginPath(); ctx.ellipse(x + Math.cos(a) * size * 0.64, y + Math.sin(a) * size * 0.64, size * 0.62, size * 0.4, a, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = '#c1a66b';
+      ctx.beginPath(); ctx.arc(x, y, size * 0.3, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function drawBanks(ctx, time, recovery) {
+      BANKS.forEach(bank => {
+        const active = state.dragging && insideBank(state.dragging) &&
+          state.dragging.x >= bank.x && state.dragging.x <= bank.x + bank.w;
+        const glow = ctx.createRadialGradient(bank.x + bank.w / 2, bank.y + bank.h / 2, 20, bank.x + bank.w / 2, bank.y + bank.h / 2, bank.h * 0.6);
+        glow.addColorStop(0, 'rgba(247,233,174,' + (active ? 0.65 : 0.27) + ')');
+        glow.addColorStop(1, 'rgba(247,233,174,0)');
+        ctx.fillStyle = glow;
+        ctx.fillRect(bank.x - 22, bank.y - 30, bank.w + 44, bank.h + 60);
+        roundRect(ctx, bank.x, bank.y, bank.w, bank.h, 58);
+        ctx.fillStyle = active ? 'rgba(225,235,184,.78)' : 'rgba(208,225,188,.52)';
+        ctx.fill();
+        ctx.strokeStyle = active ? '#f9e2a0' : 'rgba(246,238,200,.9)';
+        ctx.lineWidth = active ? 4 : 2;
+        ctx.setLineDash([5, 8]);
+        ctx.lineDashOffset = -time * 8;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        const cx = bank.x + bank.w / 2;
+        ctx.fillStyle = '#537b59';
+        ctx.font = '600 19px ' + FONT;
+        ctx.textAlign = 'center';
+        ctx.fillText('养分草地', cx, bank.y + 41);
+        ctx.globalAlpha = 0.75;
+        ctx.fillStyle = '#6e966a';
+        ctx.font = '15px ' + FONT;
+        ctx.fillText('拖到这里', cx, bank.y + bank.h - 27);
+        ctx.globalAlpha = 1;
+        const sy = bank.y + bank.h * 0.48;
+        ctx.strokeStyle = '#75955f';
+        ctx.lineWidth = 2.4;
+        ctx.beginPath(); ctx.moveTo(cx, sy + 21); ctx.quadraticCurveTo(cx - 3, sy - 1, cx + 1, sy - 20); ctx.stroke();
+        ctx.fillStyle = '#86a573';
+        ctx.beginPath(); ctx.ellipse(cx - 10, sy + 1, 13, 6, 0.58, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx + 10, sy - 10, 13, 6, -0.58, 0, Math.PI * 2); ctx.fill();
+        if (active) {
+          ctx.fillStyle = '#496f54';
+          ctx.font = '700 20px ' + FONT;
+          ctx.fillText('松手滋养', cx, sy + 60);
+        }
+      });
+      scenery.blooms.forEach((bloom, index) => {
+        const growth = clamp(recovery * 1.6 - index / scenery.blooms.length * 0.6, 0, 1);
+        if (growth > 0) drawFlower(ctx, bloom.x, bloom.y + Math.sin(time + bloom.phase) * 1.1, bloom.size * growth, bloom.phase);
+      });
+    }
+
+    function drawClot(ctx, clot, time) {
+      if (clot.removed) return;
+      const dragging = state.dragging === clot;
+      const r = clot.radius;
+      const scale = (0.7 + 0.3 * clot.born) * (dragging ? 1.09 : 1);
+      ctx.save();
+      ctx.translate(clot.x, clot.y + (dragging ? -3 : Math.sin(time * 1.3 + clot.phase) * 1.7));
+      ctx.scale(scale, scale);
+      ctx.globalAlpha = Math.min(1, clot.born * 2);
+      ctx.fillStyle = dragging ? 'rgba(58,66,48,.16)' : 'rgba(97,62,56,.18)';
+      ctx.beginPath(); ctx.ellipse(3, r * 0.63, r * 1.08, r * 0.45, -0.12, 0, Math.PI * 2); ctx.fill();
+      if (dragging) {
+        ctx.strokeStyle = '#f6e5a9'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(0, 0, r + 9, 0, Math.PI * 2); ctx.stroke();
+      }
+      const points = [];
+      for (let i = 0; i < 9; i++) {
+        const a = i / 9 * Math.PI * 2;
+        const rr = r * (0.9 + Math.sin(i * 2.4 + clot.phase) * 0.09);
+        points.push({ x: Math.cos(a) * rr, y: Math.sin(a) * rr * 0.91 });
+      }
+      const fill = ctx.createLinearGradient(-r, -r, r, r);
+      fill.addColorStop(0, '#bc8b83'); fill.addColorStop(0.45, '#a37173'); fill.addColorStop(1, '#875b63');
+      ctx.fillStyle = fill; ctx.strokeStyle = '#774f5a'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo((points[0].x + points[8].x) / 2, (points[0].y + points[8].y) / 2);
+      points.forEach((point, i) => {
+        const next = points[(i + 1) % points.length];
+        ctx.quadraticCurveTo(point.x, point.y, (point.x + next.x) / 2, (point.y + next.y) / 2);
+      });
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = 'rgba(246,211,173,.55)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-r * 0.47, -r * 0.26); ctx.quadraticCurveTo(-r * 0.2, -r * 0.67, r * 0.26, -r * 0.44); ctx.stroke();
+      ctx.strokeStyle = 'rgba(100,63,70,.44)'; ctx.lineWidth = 1.7;
+      ctx.beginPath(); ctx.moveTo(-r * 0.1, -r * 0.1); ctx.lineTo(r * 0.1, r * 0.1); ctx.lineTo(0, r * 0.42); ctx.moveTo(r * 0.1, r * 0.1); ctx.lineTo(r * 0.39, r * 0.03); ctx.stroke();
+      ctx.fillStyle = '#f6dec0';
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath(); ctx.arc((i - 1) * 8, -2, 1.9, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function draw(ctx, time) {
+      state.lastTime = time;
+      const recovery = state.displayProgress;
+      ctx.save();
+      roundRect(ctx, AREA.x, AREA.y, AREA.w, AREA.h, 30);
+      ctx.fillStyle = '#e8ebd8'; ctx.fill();
+      ctx.clip();
+      const ground = ctx.createLinearGradient(0, AREA.y, 0, AREA.y + AREA.h);
+      ground.addColorStop(0, rgb(mix([222, 225, 204], [211, 232, 200], recovery)));
+      ground.addColorStop(0.6, rgb(mix([222, 229, 209], [227, 239, 208], recovery)));
+      ground.addColorStop(1, '#eae8d1');
+      ctx.fillStyle = ground; ctx.fillRect(AREA.x, AREA.y, AREA.w, AREA.h);
+      scenery.specks.forEach(speck => {
+        ctx.fillStyle = 'rgba(75,100,70,' + speck.alpha + ')';
+        ctx.beginPath(); ctx.arc(speck.x, speck.y, speck.r, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      riverPath(ctx); ctx.strokeStyle = 'rgba(102,124,87,.13)'; ctx.lineWidth = 173; ctx.stroke();
+      riverPath(ctx); ctx.strokeStyle = '#eee5cd'; ctx.lineWidth = 158; ctx.stroke();
+      riverPath(ctx); ctx.strokeStyle = rgb(mix([177, 138, 130], [215, 146, 124], recovery)); ctx.lineWidth = 140; ctx.stroke();
+      riverPath(ctx); ctx.strokeStyle = rgb(mix([190, 152, 140], [233, 172, 145], recovery)); ctx.lineWidth = 125; ctx.stroke();
+      riverPath(ctx, -17); ctx.strokeStyle = 'rgba(249,216,179,' + (0.12 + recovery * 0.22) + ')'; ctx.lineWidth = 39; ctx.stroke();
+      // Narrow travelling strokes make the direction and the restored current legible.
+      for (let i = 0; i < 24; i++) {
+        const y = AREA.y + ((i * 34 + time * (8 + recovery * 37)) % (AREA.h + 80)) - 40;
+        const offset = Math.sin(i * 2.7) * 42;
+        ctx.strokeStyle = 'rgba(255,238,205,' + (0.18 + recovery * 0.45) + ')';
+        ctx.lineWidth = i % 3 === 0 ? 3 : 1.7;
+        ctx.beginPath();
+        ctx.moveTo(riverX(y) + offset, y);
+        ctx.quadraticCurveTo(riverX(y + 9) + offset + 4, y + 9, riverX(y + 18) + offset, y + 18);
+        ctx.stroke();
+      }
+      drawBanks(ctx, time, recovery);
+      scenery.plants.forEach(plant => drawPlant(ctx, plant, time, recovery));
+      // Two little islands and their moss provide scale without obscuring interaction.
+      [{ y: 567, offset: 49 }, { y: 734, offset: -49 }].forEach((island, i) => {
+        const x = riverX(island.y) + island.offset;
+        ctx.fillStyle = '#d8d9b8';
+        ctx.beginPath(); ctx.ellipse(x, island.y, 17, 10, 0.45, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = rgb(mix([150, 161, 125], [103, 155, 108], recovery));
+        ctx.beginPath(); ctx.ellipse(x - 2, island.y - 3, 13, 7, 0.45, 0, Math.PI * 2); ctx.fill();
+        if (recovery > 0.2) drawFlower(ctx, x - 3, island.y - 9, 4 * recovery, i * 4);
+      });
+      scenery.sparks.forEach(spark => {
+        const glow = (Math.sin(time * 1.6 + spark.phase) * 0.5 + 0.5) * recovery;
+        if (glow < 0.01) return;
+        ctx.fillStyle = 'rgba(255,245,189,' + glow * 0.8 + ')';
+        ctx.beginPath(); ctx.arc(spark.x + Math.sin(time * 0.5 + spark.phase) * 8, spark.y - Math.sin(time * 0.7 + spark.phase) * 9, spark.r, 0, Math.PI * 2); ctx.fill();
+      });
+      // The quiet top label stays within the scene and is never an input target.
+      roundRect(ctx, 224, 360, 272, 46, 23);
+      ctx.fillStyle = 'rgba(249,247,232,.91)'; ctx.fill();
+      ctx.fillStyle = '#537668'; ctx.textAlign = 'center'; ctx.font = '600 19px ' + FONT;
+      ctx.fillText(state.healTimer >= 0 ? '生命之河 · 重获新生' : '第 ' + (state.wave + 1) + ' 段河道  /  3', 360, 390);
+      ctx.fillStyle = '#617e67'; ctx.font = '15px ' + FONT;
+      ctx.textAlign = 'right'; ctx.fillText('河道耐受', 328, 429);
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.ellipse(345 + i * 20, 424, 6.5, 4.4, -0.6, 0, Math.PI * 2);
+        ctx.fillStyle = i < 5 - state.mistakes ? '#6f9678' : '#d6ada1';
+        ctx.fill();
+      }
+      state.clots.filter(clot => clot !== state.dragging).forEach(clot => drawClot(ctx, clot, time));
+      if (state.dragging) drawClot(ctx, state.dragging, time);
+      if (state.removed === 0 && !state.dragging && state.life < 10) {
+        const clot = state.clots[0];
+        const pulse = Math.sin(time * 3) * 3;
+        ctx.strokeStyle = '#fbebbe'; ctx.lineWidth = 2.5; ctx.setLineDash([4, 5]);
+        ctx.beginPath(); ctx.arc(clot.x, clot.y, clot.radius + 12 + pulse, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#755b51'; ctx.font = '600 18px ' + FONT; ctx.textAlign = 'center';
+        ctx.fillText('按住石块，拖向草地', 360, 936);
+      }
+      if (state.transition > 0) {
+        ctx.fillStyle = 'rgba(247,245,223,.82)';
+        roundRect(ctx, 236, 622, 248, 60, 24); ctx.fill();
+        ctx.fillStyle = '#52725b'; ctx.font = '600 20px ' + FONT; ctx.textAlign = 'center';
+        ctx.fillText('正在查看下一段河道…', 360, 660);
+      }
+      state.floating.forEach(item => {
+        ctx.globalAlpha = Math.max(0, 1 - item.age / 1.5);
+        ctx.fillStyle = item.good ? '#4a725b' : '#8e514d';
+        ctx.font = '700 20px ' + FONT; ctx.textAlign = 'center';
+        const x = clamp(item.x, 145, 575);
+        ctx.fillText(item.text, x, item.y - 38 - item.age * 24);
+      });
+      ctx.globalAlpha = 1;
+      if (state.healthFlash > 0) {
+        ctx.strokeStyle = 'rgba(174,101,89,' + state.healthFlash * 0.7 + ')';
+        ctx.lineWidth = 8;
+        roundRect(ctx, AREA.x + 4, AREA.y + 4, AREA.w - 8, AREA.h - 8, 26); ctx.stroke();
+      }
+      ctx.restore();
+      ctx.save();
+      roundRect(ctx, AREA.x, AREA.y, AREA.w, AREA.h, 30);
+      ctx.strokeStyle = 'rgba(77,111,91,.25)'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.restore();
+    }
+
+    activateWave(0);
+    api.progress(0);
+    return {
+      update, draw, pointerDown, pointerMove,
+      pointerUp: p => release(p, false),
+      pointerCancel: () => release(null, true),
+      getDebugState: () => ({
+        type: 'blood', wave: state.wave + 1, removed: state.removed, total: TOTAL,
+        mistakes: state.mistakes, health: 5 - state.mistakes, finished: state.finished,
+        transition: state.transition, healing: state.healTimer >= 0,
+        draggingId: state.dragging ? state.dragging.id : null,
+        banks: BANKS.map(bank => ({ x: bank.x, y: bank.y, w: bank.w, h: bank.h })),
+        clots: state.clots.filter(clot => !clot.removed).map(clot => ({
+          id: clot.id, x: clot.x, y: clot.y, radius: clot.radius,
+          returning: clot.returning
+        }))
+      })
+    };
+  };
+})();
+
+
+// ===== SPORE TREATMENT =====
+/* Spore meadow — all coordinates use the shared 720 × 1280 canvas. */
+(function () {
+  'use strict';
+  const registry = window.GiantCureGames = window.GiantCureGames || {};
+  const BOX = { x: 36, y: 340, w: 648, h: 620 };
+  const GOAL = 22;
+  const COLORS = { green: '#346e60', mint: '#b5d6b0', ink: '#2c534c', bad: '#8c789a', gold: '#c1a66b' };
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  const rgb = c => `rgb(${c.join(',')})`;
+
+  function roundRect(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function ellipse(ctx, x, y, rx, ry, color, angle = 0) {
+    ctx.fillStyle = color; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, angle, 0, Math.PI * 2); ctx.fill();
+  }
+  function label(ctx, text, x, y, size, color, weight = '500') {
+    ctx.font = `${weight} ${size}px "Microsoft YaHei", "PingFang SC", sans-serif`;
+    ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, x, y);
+  }
+  function heart(ctx, x, y, full) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(.8, .8);
+    ctx.beginPath(); ctx.moveTo(0, 6); ctx.bezierCurveTo(-22, -7, -18, -24, -7, -19);
+    ctx.bezierCurveTo(-2, -18, 0, -14, 0, -14); ctx.bezierCurveTo(12, -31, 30, -11, 0, 6);
+    ctx.fillStyle = full ? COLORS.green : '#d6dbcd'; ctx.fill(); ctx.restore();
+  }
+
+  registry.spore = function createSporeGame(api) {
+    let elapsed = 0, removed = 0, health = 5, finished = false, nextId = 1;
+    let nextBad = 1.0, nextGood = 9.1, hurtTimer = 0;
+    let targets = [], bursts = [];
+    let displayProgress = 0;
+    let seed = 91207;
+    function random() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+    const flowers = Array.from({ length: 29 }, (_, i) => ({
+      x: 58 + random() * 604, y: 734 + random() * 151, phase: random() * 6.28,
+      size: 5 + random() * 6, at: i / 32, tint: i % 3
+    }));
+    const motes = Array.from({ length: 25 }, () => ({ x: random() * 648, y: random() * 500, p: random() * 6.28 }));
+
+    api.progress(0);
+    api.setTask('净化 22 颗紫色孢子 · 保护绿叶精灵');
+
+    function position(target) {
+      const alive = elapsed - target.born;
+      return { x: target.x + Math.sin(alive * .9 + target.phase) * 8,
+        y: target.y + Math.sin(alive * 1.25 + target.phase) * 9 };
+    }
+    function spawn(kind) {
+      // Large, well separated targets remain easy to select with a finger.
+      let point, bestPoint = { x: 360, y: 620 }, bestDistance = -1;
+      for (let i = 0; i < 45; i++) {
+        point = { x: 108 + random() * 504, y: 463 + random() * 355 };
+        const distance = targets.reduce((d, t) => {
+          const p = position(t); return Math.min(d, Math.hypot(p.x - point.x, p.y - point.y));
+        }, 1000);
+        if (distance > bestDistance) { bestDistance = distance; bestPoint = point; }
+        if (distance > 145) break;
+      }
+      if (bestDistance < 128) return false;
+      targets.push({ id: nextId++, kind, x: bestPoint.x, y: bestPoint.y,
+        born: elapsed, lifetime: kind === 'bad' ? (elapsed < 8 ? 11 : 8.8) : 6.3,
+        phase: random() * Math.PI * 2, radius: 52 });
+      return true;
+    }
+    function damage(text, point) {
+      health--; hurtTimer = .7;
+      api.feedback(text, 'bad'); api.sound('miss');
+      api.effect(point.x, point.y, '#9b7d9e', 14);
+      if (health <= 0) {
+        finished = true;
+        api.fail('森林生机暂时不足。只点紫色「感染」孢子，保护绿叶精灵。');
+      }
+    }
+    function update(dt) {
+      if (finished) return;
+      elapsed += dt; hurtTimer = Math.max(0, hurtTimer - dt);
+      displayProgress += (removed / GOAL - displayProgress) * Math.min(1, dt * 2.7);
+      bursts = bursts.filter(b => (b.age += dt) < .7);
+      for (let i = targets.length - 1; i >= 0; i--) {
+        const target = targets[i];
+        if (elapsed - target.born >= target.lifetime) {
+          targets.splice(i, 1);
+          if (target.kind === 'bad') {
+            damage('孢子逸散 · 生机 −1', position(target));
+            if (finished) return;
+          }
+        }
+      }
+      if (elapsed >= nextBad) {
+        nextBad = elapsed + (spawn('bad') ? 3.3 : .45);
+      }
+      if (elapsed >= nextGood) {
+        nextGood = elapsed + (spawn('good') ? 5.1 : .65);
+      }
+    }
+
+    function drawEnvironment(ctx, time) {
+      const p = displayProgress;
+      const sky = ctx.createLinearGradient(0, BOX.y, 0, BOX.y + BOX.h);
+      sky.addColorStop(0, rgb(mix([207, 209, 199], [218, 235, 208], p)));
+      sky.addColorStop(.58, rgb(mix([176, 189, 177], [173, 215, 180], p)));
+      sky.addColorStop(1, rgb(mix([152, 173, 149], [112, 176, 136], p)));
+      ctx.fillStyle = sky; ctx.fillRect(BOX.x, BOX.y, BOX.w, BOX.h);
+
+      // The forest is made of soft concentric canopies, roots and rolling moss.
+      for (let depth = 0; depth < 3; depth++) {
+        const n = depth === 0 ? 7 : 5;
+        for (let i = 0; i < n; i++) {
+          const x = 55 + i * (680 / n) + Math.sin(i * 3) * 20;
+          const y = 520 + depth * 54 + Math.sin(i * 2.2) * 42;
+          const color = rgb(mix([139 + depth * 7, 159 + depth * 6, 143 + depth * 6],
+            [105 + depth * 17, 163 + depth * 15, 133 + depth * 12], p));
+          ctx.globalAlpha = .37 + depth * .05;
+          ctx.fillStyle = color;
+          ctx.beginPath(); ctx.moveTo(x - 53, 853); ctx.quadraticCurveTo(x - 17, y + 55, x - 18, y);
+          ctx.lineTo(x + 18, y); ctx.quadraticCurveTo(x + 11, y + 150, x + 60, 853); ctx.closePath(); ctx.fill();
+          ellipse(ctx, x, y, 87 - depth * 8, 104 - depth * 9, color);
+          ellipse(ctx, x - 41, y + 22, 53, 71, color, -.35);
+          ellipse(ctx, x + 37, y + 13, 61, 73, color, .4);
+        }
+      }
+      ctx.globalAlpha = 1;
+      const glow = ctx.createRadialGradient(366, 537, 10, 366, 537, 390);
+      glow.addColorStop(0, `rgba(255,251,207,${.15 + p * .44})`); glow.addColorStop(1, 'rgba(255,249,218,0)');
+      ctx.fillStyle = glow; ctx.fillRect(36, 340, 648, 620);
+
+      // A ribbon of light guides the eye into the meadow.
+      ctx.fillStyle = `rgba(243,243,211,${.17 + p * .16})`;
+      ctx.beginPath(); ctx.moveTo(312, 621); ctx.bezierCurveTo(431, 726, 177, 766, 399, 960);
+      ctx.lineTo(614, 960); ctx.bezierCurveTo(281, 755, 455, 718, 348, 621); ctx.fill();
+      for (let i = 0; i < 4; i++) {
+        ctx.fillStyle = rgb(mix([132 - i * 5, 161 - i * 4, 136 - i * 5], [120 - i * 10, 180 - i * 5, 130 - i * 4], p));
+        ctx.beginPath(); ctx.moveTo(36, 837 + i * 26);
+        ctx.bezierCurveTo(195, 755 + i * 31, 420, 943 - i * 25, 684, 811 + i * 33);
+        ctx.lineTo(684, 960); ctx.lineTo(36, 960); ctx.fill();
+      }
+
+      flowers.forEach(f => {
+        const growth = clamp((p - f.at) * 6, 0, 1);
+        if (growth <= 0) return;
+        const sway = Math.sin(time * 1.3 + f.phase) * 4;
+        ctx.save(); ctx.translate(f.x, f.y); ctx.scale(growth, growth);
+        ctx.strokeStyle = '#527d58'; ctx.lineWidth = 2.1;
+        ctx.beginPath(); ctx.moveTo(0, 15); ctx.quadraticCurveTo(-2, 0, sway, -13); ctx.stroke();
+        ellipse(ctx, -5, 5, 7, 3, '#8cb273', -.4); ellipse(ctx, 5, 0, 6, 3, '#719e69', .5);
+        for (let k = 0; k < 5; k++) {
+          const a = k * Math.PI * 2 / 5;
+          ellipse(ctx, sway + Math.cos(a) * f.size * .58, -13 + Math.sin(a) * f.size * .58,
+            f.size * .6, f.size * .4, ['#f5e6ba', '#e4bdba', '#f6f2d7'][f.tint], a);
+        }
+        ellipse(ctx, sway, -13, 2.9, 2.9, '#c1a66b'); ctx.restore();
+      });
+      motes.forEach((m, i) => {
+        const x = 36 + (m.x + Math.sin(time * .25 + m.p) * 18 + 648) % 648;
+        const y = 405 + (m.y - time * (2 + i % 4) + 5000) % 455;
+        ctx.globalAlpha = (.25 + Math.sin(time + m.p) * .13) * (.3 + p * .7);
+        ellipse(ctx, x, y, i % 3 === 0 ? 2.7 : 1.6, i % 3 === 0 ? 2.7 : 1.6, '#fff8cd');
+      });
+      ctx.globalAlpha = 1;
+
+      // Two foreground saplings frame the play field without hiding its targets.
+      for (const side of [0, 1]) {
+        ctx.save(); ctx.translate(side ? 680 : 40, 906); ctx.scale(side ? -1 : 1, 1);
+        ctx.strokeStyle = '#5c8263'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(0, 20); ctx.quadraticCurveTo(30, -42, 16, -131); ctx.stroke();
+        for (let i = 0; i < 6; i++) {
+          const y = -i * 19, sx = i % 2 ? 1 : -1;
+          ellipse(ctx, 18 + sx * 10, y - 10, 19, 7, p > .4 ? '#91b47c' : '#8b9e80', sx * -.7);
+        }
+        ctx.restore();
+      }
+    }
+
+    function drawBad(ctx, target, time) {
+      const alive = elapsed - target.born;
+      const p = position(target);
+      const appear = Math.min(1, alive / .3);
+      ctx.save(); ctx.translate(p.x, p.y); ctx.scale(appear, appear);
+      ellipse(ctx, 0, 51, 38, 8, 'rgba(55,77,57,.13)');
+      const aura = ctx.createRadialGradient(0, 0, 14, 0, 0, 63);
+      aura.addColorStop(0, 'rgba(162,132,179,.3)'); aura.addColorStop(1, 'rgba(162,132,179,0)');
+      ctx.fillStyle = aura; ctx.fillRect(-65, -65, 130, 130);
+      ctx.strokeStyle = '#82708f'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+      for (let i = 0; i < 9; i++) {
+        const a = i / 9 * Math.PI * 2 + Math.sin(time + target.phase) * .08;
+        const x = Math.cos(a), y = Math.sin(a);
+        ctx.beginPath(); ctx.moveTo(x * 31, y * 31); ctx.lineTo(x * 44, y * 44); ctx.stroke();
+        ellipse(ctx, x * 45, y * 45, 4.2, 4.2, '#9a87a7');
+      }
+      const body = ctx.createRadialGradient(-11, -15, 3, 0, 0, 38);
+      body.addColorStop(0, '#b9a6c6'); body.addColorStop(1, '#8c789a');
+      ellipse(ctx, 0, 0, 35, 35, body);
+      ctx.strokeStyle = '#776686'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 35, 0, Math.PI * 2); ctx.stroke();
+      ellipse(ctx, -14, -16, 8, 5, 'rgba(255,248,255,.27)', -.6);
+      ellipse(ctx, -11, -2, 3, 4, '#574d64'); ellipse(ctx, 11, -2, 3, 4, '#574d64');
+      ctx.strokeStyle = '#695b75'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-5, 10); ctx.lineTo(0, 7); ctx.lineTo(5, 10); ctx.stroke();
+      roundRect(ctx, -29, 24, 58, 26, 13); ctx.fillStyle = '#f5eff7'; ctx.fill();
+      label(ctx, '感染', 0, 37, 16, '#796386', '700');
+      const remain = target.lifetime - alive;
+      if (remain < 2.5) {
+        ctx.strokeStyle = '#ba7c77'; ctx.lineWidth = 3.5;
+        ctx.beginPath(); ctx.arc(0, 0, 56, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * remain / 2.5); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawGood(ctx, target, time) {
+      const p = position(target), appear = Math.min(1, (elapsed - target.born) / .35);
+      ctx.save(); ctx.translate(p.x, p.y); ctx.scale(appear, appear);
+      ellipse(ctx, 0, 52, 36, 7, 'rgba(55,77,57,.11)');
+      const flap = Math.sin(time * 5 + target.phase) * .15;
+      ellipse(ctx, -26, -3, 21, 12, 'rgba(248,251,219,.72)', -.5 + flap);
+      ellipse(ctx, 26, -3, 21, 12, 'rgba(248,251,219,.72)', .5 - flap);
+      const body = ctx.createLinearGradient(-24, -32, 26, 38);
+      body.addColorStop(0, '#d5e9b5'); body.addColorStop(1, '#79ad83');
+      ellipse(ctx, 0, 4, 29, 33, body);
+      ctx.strokeStyle = '#6b9973'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(0, 4, 29, 33, 0, 0, 6.29); ctx.stroke();
+      ellipse(ctx, -10, -34, 19, 9, '#79a66f', .5); ellipse(ctx, 9, -39, 20, 9, '#9abd7e', -.7);
+      ctx.strokeStyle = '#4c7854'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, -25); ctx.lineTo(19, -46); ctx.stroke();
+      ellipse(ctx, -10, 0, 2.8, 3.5, '#3f7056'); ellipse(ctx, 10, 0, 2.8, 3.5, '#3f7056');
+      ctx.strokeStyle = '#4f7f58'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 7, 5.5, .15, Math.PI - .15); ctx.stroke();
+      ellipse(ctx, -18, 8, 4.5, 2.5, '#e4c6a7'); ellipse(ctx, 18, 8, 4.5, 2.5, '#e4c6a7');
+      roundRect(ctx, -29, 28, 58, 26, 13); ctx.fillStyle = '#f5f6df'; ctx.fill();
+      label(ctx, '守护', 0, 41, 16, COLORS.green, '700'); ctx.restore();
+    }
+
+    function draw(ctx, time) {
+      ctx.save(); roundRect(ctx, BOX.x, BOX.y, BOX.w, BOX.h, 30); ctx.clip();
+      drawEnvironment(ctx, time);
+      // Scene status is readable while the main HUD handles time and total score.
+      roundRect(ctx, 58, 357, 604, 63, 20); ctx.fillStyle = 'rgba(249,248,232,.87)'; ctx.fill();
+      label(ctx, '森林生机', 122, 380, 17, COLORS.green, '600');
+      for (let i = 0; i < 5; i++) heart(ctx, 212 + i * 31, 391, i < health);
+      label(ctx, `${removed} / ${GOAL}`, 581, 382, 26, COLORS.green, '700');
+      label(ctx, '孢子已净化', 580, 405, 12, '#6b8572');
+
+      targets.slice().sort((a, b) => a.y - b.y).forEach(t => t.kind === 'bad' ? drawBad(ctx, t, time) : drawGood(ctx, t, time));
+      bursts.forEach(b => {
+        ctx.globalAlpha = 1 - b.age / .7;
+        ctx.strokeStyle = b.color; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(b.x, b.y, 27 + b.age * 72, 0, Math.PI * 2); ctx.stroke();
+        label(ctx, b.text, b.x, b.y - b.age * 55, 22, b.color, '700');
+      });
+      ctx.globalAlpha = 1;
+      roundRect(ctx, 92, 903, 536, 38, 19); ctx.fillStyle = 'rgba(248,247,229,.88)'; ctx.fill();
+      ellipse(ctx, 120, 922, 8, 8, COLORS.bad); label(ctx, '紫色感染 · 点击净化', 236, 922, 17, '#766581', '600');
+      ellipse(ctx, 393, 922, 10, 5, '#76a478', -.5); label(ctx, '绿叶精灵 · 请保护', 507, 922, 17, COLORS.green, '600');
+      if (elapsed < 5.8 && removed === 0) {
+        roundRect(ctx, 165, 844, 390, 42, 21); ctx.fillStyle = 'rgba(248,247,229,.95)'; ctx.fill();
+        label(ctx, '轻点紫色孢子，唤醒这片森林', 360, 865, 19, COLORS.green, '600');
+      }
+      if (hurtTimer > 0) {
+        ctx.fillStyle = `rgba(162,104,121,${hurtTimer * .13})`; ctx.fillRect(BOX.x, BOX.y, BOX.w, BOX.h);
+      }
+      ctx.restore();
+      ctx.save(); roundRect(ctx, BOX.x, BOX.y, BOX.w, BOX.h, 30);
+      ctx.strokeStyle = 'rgba(79,120,95,.2)'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+    }
+
+    function pointerDown(point) {
+      if (finished) return false;
+      const hit = targets.filter(t => {
+        const p = position(t); return Math.hypot(point.x - p.x, point.y - p.y) <= t.radius;
+      }).sort((a, b) => {
+        const pa = position(a), pb = position(b);
+        return Math.hypot(point.x - pa.x, point.y - pa.y) - Math.hypot(point.x - pb.x, point.y - pb.y);
+      })[0];
+      if (!hit) return false;
+      targets = targets.filter(t => t !== hit);
+      const p = position(hit);
+      if (hit.kind === 'good') {
+        bursts.push({ x: p.x, y: p.y, age: 0, color: '#9f777e', text: '生机 −1' });
+        damage('这是守护精灵 · 生机 −1', p);
+      } else {
+        removed++;
+        api.progress(removed / GOAL); api.sound('hit'); api.effect(p.x, p.y, '#e8cf89', 15);
+        bursts.push({ x: p.x, y: p.y, age: 0, color: '#f5f2c9', text: '+1 净化' });
+        if (removed === 1) api.feedback('做得好！记得保护绿叶精灵', 'good');
+        else if (removed % 5 === 0) api.feedback('花朵正重新绽放', 'good');
+        if (removed >= GOAL) { finished = true; api.success(); }
+      }
+      return true;
+    }
+    return {
+      update, draw, pointerDown,
+      pointerMove() { return false; }, pointerUp() { return false; },
+      getDebugState() {
+        return { elapsed, removed, goal: GOAL, health, finished,
+          targets: targets.map(t => ({ id: t.id, kind: t.kind, ...position(t), radius: t.radius,
+            remaining: t.lifetime - (elapsed - t.born) })) };
+      }
+    };
+  };
+})();
+
+
+// ===== HEART TREATMENT =====
+(function () {
+  'use strict';
+
+  var games = window.GiantCureGames = window.GiantCureGames || {};
+
+  games.heart = function (api) {
+    var SCENE = { x: 36, y: 340, w: 648, h: 620 };
+    var TRACK = { left: 92, right: 628, y: 825, height: 58 };
+    var REQUIRED_HITS = 17;
+    var ROUND_SECONDS = 3.8;
+    var WARMUP_SECONDS = 3;
+    var MAX_MISTAKES = 6;
+    var TARGET_HALF_WIDTH = 69;
+    var phase = 'warmup';
+    var elapsed = 0;
+    var warmupElapsed = 0;
+    var roundElapsed = 0;
+    var roundIndex = 0;
+    var roundResolved = false;
+    var roundResult = '';
+    var hits = 0;
+    var mistakes = 0;
+    var targetX = 397;
+    var hitPulse = 0;
+    var errorPulse = 0;
+    var announcement = '光点进入金色区域时，轻点一下';
+    var announcementTime = 0;
+    var motes = Array.from({ length: 27 }, function (_, i) {
+      return { x: 73 + ((i * 109) % 574), y: 426 + ((i * 67) % 293), seed: i * 1.71 };
+    });
+
+    function call(name) {
+      if (typeof api[name] === 'function') {
+        api[name].apply(api, Array.prototype.slice.call(arguments, 1));
+      }
+    }
+
+    function setTask() {
+      call('setTask', '在金色安定区按拍 · 已安定 ' + hits + ' / ' + REQUIRED_HITS + ' 次');
+    }
+
+    function clamp(value, low, high) { return Math.max(low, Math.min(high, value)); }
+
+    function mixColor(a, b, t) {
+      var aa = parseInt(a.slice(1), 16);
+      var bb = parseInt(b.slice(1), 16);
+      var red = Math.round((aa >> 16) + ((bb >> 16) - (aa >> 16)) * t);
+      var green = Math.round(((aa >> 8) & 255) + (((bb >> 8) & 255) - ((aa >> 8) & 255)) * t);
+      var blue = Math.round((aa & 255) + ((bb & 255) - (aa & 255)) * t);
+      return 'rgb(' + red + ',' + green + ',' + blue + ')';
+    }
+
+    function roundedPath(ctx, x, y, width, height, radius) {
+      var r = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + width, y, x + width, y + height, r);
+      ctx.arcTo(x + width, y + height, x, y + height, r);
+      ctx.arcTo(x, y + height, x, y, r);
+      ctx.arcTo(x, y, x + width, y, r);
+      ctx.closePath();
+    }
+
+    function text(ctx, words, x, y, size, color, align, weight) {
+      ctx.font = (weight || '500') + ' ' + size + 'px "PingFang SC","Microsoft YaHei",sans-serif';
+      ctx.fillStyle = color;
+      ctx.textAlign = align || 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(words, x, y);
+    }
+
+    function indicatorX() {
+      var position = phase === 'warmup' ? warmupElapsed / WARMUP_SECONDS : roundElapsed / ROUND_SECONDS;
+      return TRACK.left + clamp(position, 0, 1) * (TRACK.right - TRACK.left);
+    }
+
+    function targetContains(x) { return Math.abs(x - targetX) <= TARGET_HALF_WIDTH; }
+
+    function startNextRound() {
+      roundElapsed = 0;
+      roundResolved = false;
+      roundResult = '';
+      // A gentle variation keeps the same rhythm readable without becoming a fixed-position tap.
+      targetX = 397 + Math.sin(roundIndex * 1.34) * 44;
+    }
+
+    function resolveMistake(message) {
+      if (roundResolved || phase !== 'playing') return;
+      roundResolved = true;
+      roundResult = 'miss';
+      mistakes += 1;
+      errorPulse = 1;
+      announcement = message;
+      announcementTime = 1.9;
+      call('feedback', message, 'bad');
+      call('sound', 'miss');
+      if (mistakes >= MAX_MISTAKES) {
+        phase = 'failed';
+        call('fail', '生命之城有些疲惫了。跟着光点，慢慢再来一次。');
+      }
+    }
+
+    function update(dt) {
+      if (!Number.isFinite(dt) || dt <= 0) return;
+      elapsed += dt;
+      hitPulse = Math.max(0, hitPulse - dt * 1.45);
+      errorPulse = Math.max(0, errorPulse - dt * 2.3);
+      announcementTime = Math.max(0, announcementTime - dt);
+      if (phase === 'success' || phase === 'failed') return;
+
+      var remaining = dt;
+      if (phase === 'warmup') {
+        var warmupStep = Math.min(remaining, WARMUP_SECONDS - warmupElapsed);
+        warmupElapsed += warmupStep;
+        remaining -= warmupStep;
+        if (warmupElapsed >= WARMUP_SECONDS) {
+          phase = 'playing';
+          startNextRound();
+          call('feedback', '开始了，等光点进入金色区域', 'info');
+        }
+      }
+
+      while (phase === 'playing' && remaining > 0) {
+        var step = Math.min(remaining, ROUND_SECONDS - roundElapsed);
+        roundElapsed += step;
+        remaining -= step;
+        var targetEndTime = ((targetX + TARGET_HALF_WIDTH - TRACK.left) / (TRACK.right - TRACK.left)) * ROUND_SECONDS;
+        if (!roundResolved && roundElapsed > targetEndTime) {
+          resolveMistake('错过这一拍了，等下一个光点');
+        }
+        if (roundElapsed >= ROUND_SECONDS - 0.000001 && phase === 'playing') {
+          roundIndex += 1;
+          startNextRound();
+        }
+      }
+    }
+
+    function pointerDown() {
+      if (phase === 'warmup') return;
+      if (phase !== 'playing' || roundResolved) return;
+      var x = indicatorX();
+      if (targetContains(x)) {
+        roundResolved = true;
+        roundResult = 'hit';
+        hits += 1;
+        hitPulse = 1;
+        announcement = hits >= REQUIRED_HITS ? '心跳归于和谐，生命之城苏醒了' : '稳稳一拍 · 生命正在复苏';
+        announcementTime = 2;
+        call('progress', hits / REQUIRED_HITS);
+        call('feedback', '安定 +' + 1 + ' · ' + hits + ' / ' + REQUIRED_HITS, 'good');
+        call('effect', 360, 568, '#c1a66b', 20);
+        call('sound', 'hit');
+        setTask();
+        if (hits >= REQUIRED_HITS) {
+          phase = 'success';
+          call('effect', 360, 640, '#79b99b', 36);
+          call('success');
+        }
+      } else {
+        resolveMistake(x < targetX ? '稍早了一点，下一拍等光点进区' : '稍晚了一点，下一拍再试');
+      }
+    }
+
+    function drawLeaf(ctx, x, y, length, angle, color) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(-length * 0.72, -length * 0.3, -length * 0.46, -length, 0, -length);
+      ctx.bezierCurveTo(length * 0.49, -length * 0.65, length * 0.59, -length * 0.17, 0, 0);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(246,244,232,.45)';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(0, -2);
+      ctx.lineTo(0, -length * 0.84);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function flower(ctx, x, y, size, sway, bloom) {
+      if (bloom <= 0) return;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(bloom, bloom);
+      ctx.strokeStyle = '#6b9d83';
+      ctx.lineWidth = 2.3;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(sway * 6, -size * 0.65, sway * 9, -size);
+      ctx.stroke();
+      drawLeaf(ctx, sway * 3, -size * 0.35, size * 0.4, -0.75, '#88b89b');
+      ctx.translate(sway * 9, -size);
+      for (var petal = 0; petal < 5; petal += 1) {
+        var angle = petal * Math.PI * 2 / 5;
+        ctx.fillStyle = petal % 2 ? '#e5aa98' : '#f4c7b2';
+        ctx.beginPath();
+        ctx.ellipse(Math.sin(angle) * size * 0.17, Math.cos(angle) * size * 0.17, size * 0.15, size * 0.22, -angle, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#c1a66b';
+      ctx.beginPath();
+      ctx.arc(0, 0, size * 0.1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawTower(ctx, x, y, width, height, recovery, tall) {
+      var wall = ctx.createLinearGradient(x, y - height, x + width, y);
+      wall.addColorStop(0, mixColor('#bbc3be', '#efe9d0', recovery));
+      wall.addColorStop(1, mixColor('#9caeaa', '#cbdcb8', recovery));
+      ctx.fillStyle = wall;
+      roundedPath(ctx, x, y - height, width, height, 10);
+      ctx.fill();
+      ctx.strokeStyle = mixColor('#8ba09c', '#83a88b', recovery);
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = mixColor('#849f9c', '#5b9c80', recovery);
+      ctx.beginPath();
+      ctx.moveTo(x - 7, y - height + 7);
+      ctx.quadraticCurveTo(x + width / 2, y - height - (tall ? 47 : 26), x + width + 7, y - height + 7);
+      ctx.quadraticCurveTo(x + width / 2, y - height + 21, x - 7, y - height + 7);
+      ctx.fill();
+      var windows = Math.max(1, Math.floor((height - 25) / 33));
+      for (var row = 0; row < windows; row += 1) {
+        var wy = y - height + 28 + row * 32;
+        ctx.fillStyle = mixColor('#a7b5ad', '#f5df98', recovery * 0.85 + hitPulse * 0.15);
+        for (var col = 0; col < 2; col += 1) {
+          roundedPath(ctx, x + 10 + col * (width - 27), wy, 7, 13, 3.5);
+          ctx.fill();
+        }
+      }
+      ctx.fillStyle = mixColor('#839c91', '#719c78', recovery);
+      roundedPath(ctx, x + width / 2 - 8, y - 21, 16, 21, 7);
+      ctx.fill();
+    }
+
+    function drawCity(ctx, time, recovery) {
+      var breath = Math.sin(time * (1.8 + recovery * 0.65)) * (1.8 + recovery * 1.8);
+      var glow = ctx.createRadialGradient(360, 558, 10, 360, 558, 230);
+      glow.addColorStop(0, 'rgba(244,218,147,' + (0.14 + recovery * 0.3 + hitPulse * 0.22) + ')');
+      glow.addColorStop(1, 'rgba(244,218,147,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(118, 388, 484, 351);
+
+      // This island has the two lobes and tapered tip of a heart, with leaf veins.
+      ctx.save();
+      ctx.translate(360, 643 + breath);
+      ctx.scale(1 + hitPulse * 0.018, 1 + hitPulse * 0.018);
+      ctx.fillStyle = 'rgba(48,90,77,.10)';
+      ctx.beginPath();
+      ctx.ellipse(0, 84, 183, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+      var island = ctx.createLinearGradient(0, -40, 0, 104);
+      island.addColorStop(0, mixColor('#a5b6ad', '#a4cda3', recovery));
+      island.addColorStop(1, mixColor('#789a91', '#4d9578', recovery));
+      ctx.fillStyle = island;
+      ctx.beginPath();
+      ctx.moveTo(0, -14);
+      ctx.bezierCurveTo(-66, -105, -211, -60, -190, 8);
+      ctx.bezierCurveTo(-178, 53, -74, 88, 0, 112);
+      ctx.bezierCurveTo(73, 88, 178, 53, 190, 8);
+      ctx.bezierCurveTo(211, -60, 66, -105, 0, -14);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(236,240,204,.5)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, 105);
+      ctx.quadraticCurveTo(8, 41, 0, -13);
+      for (var vein = 0; vein < 3; vein += 1) {
+        ctx.moveTo(0, 75 - vein * 25);
+        ctx.quadraticCurveTo(-75, 43 - vein * 20, -152 + vein * 16, 2 - vein * 14);
+        ctx.moveTo(0, 75 - vein * 25);
+        ctx.quadraticCurveTo(75, 43 - vein * 20, 152 - vein * 16, 2 - vein * 14);
+      }
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(0, breath);
+      ctx.fillStyle = mixColor('#a8b9b0', '#cfdbac', recovery);
+      ctx.beginPath();
+      ctx.ellipse(360, 641, 176, 32, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(246,244,232,.72)';
+      ctx.lineWidth = 11;
+      ctx.beginPath();
+      ctx.moveTo(211, 640);
+      ctx.bezierCurveTo(289, 610, 375, 681, 509, 628);
+      ctx.stroke();
+
+      drawTower(ctx, 220, 628, 49, 86, recovery, false);
+      drawTower(ctx, 278, 639, 54, 130, recovery, true);
+      drawTower(ctx, 397, 639, 55, 117, recovery, true);
+      drawTower(ctx, 466, 629, 43, 75, recovery, false);
+
+      // The city's life tree doubles as an organic bell tower.
+      ctx.strokeStyle = mixColor('#80988d', '#698e66', recovery);
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 13;
+      ctx.beginPath();
+      ctx.moveTo(360, 639);
+      ctx.bezierCurveTo(342, 577, 374, 523, 358, 467);
+      ctx.stroke();
+      ctx.lineWidth = 6;
+      var branches = [[360, 551, 319, 517], [357, 526, 402, 489], [360, 492, 333, 461]];
+      branches.forEach(function (branch) {
+        ctx.beginPath();
+        ctx.moveTo(branch[0], branch[1]);
+        ctx.quadraticCurveTo(branch[0] - 5, branch[3] + 20, branch[2], branch[3]);
+        ctx.stroke();
+      });
+      var leafColor = mixColor('#a5b8ad', '#78b48a', recovery);
+      drawLeaf(ctx, 320, 522, 44 + recovery * 14, -0.9, leafColor);
+      drawLeaf(ctx, 401, 496, 43 + recovery * 15, 0.91, leafColor);
+      drawLeaf(ctx, 355, 475, 47 + recovery * 19, -0.06, mixColor('#b1bdb0', '#a4ca8f', recovery));
+      drawLeaf(ctx, 339, 470, 28 + recovery * 11, -1.05, leafColor);
+      drawLeaf(ctx, 363, 574, 28 + recovery * 12, 0.85, leafColor);
+
+      ctx.shadowColor = '#f5d78a';
+      ctx.shadowBlur = 12 + recovery * 15 + hitPulse * 18;
+      ctx.fillStyle = mixColor('#b7bda4', '#efd58c', recovery * 0.8 + hitPulse * 0.2);
+      ctx.beginPath();
+      ctx.arc(360, 562, 16 + hitPulse * 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#f6f4e8';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(350, 562);
+      ctx.lineTo(355, 562);
+      ctx.lineTo(359, 555);
+      ctx.lineTo(363, 570);
+      ctx.lineTo(367, 562);
+      ctx.lineTo(371, 562);
+      ctx.stroke();
+
+      for (var f = 0; f < 13; f += 1) {
+        var bloom = clamp(recovery * 1.65 - f * 0.055, 0, 1);
+        flower(ctx, 202 + f * 26, 648 + Math.sin(f * 1.9) * 14, 19 + (f % 3) * 5, Math.sin(time * 1.5 + f), bloom);
+      }
+      ctx.restore();
+    }
+
+    function drawTrack(ctx, time) {
+      var x = indicatorX();
+      var inTarget = targetContains(x);
+      var active = phase === 'playing' && !roundResolved;
+      text(ctx, '安 定 区', targetX, 777, 17, '#927444', 'center', '600');
+      roundedPath(ctx, 73, TRACK.y - TRACK.height / 2 - 9, 574, TRACK.height + 18, 35);
+      ctx.fillStyle = '#e9eadd';
+      ctx.fill();
+      roundedPath(ctx, TRACK.left - 18, TRACK.y - TRACK.height / 2, TRACK.right - TRACK.left + 36, TRACK.height, 29);
+      ctx.fillStyle = '#426c60';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(246,244,232,.15)';
+      ctx.lineWidth = 1;
+      for (var i = 0; i <= 12; i += 1) {
+        var tickX = TRACK.left + i * (TRACK.right - TRACK.left) / 12;
+        ctx.beginPath();
+        ctx.moveTo(tickX, TRACK.y - 7);
+        ctx.lineTo(tickX, TRACK.y + 7);
+        ctx.stroke();
+      }
+      roundedPath(ctx, targetX - TARGET_HALF_WIDTH, TRACK.y - TRACK.height / 2 - 5, TARGET_HALF_WIDTH * 2, TRACK.height + 10, 21);
+      ctx.fillStyle = roundResult === 'hit' ? 'rgba(191,221,157,.87)' : 'rgba(220,194,126,.83)';
+      ctx.fill();
+      ctx.strokeStyle = '#fff2c2';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.strokeStyle = '#fff8da';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(targetX, TRACK.y - 10);
+      ctx.lineTo(targetX, TRACK.y + 10);
+      ctx.stroke();
+
+      ctx.shadowColor = inTarget && active ? '#ffdf95' : '#c7e6d8';
+      ctx.shadowBlur = inTarget && active ? 24 : 9;
+      ctx.fillStyle = roundResult === 'miss' ? '#e4a594' : '#f9f4df';
+      ctx.beginPath();
+      ctx.arc(x, TRACK.y, 19 + (inTarget && active ? Math.sin(time * 10) * 2 : 0), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = roundResult === 'miss' ? '#ce8174' : '#c1a66b';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.fillStyle = roundResult === 'hit' ? '#6e9f79' : '#c1a66b';
+      ctx.beginPath();
+      ctx.arc(x, TRACK.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (phase === 'warmup') {
+        text(ctx, Math.max(1, Math.ceil(WARMUP_SECONDS - warmupElapsed)) + ' · 准备按拍', 360, 888, 23, '#346e60', 'center', '700');
+      } else if (roundResolved) {
+        text(ctx, roundResult === 'hit' ? '这次很稳，等待下一拍' : '深呼吸，等待下一拍', 360, 888, 21, roundResult === 'hit' ? '#477f61' : '#aa6e60', 'center', '600');
+      } else {
+        text(ctx, inTarget ? '就是现在 · 轻点！' : '等待光点进入金色区域', 360, 888, 22, inTarget ? '#8b713f' : '#59796a', 'center', inTarget ? '700' : '500');
+      }
+      text(ctx, '轻点画面或按拍按钮 · 每轮轻点一次', 360, 927, 17, '#829386');
+    }
+
+    function draw(ctx, time) {
+      time = Number.isFinite(time) ? time : elapsed;
+      var recovery = hits / REQUIRED_HITS;
+      ctx.save();
+      roundedPath(ctx, SCENE.x, SCENE.y, SCENE.w, SCENE.h, 32);
+      ctx.clip();
+      var background = ctx.createLinearGradient(0, SCENE.y, 0, SCENE.y + SCENE.h);
+      background.addColorStop(0, mixColor('#e0e8e4', '#e9efd9', recovery));
+      background.addColorStop(0.6, mixColor('#edf0e7', '#f4f2dc', recovery));
+      background.addColorStop(1, '#f6f4e8');
+      ctx.fillStyle = background;
+      ctx.fillRect(SCENE.x, SCENE.y, SCENE.w, SCENE.h);
+
+      ctx.fillStyle = 'rgba(125,157,137,.075)';
+      ctx.beginPath();
+      ctx.ellipse(76, 497, 107, 166, -0.4, 0, Math.PI * 2);
+      ctx.ellipse(656, 579, 88, 158, 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      drawLeaf(ctx, 47, 674, 102, 0.3, 'rgba(127,165,141,.15)');
+      drawLeaf(ctx, 677, 650, 108, -0.6, 'rgba(127,165,141,.14)');
+
+      text(ctx, '让生命之城，重新安稳呼吸', 71, 376, 22, '#346e60', 'left', '600');
+      text(ctx, '容错', 487, 411, 15, '#7e9385', 'right');
+      for (var life = 0; life < MAX_MISTAKES; life += 1) {
+        var lifeX = 507 + life * 22;
+        drawLeaf(ctx, lifeX, 418, 17, 0.25, life < MAX_MISTAKES - mistakes ? '#83aa8b' : '#d4dbcf');
+      }
+
+      drawCity(ctx, time, recovery);
+      motes.forEach(function (mote) {
+        var alpha = (0.15 + recovery * 0.65) * (0.45 + Math.sin(time * 1.3 + mote.seed) * 0.3);
+        ctx.fillStyle = 'rgba(190,166,103,' + alpha + ')';
+        ctx.beginPath();
+        ctx.arc(mote.x + Math.sin(time * 0.6 + mote.seed) * 9, mote.y - ((time * (4 + recovery * 9) + mote.seed * 13) % 80), 1.7 + recovery, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      var message = announcementTime > 0 ? announcement : (phase === 'warmup' ? announcement : '每一次合拍，都为城市点亮一盏灯');
+      text(ctx, message, 360, 746, 20, errorPulse > 0 ? '#ac7061' : '#597b65', 'center', '500');
+      drawTrack(ctx, time);
+      if (errorPulse > 0) {
+        ctx.strokeStyle = 'rgba(206,129,116,' + errorPulse * 0.65 + ')';
+        ctx.lineWidth = 6;
+        roundedPath(ctx, SCENE.x + 3, SCENE.y + 3, SCENE.w - 6, SCENE.h - 6, 29);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    call('progress', 0);
+    setTask();
+
+    return {
+      update: update,
+      draw: draw,
+      pointerDown: pointerDown,
+      pointerMove: function () {},
+      pointerUp: function () {},
+      pointerCancel: function () {},
+      getDebugState: function () {
+        return {
+          phase: phase,
+          hits: hits,
+          requiredHits: REQUIRED_HITS,
+          mistakes: mistakes,
+          health: MAX_MISTAKES - mistakes,
+          roundIndex: roundIndex,
+          roundElapsed: roundElapsed,
+          roundDuration: ROUND_SECONDS,
+          roundResolved: roundResolved,
+          roundResult: roundResult,
+          indicatorX: indicatorX(),
+          indicatorY: TRACK.y,
+          targetX: targetX,
+          targetLeft: targetX - TARGET_HALF_WIDTH,
+          targetRight: targetX + TARGET_HALF_WIDTH,
+          warmupRemaining: Math.max(0, WARMUP_SECONDS - warmupElapsed)
+        };
+      }
+    };
+  };
+}());
+
+(function () {
+  'use strict';
+
+  var PAPER = '#f7f6ed';
+  var INK = '#346e60';
+
+  function path(ctx, commands, fill, stroke, width) {
+    ctx.beginPath();
+    commands(ctx);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = width || 1; ctx.stroke(); }
+  }
+
+  function ellipse(ctx, x, y, rx, ry, color, angle) {
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx, ry, angle || 0, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  function leaf(ctx, x, y, length, angle, color, vein) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    path(ctx, function (p) {
+      p.moveTo(0, 0);
+      p.bezierCurveTo(-length * 0.54, -length * 0.22, -length * 0.48, -length * 0.8, 0, -length);
+      p.bezierCurveTo(length * 0.48, -length * 0.81, length * 0.5, -length * 0.25, 0, 0);
+    }, color);
+    if (vein) {
+      path(ctx, function (p) { p.moveTo(0, -length * 0.12); p.quadraticCurveTo(-1.2, -length * 0.5, 0, -length * 0.9); }, null, 'rgba(247,246,237,.5)', 0.9);
+    }
+    ctx.restore();
+  }
+
+  function tree(ctx, x, y, size, tint, sway, type) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(sway);
+    var stem = size * 0.77;
+    path(ctx, function (p) {
+      p.moveTo(0, 1);
+      p.bezierCurveTo(-size * 0.04, -stem * 0.3, size * 0.04, -stem * 0.8, 0, -stem);
+    }, null, '#739981', Math.max(1.1, size * 0.027));
+    if (type === 1) {
+      for (var i = 0; i < 5; i += 1) {
+        var ly = -stem * (0.18 + i * 0.15);
+        var len = size * (0.43 - i * 0.048);
+        leaf(ctx, 0, ly, len, -0.81, tint, true);
+        leaf(ctx, 0, ly - 3, len * 0.9, 0.81, tint, true);
+      }
+      leaf(ctx, 0, -stem + size * 0.07, size * 0.3, 0, tint, true);
+    } else {
+      var clusters = [[-0.2, -0.65, 0.22], [0.18, -0.72, 0.2], [-0.14, -0.88, 0.2], [0.12, -0.95, 0.18], [0, -1.08, 0.16]];
+      clusters.forEach(function (c, index) {
+        leaf(ctx, c[0] * size, (c[1] + c[2]) * size, c[2] * size * 2.4, index % 2 ? 0.42 : -0.46, tint, false);
+      });
+      path(ctx, function (p) {
+        p.moveTo(0, -size * 0.32); p.lineTo(-size * 0.15, -size * 0.57);
+        p.moveTo(0, -size * 0.57); p.lineTo(size * 0.16, -size * 0.81);
+      }, null, 'rgba(247,246,237,.4)', 1);
+    }
+    ctx.restore();
+  }
+
+  function sprig(ctx, x, y, size, seed, time) {
+    var sway = Math.sin(time * 0.55 + seed) * 0.07;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(sway);
+    path(ctx, function (p) { p.moveTo(0, 0); p.quadraticCurveTo(-3, -size * 0.42, 2, -size); }, null, '#739c7f', 1.2);
+    leaf(ctx, 0, -size * 0.3, size * 0.48, -0.96, '#a7c29e', false);
+    leaf(ctx, 0, -size * 0.54, size * 0.38, 0.9, '#7fa98a', false);
+    var blossomY = -size;
+    for (var i = 0; i < 5; i += 1) {
+      var a = i * Math.PI * 2 / 5;
+      ellipse(ctx, 2 + Math.sin(a) * 3.1, blossomY + Math.cos(a) * 3.1, 2.2, 3.7, seed % 3 === 0 ? '#d9a495' : '#f4e8bd', -a);
+    }
+    ellipse(ctx, 2, blossomY, 1.8, 1.8, '#b99c61');
+    ctx.restore();
+  }
+
+  function star(ctx, x, y, size, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    path(ctx, function (p) {
+      p.moveTo(x, y - size);
+      p.quadraticCurveTo(x + size * 0.18, y - size * 0.15, x + size, y);
+      p.quadraticCurveTo(x + size * 0.15, y + size * 0.2, x, y + size);
+      p.quadraticCurveTo(x - size * 0.15, y + size * 0.2, x - size, y);
+      p.quadraticCurveTo(x - size * 0.2, y - size * 0.18, x, y - size);
+    }, '#b99c61');
+    ctx.restore();
+  }
+
+  function building(ctx, x, y, width, height, style, lit) {
+    var top = y - height;
+    var wall = ctx.createLinearGradient(x, top, x + width, y);
+    wall.addColorStop(0, '#f6eed5');
+    wall.addColorStop(1, '#d5dfbd');
+    path(ctx, function (p) {
+      p.moveTo(x, y); p.lineTo(x + 1.6, top + 9);
+      p.quadraticCurveTo(x + width * 0.5, top - 3, x + width - 1.4, top + 9);
+      p.lineTo(x + width, y); p.closePath();
+    }, wall, 'rgba(82,125,97,.42)', 1);
+    path(ctx, function (p) {
+      p.moveTo(x - 4, top + 11);
+      p.bezierCurveTo(x + width * 0.2, top + 3, x + width * 0.4, top - (style ? 24 : 16), x + width * 0.49, top - (style ? 29 : 19));
+      p.bezierCurveTo(x + width * 0.55, top - 11, x + width * 0.77, top + 3, x + width + 4, top + 11);
+      p.quadraticCurveTo(x + width * 0.45, top + 18, x - 4, top + 11);
+    }, style ? '#578a70' : '#81a582', 'rgba(52,110,96,.32)', 1);
+    var rows = Math.max(1, Math.floor((height - 17) / 18));
+    for (var r = 0; r < rows; r += 1) {
+      for (var c = 0; c < (width > 25 ? 2 : 1); c += 1) {
+        var wx = x + (width > 25 ? 8 + c * (width - 16) : width * 0.5);
+        path(ctx, function (p) {
+          p.moveTo(wx - 2.2, top + 23 + r * 18);
+          p.lineTo(wx - 2.2, top + 18 + r * 18);
+          p.quadraticCurveTo(wx, top + 12 + r * 18, wx + 2.2, top + 18 + r * 18);
+          p.lineTo(wx + 2.2, top + 23 + r * 18); p.closePath();
+        }, lit ? '#ecd289' : '#b4c69d');
+      }
+    }
+    path(ctx, function (p) {
+      p.moveTo(x + width * 0.36, y); p.lineTo(x + width * 0.36, y - 10);
+      p.quadraticCurveTo(x + width * 0.5, y - 19, x + width * 0.65, y - 10);
+      p.lineTo(x + width * 0.65, y);
+    }, '#719b79');
+    if (style) {
+      path(ctx, function (p) { p.moveTo(x + width * 0.49, top - 29); p.lineTo(x + width * 0.49, top - 39); }, null, '#b99c61', 1);
+      leaf(ctx, x + width * 0.49, top - 32, 10, 0.8, '#c4b374', false);
+    }
+  }
+
+  function drawSky(ctx, time) {
+    // A fine orbital arc frames the sleeping world without enclosing it in a card.
+    ctx.save();
+    ctx.setLineDash([1, 9]);
+    ctx.lineCap = 'round';
+    path(ctx, function (p) {
+      p.moveTo(127, 601); p.bezierCurveTo(209, 492, 459, 472, 579, 560);
+    }, null, 'rgba(185,156,97,.42)', 1.1);
+    ctx.restore();
+    star(ctx, 254, 526, 5, 0.62);
+    star(ctx, 461, 522, 7, 0.78);
+    star(ctx, 660, 639, 6, 0.5);
+    star(ctx, 105, 635, 4.5, 0.52);
+    star(ctx, 516, 579, 3, 0.55);
+    ellipse(ctx, 322, 506, 1.6, 1.6, '#cfbf88');
+    ellipse(ctx, 528, 539, 1.3, 1.3, '#cfbf88');
+    ellipse(ctx, 184, 569, 1.9, 1.9, '#cfbf88');
+    ctx.save();
+    ctx.translate(597, 556 + Math.sin(time * 0.28) * 2.8);
+    ctx.rotate(-0.28);
+    path(ctx, function (p) {
+      p.moveTo(9, -27);
+      p.bezierCurveTo(-24, -17, -26, 23, 7, 30);
+      p.bezierCurveTo(31, 31, 40, 12, 33, -3);
+      p.bezierCurveTo(30, 18, 6, 20, -1, 5);
+      p.bezierCurveTo(-9, -9, -2, -19, 9, -27);
+    }, '#ddc994');
+    ctx.restore();
+    star(ctx, 635, 543, 4.5, 0.7);
+  }
+
+  function drawIsland(ctx, time) {
+    // The underside follows uneven, sedimentary curves rather than a geometric cone.
+    var rock = ctx.createLinearGradient(0, 777, 0, 925);
+    rock.addColorStop(0, '#d6d7b8');
+    rock.addColorStop(0.4, '#d7cba7');
+    rock.addColorStop(1, '#b9b394');
+    path(ctx, function (p) {
+      p.moveTo(61, 782); p.bezierCurveTo(122, 764, 210, 780, 288, 788);
+      p.bezierCurveTo(361, 785, 445, 782, 520, 796);
+      p.bezierCurveTo(508, 814, 480, 832, 466, 847);
+      p.bezierCurveTo(434, 849, 427, 873, 405, 881);
+      p.bezierCurveTo(383, 886, 386, 909, 363, 906);
+      p.bezierCurveTo(346, 903, 334, 925, 311, 918);
+      p.bezierCurveTo(285, 913, 281, 932, 254, 913);
+      p.bezierCurveTo(225, 915, 225, 895, 194, 889);
+      p.bezierCurveTo(158, 885, 145, 867, 127, 850);
+      p.bezierCurveTo(95, 841, 81, 814, 61, 782); p.closePath();
+    }, rock);
+
+    var layers = [
+      [79, 806, 130, 828, 233, 815, 305, 827, 403, 838, 479, 814],
+      [100, 828, 162, 844, 236, 832, 319, 847, 395, 859, 450, 845],
+      [142, 855, 203, 873, 244, 856, 303, 870, 347, 885, 412, 872],
+      [203, 886, 239, 902, 279, 882, 309, 893, 335, 906, 367, 901]
+    ];
+    layers.forEach(function (l, i) {
+      path(ctx, function (p) {
+        p.moveTo(l[0], l[1]); p.bezierCurveTo(l[2], l[3], l[4], l[5], l[6], l[7]);
+        p.quadraticCurveTo(l[8], l[9], l[10], l[11]);
+      }, null, i % 2 ? 'rgba(247,246,237,.52)' : 'rgba(151,149,112,.29)', i === 0 ? 4.4 : 2.3);
+    });
+    for (var i = 0; i < 33; i += 1) {
+      var sx = 105 + (i * 79) % 361;
+      var sy = 814 + (i * 31) % 64;
+      if (Math.abs(sx - 292) > 190 - (sy - 810) * 1.2) continue;
+      ellipse(ctx, sx, sy, 1 + (i % 3) * 0.5, 0.65, 'rgba(135,132,103,.28)', i * 0.2);
+    }
+    // A tiny shell fossil is a quiet reward for looking closely.
+    ctx.strokeStyle = 'rgba(142,139,103,.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var s = 0; s < 37; s += 1) {
+      var angle = s * 0.35;
+      var radius = s * 0.13;
+      var fx = 218 + Math.cos(angle) * radius;
+      var fy = 851 + Math.sin(angle) * radius * 0.7;
+      if (s === 0) ctx.moveTo(fx, fy); else ctx.lineTo(fx, fy);
+    }
+    ctx.stroke();
+
+    var roots = [[191, 886, -19, 34], [228, 903, 7, 35], [266, 914, -11, 36], [332, 914, 13, 30], [374, 900, 19, 29], [411, 879, 21, 30]];
+    roots.forEach(function (r, index) {
+      var sway = Math.sin(time * 0.5 + index) * 1.4;
+      path(ctx, function (p) {
+        p.moveTo(r[0], r[1]);
+        p.bezierCurveTo(r[0] - 4, r[1] + 12, r[0] + r[2] + sway, r[1] + r[3] - 8, r[0] + r[2] * 0.7 + sway, r[1] + r[3]);
+        p.moveTo(r[0] - 1, r[1] + 13);
+        p.quadraticCurveTo(r[0] - 10, r[1] + 17, r[0] - 10, r[1] + 25);
+      }, null, 'rgba(130,146,112,.6)', 1.1);
+    });
+  }
+
+  function drawGiant(ctx, time) {
+    var skin = ctx.createLinearGradient(0, 680, 0, 815);
+    skin.addColorStop(0, '#eee4c4');
+    skin.addColorStop(1, '#dfcfaa');
+
+    // Reclining torso and bent arm form the low foreground of the green hillside.
+    path(ctx, function (p) {
+      p.moveTo(98, 757); p.bezierCurveTo(122, 720, 171, 690, 221, 680);
+      p.bezierCurveTo(303, 662, 402, 689, 463, 727);
+      p.bezierCurveTo(484, 740, 505, 759, 531, 774);
+      p.bezierCurveTo(538, 783, 538, 792, 519, 797);
+      p.bezierCurveTo(470, 813, 390, 814, 324, 803);
+      p.bezierCurveTo(261, 801, 187, 797, 143, 782);
+      p.bezierCurveTo(125, 786, 103, 777, 98, 757); p.closePath();
+    }, skin);
+
+    var grass = ctx.createLinearGradient(0, 613, 0, 795);
+    grass.addColorStop(0, '#b5c9a6');
+    grass.addColorStop(0.52, '#96b69a');
+    grass.addColorStop(1, '#749f85');
+    path(ctx, function (p) {
+      p.moveTo(90, 756); p.bezierCurveTo(124, 710, 151, 673, 201, 659);
+      p.bezierCurveTo(223, 650, 247, 656, 270, 642);
+      p.bezierCurveTo(305, 615, 338, 617, 361, 623);
+      p.bezierCurveTo(408, 623, 431, 653, 458, 686);
+      p.bezierCurveTo(477, 706, 491, 718, 501, 747);
+      p.bezierCurveTo(447, 744, 438, 770, 386, 762);
+      p.bezierCurveTo(337, 747, 313, 783, 265, 766);
+      p.bezierCurveTo(222, 750, 184, 776, 149, 763);
+      p.bezierCurveTo(126, 771, 104, 763, 90, 756); p.closePath();
+    }, grass);
+    path(ctx, function (p) {
+      p.moveTo(100, 755); p.bezierCurveTo(150, 710, 181, 717, 229, 708);
+      p.bezierCurveTo(294, 696, 302, 663, 365, 668);
+      p.bezierCurveTo(424, 673, 446, 706, 482, 729);
+    }, null, 'rgba(233,239,207,.45)', 2);
+    path(ctx, function (p) {
+      p.moveTo(134, 755); p.bezierCurveTo(204, 734, 230, 752, 279, 736);
+      p.moveTo(385, 725); p.quadraticCurveTo(432, 731, 455, 745);
+    }, null, 'rgba(53,110,87,.18)', 1.1);
+
+    // A soft side profile: closed eyelid, lifted nose, calm mouth and round cheek.
+    var face = ctx.createLinearGradient(502, 693, 609, 789);
+    face.addColorStop(0, '#f2e9cf');
+    face.addColorStop(0.7, '#efe2c5');
+    face.addColorStop(1, '#e5d6b5');
+    path(ctx, function (p) {
+      p.moveTo(499, 720); p.bezierCurveTo(497, 696, 525, 680, 553, 692);
+      p.bezierCurveTo(580, 696, 593, 714, 599, 732);
+      p.quadraticCurveTo(604, 742, 627, 746);
+      p.bezierCurveTo(638, 749, 632, 758, 616, 760);
+      p.quadraticCurveTo(615, 767, 608, 768);
+      p.quadraticCurveTo(616, 775, 608, 781);
+      p.bezierCurveTo(593, 797, 562, 798, 535, 783);
+      p.bezierCurveTo(513, 775, 493, 754, 499, 720); p.closePath();
+    }, face, 'rgba(153,142,105,.16)', 1);
+    ellipse(ctx, 568, 759, 14, 7.5, 'rgba(212,155,128,.15)', 0.26);
+    path(ctx, function (p) {
+      p.moveTo(560, 735); p.quadraticCurveTo(574, 747, 589, 740);
+      p.moveTo(582, 742); p.lineTo(585, 746);
+      p.moveTo(587, 741); p.lineTo(591, 744);
+    }, null, '#648474', 1.9);
+    path(ctx, function (p) { p.moveTo(560, 727); p.quadraticCurveTo(572, 723, 581, 729); }, null, 'rgba(100,132,116,.45)', 1.2);
+    path(ctx, function (p) {
+      p.moveTo(599, 732); p.quadraticCurveTo(604, 742, 610, 744);
+      p.moveTo(617, 755); p.quadraticCurveTo(620, 751, 624, 753);
+      p.moveTo(601, 772); p.quadraticCurveTo(607, 774, 612, 771);
+    }, null, '#bba985', 1.1);
+
+    path(ctx, function (p) {
+      p.moveTo(504, 752); p.bezierCurveTo(479, 740, 471, 721, 481, 694);
+      p.bezierCurveTo(485, 668, 517, 657, 540, 671);
+      p.bezierCurveTo(567, 671, 587, 685, 592, 708);
+      p.bezierCurveTo(580, 696, 569, 699, 557, 702);
+      p.bezierCurveTo(541, 700, 531, 709, 529, 725);
+      p.quadraticCurveTo(513, 724, 504, 752); p.closePath();
+    }, '#709c81');
+    for (var curl = 0; curl < 7; curl += 1) {
+      var cx = 487 + curl * 10;
+      var cy = 704 - Math.sin(curl * 0.34) * 20;
+      path(ctx, function (p) {
+        p.moveTo(cx, cy + 14); p.bezierCurveTo(cx - 6, cy + 6, cx + 3, cy - 3, cx + 7, cy + 2);
+      }, null, 'rgba(225,235,202,.28)', 1);
+    }
+    ellipse(ctx, 524, 739, 9.5, 13, '#ecdfbf', -0.32);
+    path(ctx, function (p) { p.moveTo(526, 731); p.quadraticCurveTo(516, 733, 523, 745); }, null, '#bcae89', 1);
+
+    // His hand rests under his cheek. The curved seams are deliberately light.
+    path(ctx, function (p) {
+      p.moveTo(390, 781); p.bezierCurveTo(430, 771, 460, 774, 487, 781);
+      p.bezierCurveTo(512, 778, 534, 779, 549, 786);
+      p.quadraticCurveTo(557, 794, 544, 797);
+      p.bezierCurveTo(513, 801, 494, 796, 472, 795);
+      p.quadraticCurveTo(433, 806, 402, 798);
+    }, '#ecdfbd', 'rgba(164,151,112,.22)', 1);
+    for (var finger = 0; finger < 3; finger += 1) {
+      path(ctx, function (p) {
+        p.moveTo(518 + finger * 8, 784 + finger * 1.5); p.quadraticCurveTo(525 + finger * 6, 791, 526 + finger * 7, 797);
+      }, null, 'rgba(163,150,110,.27)', 0.9);
+    }
+
+    // A low moss rim stitches the giant into the island without hiding his silhouette.
+    path(ctx, function (p) {
+      p.moveTo(57, 779); p.quadraticCurveTo(75, 767, 95, 777);
+      p.quadraticCurveTo(109, 768, 125, 780); p.quadraticCurveTo(143, 777, 157, 787);
+      p.quadraticCurveTo(181, 782, 200, 791); p.quadraticCurveTo(222, 783, 242, 794);
+      p.quadraticCurveTo(268, 787, 290, 800); p.quadraticCurveTo(318, 789, 339, 799);
+      p.quadraticCurveTo(370, 790, 397, 803); p.quadraticCurveTo(424, 796, 446, 805);
+      p.quadraticCurveTo(479, 796, 515, 797); p.quadraticCurveTo(495, 815, 458, 816);
+      p.bezierCurveTo(324, 822, 173, 809, 68, 795); p.closePath();
+    }, '#93ae86');
+    path(ctx, function (p) {
+      p.moveTo(67, 792); p.bezierCurveTo(189, 803, 365, 817, 495, 808);
+    }, null, 'rgba(234,235,198,.55)', 2);
+  }
+
+  function drawCity(ctx, time, restored) {
+    // Hair becomes a layered woodland, with pale trunks visible through the canopy.
+    for (var back = 0; back < 10; back += 1) {
+      var bx = 150 + back * 20;
+      var by = 684 - Math.sin(back / 10 * Math.PI) * 42;
+      tree(ctx, bx, by, 39 + (back * 17) % 43, back % 2 ? '#9ebd9a' : '#88ad91', Math.sin(time * 0.4 + back) * 0.014, back % 2);
+    }
+    // The main city climbs the gentle shoulder; little footbridges link its towers.
+    path(ctx, function (p) {
+      p.moveTo(267, 654); p.quadraticCurveTo(292, 631, 315, 647);
+      p.moveTo(329, 646); p.quadraticCurveTo(352, 621, 377, 636);
+      p.moveTo(386, 650); p.quadraticCurveTo(415, 639, 435, 660);
+    }, null, '#d8dcb8', 7);
+    path(ctx, function (p) {
+      p.moveTo(269, 647); p.quadraticCurveTo(292, 624, 315, 640);
+      p.moveTo(330, 639); p.quadraticCurveTo(352, 614, 376, 629);
+      p.moveTo(387, 644); p.quadraticCurveTo(416, 632, 433, 654);
+    }, null, 'rgba(93,139,108,.45)', 1);
+    building(ctx, 274, 651, 24, 54, 0, true);
+    building(ctx, 309, 647, 30, 75, 1, true);
+    building(ctx, 388, 653, 29, 67, 1, true);
+    building(ctx, 429, 669, 24, 49, 0, true);
+    building(ctx, 249, 667, 19, 38, 0, false);
+    building(ctx, 351, 661, 25, 47, 0, true);
+
+    // A luminous, bell-like heart in the living tree is the city's quiet centre.
+    var halo = ctx.createRadialGradient(362, 567, 5, 362, 567, 73);
+    halo.addColorStop(0, 'rgba(233,215,150,' + (0.23 + restored * 0.12) + ')');
+    halo.addColorStop(1, 'rgba(233,215,150,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(286, 490, 152, 160);
+    path(ctx, function (p) {
+      p.moveTo(360, 643); p.bezierCurveTo(346, 605, 369, 569, 361, 532);
+      p.moveTo(359, 586); p.quadraticCurveTo(337, 564, 326, 559);
+      p.moveTo(362, 571); p.quadraticCurveTo(386, 549, 399, 545);
+    }, null, '#789368', 6);
+    leaf(ctx, 352, 570, 58, -0.7, '#a6c293', true);
+    leaf(ctx, 369, 563, 55, 0.68, '#80ac87', true);
+    leaf(ctx, 362, 543, 51, 0.06, '#bbce9e', true);
+    leaf(ctx, 328, 565, 34, -0.96, '#87b18e', true);
+    leaf(ctx, 398, 553, 35, 0.85, '#a6c293', true);
+    ellipse(ctx, 361, 588, 11, 14, '#ecd38f');
+    path(ctx, function (p) {
+      p.moveTo(355, 588); p.lineTo(358, 588); p.lineTo(360, 584);
+      p.lineTo(363, 592); p.lineTo(365, 588); p.lineTo(368, 588);
+    }, null, '#fcf5d7', 1.3);
+    ellipse(ctx, 361, 605, 2.1, 2.1, '#c6b272');
+    path(ctx, function (p) { p.moveTo(361, 602); p.lineTo(361, 610); }, null, '#bca66a', 1);
+
+    // The hairline on the head continues the forest at a smaller scale.
+    for (var h = 0; h < 7; h += 1) {
+      tree(ctx, 478 + h * 12, 701 - Math.sin(h * 0.4) * 17, 25 + (h * 13) % 25, h % 2 ? '#759f80' : '#96b68c', Math.sin(time * 0.5 + h) * 0.02, h % 2);
+    }
+  }
+
+  function drawRiver(ctx, time) {
+    var riverPath = function (p) {
+      p.moveTo(387, 665); p.bezierCurveTo(374, 677, 354, 676, 351, 691);
+      p.bezierCurveTo(347, 713, 303, 710, 307, 728);
+      p.bezierCurveTo(312, 748, 347, 747, 326, 769);
+      p.bezierCurveTo(319, 778, 294, 788, 296, 805);
+    };
+    path(ctx, riverPath, null, '#b8d5c0', 20);
+    path(ctx, riverPath, null, '#6faea1', 12.5);
+    path(ctx, riverPath, null, 'rgba(221,239,214,.72)', 3.2);
+    path(ctx, function (p) {
+      p.moveTo(295, 803); p.bezierCurveTo(296, 825, 311, 835, 309, 857);
+      p.bezierCurveTo(306, 877, 320, 879, 317, 896);
+    }, null, 'rgba(133,187,170,.73)', 11);
+    path(ctx, function (p) {
+      p.moveTo(295, 803); p.bezierCurveTo(294, 824, 309, 835, 307, 856);
+      p.bezierCurveTo(304, 874, 316, 884, 314, 895);
+    }, null, 'rgba(243,247,224,.82)', 3.1);
+    path(ctx, function (p) {
+      p.moveTo(302, 807); p.bezierCurveTo(304, 828, 317, 840, 316, 855);
+    }, null, 'rgba(235,245,220,.46)', 1.3);
+    for (var i = 0; i < 5; i += 1) {
+      var fall = (time * 0.22 + i * 0.22) % 1;
+      ellipse(ctx, 316 + Math.sin(i + time * 0.3) * 3, 895 + fall * 30, 1.4 - fall * 0.8, 2.7 - fall, 'rgba(119,178,162,' + (0.4 * (1 - fall)) + ')');
+    }
+    for (var wave = 0; wave < 5; wave += 1) {
+      var wy = 687 + wave * 23;
+      var wx = [360, 332, 317, 329, 301][wave];
+      path(ctx, function (p) { p.moveTo(wx - 3, wy); p.quadraticCurveTo(wx + 1, wy + Math.sin(time * 1.2 + wave) * 1.5, wx + 5, wy - 1); }, null, 'rgba(244,247,218,.65)', 1.1);
+    }
+    // A little root bridge keeps the river part of an inhabited world.
+    path(ctx, function (p) {
+      p.moveTo(315, 748); p.quadraticCurveTo(330, 733, 346, 745);
+    }, null, '#c8b78c', 5);
+    path(ctx, function (p) { p.moveTo(315, 744); p.quadraticCurveTo(330, 729, 346, 741); }, null, '#8a9b75', 1.2);
+    for (var post = 0; post < 5; post += 1) {
+      var px = 317 + post * 6.7;
+      var py = 744 - Math.sin(post / 4 * Math.PI) * 6;
+      path(ctx, function (p) { p.moveTo(px, py); p.lineTo(px, py - 5); }, null, '#8a9b75', 1);
+    }
+  }
+
+  window.GiantCureCover = {
+    draw: function (ctx, time, restored) {
+      time = Number.isFinite(time) ? time : 0;
+      restored = Math.max(0, Math.min(1, Number(restored) || 0));
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 430, 720, 548);
+      ctx.clip();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      // All washes are translucent, so the drawing can sit directly on the page's paper.
+      var atmosphere = ctx.createRadialGradient(346, 706, 36, 346, 706, 306);
+      atmosphere.addColorStop(0, 'rgba(199,216,184,.3)');
+      atmosphere.addColorStop(0.8, 'rgba(220,228,202,.12)');
+      atmosphere.addColorStop(1, 'rgba(247,246,237,0)');
+      ctx.fillStyle = atmosphere;
+      ctx.fillRect(33, 448, 652, 477);
+      drawSky(ctx, time);
+
+      // Almost-transparent far ridges lend the island depth without a solid backdrop.
+      path(ctx, function (p) {
+        p.moveTo(76, 739); p.bezierCurveTo(120, 708, 147, 635, 186, 650);
+        p.bezierCurveTo(220, 662, 226, 592, 259, 613);
+        p.bezierCurveTo(303, 633, 307, 576, 344, 598);
+        p.bezierCurveTo(389, 622, 413, 600, 449, 650);
+        p.bezierCurveTo(489, 667, 505, 641, 542, 698);
+        p.lineTo(554, 764); p.closePath();
+      }, 'rgba(173,197,168,.2)');
+      path(ctx, function (p) {
+        p.moveTo(94, 719); p.bezierCurveTo(161, 702, 197, 680, 224, 692);
+        p.moveTo(410, 666); p.quadraticCurveTo(448, 670, 474, 696);
+      }, null, 'rgba(140,171,145,.16)', 1.2);
+
+      drawIsland(ctx, time);
+      drawGiant(ctx, time);
+      drawCity(ctx, time, restored);
+      drawRiver(ctx, time);
+
+      var foliage = [[104, 770, 33, 0], [133, 781, 23, 1], [175, 786, 20, 2], [213, 791, 31, 3], [245, 795, 20, 4], [271, 795, 25, 5], [359, 802, 21, 6], [383, 804, 27, 7], [418, 806, 21, 8], [461, 807, 23, 9], [485, 804, 17, 10]];
+      foliage.forEach(function (f) { sprig(ctx, f[0], f[1], f[2], f[3], time); });
+      tree(ctx, 82, 775, 43, '#729b7d', Math.sin(time * 0.6) * 0.02, 1);
+      tree(ctx, 181, 709, 41, '#6e9c80', Math.sin(time * 0.6 + 1) * 0.018, 0);
+      tree(ctx, 231, 714, 30, '#89af8c', Math.sin(time * 0.5 + 4) * 0.02, 1);
+      leaf(ctx, 457, 812, 25, 0.52, '#7a9d77', true);
+      leaf(ctx, 451, 813, 20, -0.55, '#aec29a', true);
+      leaf(ctx, 156, 796, 24, -0.3, '#a7c092', true);
+
+      // Three birds, only a few ink strokes, echo the closed eye of the giant.
+      path(ctx, function (p) {
+        p.moveTo(446, 583); p.quadraticCurveTo(451, 578, 456, 583); p.quadraticCurveTo(461, 577, 467, 582);
+        p.moveTo(475, 605); p.quadraticCurveTo(479, 601, 483, 605); p.quadraticCurveTo(487, 601, 491, 605);
+        p.moveTo(131, 616); p.quadraticCurveTo(135, 612, 139, 615); p.quadraticCurveTo(144, 611, 148, 614);
+      }, null, 'rgba(78,121,97,.5)', 1.2);
+
+      // Fireflies drift above plants. The lower-right caption area remains open.
+      for (var i = 0; i < 21; i += 1) {
+        var fx = 102 + ((i * 83) % 493) + Math.sin(time * 0.3 + i * 1.7) * 5;
+        var fy = 600 + ((i * 47) % 164) + Math.sin(time * 0.43 + i) * 7;
+        var shimmer = 0.25 + (Math.sin(time * 1.1 + i * 2.1) + 1) * 0.2;
+        ellipse(ctx, fx, fy, 1.15 + (i % 3) * 0.35, 1.15 + (i % 3) * 0.35, 'rgba(185,156,97,' + shimmer + ')');
+        if (i % 7 === 0) star(ctx, fx, fy, 3.4, shimmer * 0.8);
+      }
+      // Sparse pencil-like accents keep the tiny forest floor lively.
+      path(ctx, function (p) {
+        p.moveTo(119, 774); p.lineTo(116, 768); p.moveTo(119, 774); p.lineTo(124, 769);
+        p.moveTo(193, 774); p.lineTo(190, 769); p.moveTo(193, 774); p.lineTo(198, 767);
+        p.moveTo(403, 786); p.lineTo(401, 781); p.moveTo(403, 786); p.lineTo(408, 782);
+      }, null, 'rgba(64,114,84,.44)', 1);
+
+      ctx.restore();
+    }
+  };
+}());
+
+// Shared shell: navigation, input, timing, sound, scoring and presentation.
+(() => {
+  'use strict';
+  const W = 720, H = 1280, LIMIT = 90;
+  const $ = id => document.getElementById(id);
+  const canvas = $('world'), ctx = canvas.getContext('2d');
+  const scenes = ['home', 'cases', 'treatment', 'result'];
+  const order = ['blood', 'spore', 'heart'];
+  const cases = {
+    blood: { title: '血河淤堵', number: '01', world: '河流生态', en: 'RIVER', subtitle: '搬走沉积的疲惫，让生命再次流动。', glyph: '↔', task: '拖动血栓，疏通河道', instruction: '按住河中的石块，拖到发光草地后松手。', note: '鼠标 / 触屏拖拽', successTitle: '河流，重新呼吸。', successText: '你搬走的不只是石块，还有世界的疲惫。', poem: '一条河流醒来，一座世界重生。', intro: '河道被九处血栓堵住了。按住石块，拖到任意一侧发光草地再松开。分三批疏通，让血河恢复流动。', tolerance: '错误投放 5 次会结束治疗；单击或取消拖动不扣耐受。' },
+    spore: { title: '孢子侵染', number: '02', world: '森林生态', en: 'FOREST', subtitle: '守护林间的微光，让绿意再次生长。', glyph: '✧', task: '净化紫色孢子，保护绿叶精灵', instruction: '点击标有「感染」的紫色孢子，避开「守护」绿叶。', note: '鼠标 / 触屏点击', successTitle: '森林，再次苏醒。', successText: '散落的微光，终于又长成了一整片春天。', poem: '每一片新叶，都记得你的温柔。', intro: '点击带有「感染」字样的紫色孢子，累计净化 22 颗。带有「守护」字样的绿叶精灵是森林的朋友，请让它们自由飞过。', tolerance: '漏掉感染或误伤精灵都会消耗生机；共可承受 5 次。' },
+    heart: { title: '心跳失序', number: '03', world: '生命之城', en: 'HEART', subtitle: '听见生命的节奏，点亮沉睡的城市。', glyph: '♡', task: '光点进入金色区域时轻点一下', instruction: '跟随光点，在金色安定区按下共鸣。', note: '点击场景 / 共鸣按钮 / 空格', successTitle: '心跳，温柔有序。', successText: '当心跳找回节奏，整座城都有了光。', poem: '一声心跳，是万物生长的回音。', intro: '先看一次 3 秒的节奏示范。随后，光点每次进入金色安定区时，点击场景或「共鸣」按钮。成功共鸣 17 次，就能唤醒生命之城。', tolerance: '每轮只结算一次。提前点击或漏拍消耗安定度，共可承受 6 次。也可以按空格键。' }
+  };
+  let records = {};
+  try { records = JSON.parse(localStorage.getItem('giant-cure-records-v1') || '{}') || {}; } catch { records = {}; }
+  if (typeof records !== 'object' || Array.isArray(records)) records = {};
+  const state = { screen: 'home', phase: 'idle', id: null, game: null, progress: 0, remaining: LIMIT, elapsed: 0, mistakes: 0, result: null, finishWait: 0, feedbackTime: 0, modal: null };
+  let particles = [], pointerId = null, previousFocus = null, soundEnabled = false;
+  let audioContext = null, toastTimer = null, lastFrame = null;
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resize() {
+    const vw = document.documentElement.clientWidth;
+    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const margin = vw > 600 ? 30 : 0;
+    const bodyStyle = getComputedStyle(document.body);
+    const safePadding = parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom);
+    const scale = Math.min(vw / W, (vh - margin - safePadding) / H);
+    $('viewport').style.width = `${W * scale}px`;
+    $('viewport').style.height = `${H * scale}px`;
+    $('app').style.transform = `scale(${scale})`;
+    // Extra backing pixels keep original Canvas artwork crisp on mobile displays.
+    const dpr = Math.min(2, Math.max(1, devicePixelRatio * scale));
+    if (canvas.width !== Math.round(W * dpr)) {
+      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    }
+  }
+  window.addEventListener('resize', resize);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+  resize();
+
+  function showScreen(name) {
+    cancelPointer();
+    state.screen = name;
+    for (const id of scenes) $(id).hidden = id !== name;
+    $('folio-page').textContent = ({ home: '001', cases: '002', treatment: '00' + (3 + order.indexOf(state.id)), result: '006' })[name];
+    if (name === 'cases') updateRecords();
+    $('app').classList.toggle('heart-mode', name === 'treatment' && state.id === 'heart');
+  }
+  function updateRecords() {
+    const count = order.filter(id => records[id] && records[id].wins > 0).length;
+    $('record-summary').textContent = `已治愈 ${count} / 3 个病例`;
+    for (const card of document.querySelectorAll('[data-case]')) card.querySelector('.case-complete').hidden = !(records[card.dataset.case] && records[card.dataset.case].wins);
+  }
+  function goHome() { closeModal(); state.phase = 'idle'; state.game = null; particles = []; showScreen('home'); }
+  function goCases() { closeModal(); state.phase = 'idle'; state.game = null; particles = []; showScreen('cases'); }
+  function requestNavigation(destination) {
+    if (state.screen === 'treatment' && (state.phase === 'playing' || state.phase === 'paused')) {
+      pauseGame();
+      openDialog('离开这次治疗？', '<p>当前治疗进度不会保存。已完成的病例记录会留在病历簿里。</p>', [
+        { label: '继续治疗', primary: true, action: resumeGame },
+        { label: destination === 'home' ? '回到封面' : '回到病历簿', action: destination === 'home' ? goHome : goCases }
+      ], 'LEAVE THIS TREATMENT');
+    } else if (state.phase !== 'finishing') (destination === 'home' ? goHome : goCases)();
+  }
+  function openCase(id) {
+    const info = cases[id];
+    openDialog(info.title, `<p>${info.intro}</p><p class="dialog-tip">${info.tolerance}<br>限时 90 秒 · 随时可暂停</p>`, [
+      { label: '准备好了，开始治疗 ↗', primary: true, action: () => startGame(id) },
+      { label: '再看看其他病例', action: closeModal }
+    ], `CASE ${info.number} / ${info.world}`);
+  }
+  function startGame(id) {
+    closeModal();
+    const info = cases[id];
+    Object.assign(state, { id, progress: 0, elapsed: 0, remaining: LIMIT, mistakes: 0, result: null, finishWait: 0, feedbackTime: 0, phase: 'playing' });
+    particles = [];
+    $('case-number').textContent = `CASE ${info.number} / ${info.en}`;
+    $('treatment-title').textContent = info.title;
+    $('treatment-subtitle').textContent = info.subtitle;
+    $('control-glyph').textContent = info.glyph;
+    $('task-text').textContent = info.task;
+    $('instruction-text').textContent = info.instruction;
+    $('control-note').textContent = info.note;
+    $('beat').hidden = id !== 'heart';
+    feedback(info.instruction, 'info');
+    state.game = window.GiantCureGames[id]({
+      progress: value => { state.progress = Math.max(0, Math.min(1, value)); updateStats(); },
+      feedback,
+      success: () => finishGame(true),
+      fail: reason => finishGame(false, reason),
+      effect: spawnParticles,
+      sound: playSound,
+      setTask: text => { $('task-text').textContent = text; }
+    });
+    showScreen('treatment');
+    updateStats();
+    lastFrame = null;
+  }
+  function updateStats() {
+    const percent = Math.round(state.progress * 100);
+    $('progress-value').innerHTML = `${percent}<span>%</span>`;
+    $('progress-fill').style.width = `${percent}%`;
+    const seconds = Math.max(0, Math.ceil(state.remaining));
+    $('time-value').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+    $('time-value').classList.toggle('urgent', seconds <= 15);
+  }
+  function feedback(text, kind = 'info') {
+    $('game-feedback').textContent = text;
+    $('game-feedback').dataset.kind = kind;
+    state.feedbackTime = 3.4;
+    if (kind === 'bad' && state.phase === 'playing') state.mistakes++;
+  }
+  function finishGame(won, reason = '') {
+    if (state.phase !== 'playing') return;
+    cancelPointer();
+    state.phase = 'finishing';
+    state.finishWait = won ? 1.8 : .8;
+    if (won) state.progress = 1;
+    const score = won ? Math.max(300, Math.round(1000 + state.remaining * 8 - state.mistakes * 45)) : Math.round(state.progress * 600);
+    state.result = { won, reason, score, seconds: Math.ceil(state.elapsed), progress: state.progress, stars: won ? (state.mistakes === 0 ? 3 : state.mistakes <= 2 ? 2 : 1) : 0 };
+    if (won) {
+      const previous = records[state.id] || {};
+      records[state.id] = { wins: (Number(previous.wins) || 0) + 1, best: Math.max(Number(previous.best) || 0, score), stars: Math.max(Number(previous.stars) || 0, state.result.stars) };
+      try { localStorage.setItem('giant-cure-records-v1', JSON.stringify(records)); } catch { /* Private/offline browsers may disallow storage; play remains available. */ }
+      feedback('治疗完成 · 你听见世界苏醒的声音了吗？', 'good');
+      for (let i = 0; i < 5; i++) spawnParticles(130 + i * 115, 600 + Math.sin(i) * 95, ['#a3c797', '#d2b96d', '#f0d2aa'][i % 3], 18);
+      playSound('win');
+    } else { feedback('世界在等你。休息一下，再来一次。', 'bad'); playSound('lose'); }
+    updateStats();
+  }
+  function showResult() {
+    const r = state.result, info = cases[state.id];
+    state.phase = 'result';
+    $('result-kicker').textContent = r.won ? 'A WORLD REBORN' : 'A LITTLE MORE CARE';
+    $('result-case').textContent = `CASE ${info.number} / ${info.world}`;
+    $('result-emblem').innerHTML = r.won ? caseIcon(state.id) : leafIcon();
+    $('result-stars').textContent = r.won ? '✦ '.repeat(r.stars).trim() + ' ✧'.repeat(3 - r.stars) : '✧  ✧  ✧';
+    $('result-title').textContent = r.won ? info.successTitle : '再给世界一点时间。';
+    $('result-description').textContent = r.won ? info.successText : r.reason;
+    $('result-stamp').textContent = r.won ? 'CURED ✓' : 'TO BE CONTINUED';
+    $('result-score').textContent = r.score.toLocaleString('en-US');
+    $('result-time').innerHTML = `${r.seconds}<span> 秒</span>`;
+    $('result-restored').innerHTML = `${Math.round(r.progress * 100)}<span>%</span>`;
+    $('result-message').textContent = r.won ? info.poem : '每次尝试，都是对生命的一次靠近。';
+    const allCured = order.every(id => records[id] && records[id].wins);
+    $('result-next').firstElementChild.textContent = !r.won ? '重新开始这次治疗' : allCured ? '完成巡诊 · 回到病历簿' : '走向下一处生命';
+    $('result-next').onclick = !r.won ? () => startGame(state.id) : allCured ? goCases : () => {
+      const current = order.indexOf(state.id);
+      const next = [...order.slice(current + 1), ...order.slice(0, current + 1)].find(id => !records[id] || !records[id].wins);
+      goCases(); openCase(next || order[(current + 1) % 3]);
+    };
+    showScreen('result');
+  }
+  function pauseGame() {
+    if (state.phase !== 'playing') return;
+    cancelPointer(); state.phase = 'paused';
+  }
+  function showPause() {
+    if (state.phase !== 'playing' && state.phase !== 'paused') return;
+    pauseGame();
+    openDialog('让世界歇一会儿', '<p>风停在树梢，河流等你回来。<br>治疗已暂停，时间不会流逝。</p>', [
+      { label: '继续治疗 ↗', primary: true, action: resumeGame },
+      { label: '重新治疗这个病例', action: () => startGame(state.id) },
+      { label: '返回病历簿', action: goCases }
+    ]);
+  }
+  function resumeGame() { closeModal(); if (state.phase === 'paused') { state.phase = 'playing'; lastFrame = null; } }
+  function showHelp() {
+    if (state.phase === 'finishing') return;
+    const wasPlaying = state.phase === 'playing' || state.phase === 'paused';
+    if (wasPlaying) pauseGame();
+    openDialog('在微小之处，照顾世界', '<p>巨人沉睡着。他的身体，就是万物赖以生存的奇幻生态。</p>' + order.map(id => `<div class="help-item"><strong>${cases[id].glyph} ${cases[id].title}</strong><p>${cases[id].instruction}</p></div>`).join('') + '<p class="dialog-tip">每次治疗限时 90 秒。可自由选择病例或随机巡诊。完成三次治疗约需 3–5 分钟。声音默认关闭，可点击右上角音符开启。</p>', [
+      { label: wasPlaying ? '明白了，继续治疗 ↗' : '明白了 ↗', primary: true, action: wasPlaying ? resumeGame : closeModal }
+    ], 'HOW TO CARE');
+  }
+  function openDialog(title, body, buttons, kicker = 'A MOMENT OF CARE') {
+    if ($('modal').hidden) previousFocus = document.activeElement;
+    state.modal = true;
+    $('dialog-title').textContent = title;
+    $('dialog-kicker').textContent = kicker;
+    $('dialog-body').innerHTML = body;
+    $('dialog-actions').replaceChildren();
+    buttons.forEach((item, index) => {
+      const button = document.createElement('button');
+      button.className = item.primary ? 'primary-button' : index === buttons.length - 1 && buttons.length > 2 ? 'text-button' : 'secondary-button';
+      button.textContent = item.label; button.onclick = item.action;
+      $('dialog-actions').append(button);
+    });
+    $('modal').hidden = false;
+    for (const id of scenes) $(id).inert = true;
+    document.querySelector('.app-header').inert = true;
+    $('dialog-actions').firstElementChild.focus({ preventScroll: true });
+  }
+  function closeModal() {
+    $('modal').hidden = true; state.modal = null;
+    for (const id of scenes) $(id).inert = false;
+    document.querySelector('.app-header').inert = false;
+    if (previousFocus && previousFocus.isConnected && !previousFocus.closest('[hidden]')) previousFocus.focus({ preventScroll: true });
+    previousFocus = null;
+  }
+  function cancelPointer() {
+    if (pointerId !== null && state.game && state.game.pointerCancel) state.game.pointerCancel();
+    if (pointerId !== null && canvas.hasPointerCapture(pointerId)) canvas.releasePointerCapture(pointerId);
+    pointerId = null;
+  }
+  const toPoint = event => { const rect = canvas.getBoundingClientRect(); return { x: (event.clientX - rect.left) * W / rect.width, y: (event.clientY - rect.top) * H / rect.height }; };
+  function acceptsInput() { return state.screen === 'treatment' && state.phase === 'playing' && !state.modal; }
+  canvas.addEventListener('pointerdown', event => {
+    if (!acceptsInput() || pointerId !== null || event.button > 0) return;
+    const p = toPoint(event);
+    if (p.x < 36 || p.x > 684 || p.y < 340 || p.y > 960) return;
+    event.preventDefault(); pointerId = event.pointerId;
+    canvas.setPointerCapture(pointerId); state.game.pointerDown(p);
+  });
+  canvas.addEventListener('pointermove', event => { if (acceptsInput() && pointerId === event.pointerId) { event.preventDefault(); state.game.pointerMove(toPoint(event)); } });
+  canvas.addEventListener('pointerup', event => {
+    if (pointerId !== event.pointerId) return;
+    if (acceptsInput()) state.game.pointerUp(toPoint(event));
+    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    pointerId = null;
+  });
+  canvas.addEventListener('pointercancel', cancelPointer);
+  canvas.addEventListener('lostpointercapture', () => { if (pointerId !== null) cancelPointer(); });
+  $('beat').onclick = () => { if (acceptsInput()) state.game.pointerDown({ x: 360, y: 1072 }); };
+  document.addEventListener('keydown', event => {
+    if (event.code === 'Escape') { event.preventDefault(); if (state.phase === 'playing') showPause(); else if (state.phase === 'paused') resumeGame(); else if (state.modal) closeModal(); }
+    if (event.code === 'Space' && state.id === 'heart' && acceptsInput() && !event.repeat) { event.preventDefault(); state.game.pointerDown({ x: 360, y: 1072 }); }
+    if (event.key === 'Tab' && state.modal) {
+      const buttons = [...$('dialog-actions').querySelectorAll('button')], first = buttons[0], last = buttons[buttons.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }
+  });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && state.phase === 'playing') showPause(); });
+  $('brand').onclick = () => requestNavigation('home');
+  $('begin').onclick = goCases;
+  $('case-back').onclick = goHome;
+  $('help').onclick = showHelp;
+  $('pause').onclick = showPause;
+  $('random-case').onclick = () => openCase(order[Math.floor(Math.random() * order.length)]);
+  $('retry').onclick = () => startGame(state.id);
+  $('result-cases').onclick = goCases;
+  document.querySelectorAll('[data-case]').forEach(card => { card.onclick = () => openCase(card.dataset.case); });
+
+  function toast(message) {
+    clearTimeout(toastTimer); $('toast').textContent = message; $('toast').hidden = false;
+    toastTimer = setTimeout(() => { $('toast').hidden = true; }, 2200);
+  }
+  $('sound').onclick = () => {
+    soundEnabled = !soundEnabled;
+    $('sound').setAttribute('aria-pressed', String(soundEnabled));
+    $('sound').setAttribute('aria-label', soundEnabled ? '关闭声音' : '开启声音');
+    $('sound').title = soundEnabled ? '关闭声音' : '开启声音';
+    if (soundEnabled) { playSound('hit'); toast('声音已开启 · 让生命有回响'); } else toast('声音已关闭');
+  };
+  function playSound(kind) {
+    if (!soundEnabled) return;
+    try {
+      if (!audioContext) { const Audio = window.AudioContext || window.webkitAudioContext; if (!Audio) return; audioContext = new Audio(); }
+      if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+      const notes = kind === 'win' ? [523.25, 659.25, 783.99, 1046.5] : kind === 'hit' ? [659.25, 880] : kind === 'miss' || kind === 'lose' ? [261.63, 220] : [440];
+      notes.forEach((hz, i) => {
+        const oscillator = audioContext.createOscillator(), gain = audioContext.createGain();
+        const time = audioContext.currentTime + i * .1;
+        oscillator.type = 'sine'; oscillator.frequency.value = hz;
+        gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(.045, time + .015); gain.gain.exponentialRampToValueAtTime(.001, time + .65);
+        oscillator.connect(gain); gain.connect(audioContext.destination); oscillator.start(time); oscillator.stop(time + .7);
+      });
+    } catch { soundEnabled = false; $('sound').setAttribute('aria-pressed', 'false'); toast('此浏览器暂不支持声音，可继续游玩'); }
+  }
+
+  function spawnParticles(x, y, color = '#b8c98f', count = 12) {
+    const limit = reducedMotion ? Math.min(3, count) : Math.min(count, 30);
+    for (let i = 0; i < limit && particles.length < 170; i++) {
+      const angle = Math.random() * Math.PI * 2, speed = 28 + Math.random() * 95;
+      particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 35, age: 0, life: .8 + Math.random() * .9, size: 2 + Math.random() * 4, color, leaf: i % 3 === 0 });
+    }
+  }
+  function drawParticles(dt) {
+    particles = particles.filter(p => p.age < p.life);
+    for (const p of particles) {
+      p.age += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 19 * dt;
+      ctx.save(); ctx.globalAlpha = Math.max(0, 1 - p.age / p.life); ctx.fillStyle = p.color; ctx.translate(p.x, p.y); ctx.rotate(p.age * 2);
+      ctx.beginPath(); ctx.ellipse(0, 0, p.size, p.leaf ? p.size * .4 : p.size, .4, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+  }
+  function drawPage(time) {
+    ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    // Scattered warm paper flecks and botanical margins, shared by every page.
+    ctx.fillStyle = '#c5cdb6';
+    for (let i = 0; i < 44; i++) { ctx.globalAlpha = .12 + (i % 4) * .025; const x = (i * 193 + 37) % W, y = (i * 293 + 117) % H; ctx.beginPath(); ctx.arc(x, y, .7 + i % 2 * .3, 0, 7); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    if (state.screen === 'home' && window.GiantCureCover) window.GiantCureCover.draw(ctx, reducedMotion ? 0 : time, order.filter(id => records[id] && records[id].wins).length / 3);
+    if (state.screen === 'cases') drawBotanical(638, 1175, time, .7);
+    if (state.screen === 'result') { drawBotanical(79, 651, time, .55); drawBotanical(656, 725, time, .6, -1); }
+    if (state.screen === 'treatment' && state.game) { ctx.save(); state.game.draw(ctx, reducedMotion ? 0 : time); ctx.restore(); }
+  }
+  function drawBotanical(x, y, time, scale = 1, flip = 1) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(scale * flip, scale); ctx.rotate(Math.sin(time * .4) * .015);
+    ctx.strokeStyle = '#b4c4a4'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(-20, -30, 12, -85, -12, -130); ctx.stroke();
+    for (let i = 0; i < 6; i++) {
+      const side = i % 2 ? 1 : -1, yy = -15 - i * 19, xx = -4 + Math.sin(i) * 5;
+      ctx.beginPath(); ctx.moveTo(xx, yy); ctx.quadraticCurveTo(xx + 39 * side, yy - 4, xx + 28 * side, yy - 25); ctx.quadraticCurveTo(xx + 6 * side, yy - 25, xx, yy); ctx.fillStyle = i % 2 ? '#d4dec4' : '#e0e6cf'; ctx.fill(); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function frame(now) {
+    const raw = lastFrame === null ? 0 : Math.max(0, (now - lastFrame) / 1000);
+    lastFrame = now;
+    const dt = Math.min(raw, .1);
+    if (state.phase === 'playing' && raw > 2) showPause();
+    if (state.phase === 'playing') {
+      const activeTime = Math.min(raw, state.remaining);
+      state.remaining = Math.max(0, state.remaining - activeTime);
+      state.elapsed = LIMIT - state.remaining;
+      // Advance the simulation by active wall time, including slower mobile frames.
+      // Small substeps keep dragging recovery and spawning consistent at any frame rate.
+      let pending = activeTime;
+      while (pending > 0 && state.phase === 'playing') {
+        const step = Math.min(.05, pending);
+        state.game.update(step); pending -= step;
+      }
+      if (state.phase === 'playing' && state.remaining <= 0) finishGame(false, '时间到了。世界的恢复需要耐心，试着再来一次。');
+      updateStats();
+      state.feedbackTime -= dt;
+      if (state.feedbackTime <= 0) { $('game-feedback').textContent = cases[state.id].instruction; $('game-feedback').dataset.kind = 'info'; }
+    } else if (state.phase === 'finishing') {
+      state.game.update(Math.min(raw, 2)); state.finishWait -= raw;
+      if (state.finishWait <= 0) showResult();
+    }
+    drawPage(now / 1000);
+    drawParticles(state.phase === 'paused' ? 0 : dt);
+    requestAnimationFrame(frame);
+  }
+
+  function caseIcon(id) {
+    const base = '<svg viewBox="0 0 120 130" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">';
+    const back = '<ellipse cx="60" cy="66" rx="55" ry="55" fill="#e8edde"/><path d="M14 92Q50 109 105 91" stroke="#c7d4b9"/><circle cx="96" cy="28" r="3" fill="#c2a96e"/><path d="M16 29v8m-4-4h8" stroke="#b3c49d"/>';
+    const art = id === 'blood' ? '<path d="M52 19C80 34 27 49 57 67s28 28 7 47" stroke="#c3d5bd" stroke-width="27"/><path d="M52 19C80 34 27 49 57 67s28 28 7 47" stroke="#90b7a8" stroke-width="18"/><path d="M53 22C80 36 33 51 59 66s25 29 7 45" stroke="#e0ead6" stroke-width="2" stroke-dasharray="9 8"/><path d="m56 58 13-6 13 7-3 12-14 4-12-8Z" fill="#c58b79" stroke="#b87a6a"/><path d="M24 72V43m0 18c-16 0-15-14-15-14 14-1 15 14 15 14Zm0-8c15-1 16-13 16-13-16-2-16 13-16 13Z" fill="#a0ba91" stroke="#819f78"/><path d="M95 97V73m0 12c-12-2-13-11-13-11 12-2 13 11 13 11Z" fill="#adc69a" stroke="#86a67e"/>' : id === 'spore' ? '<path d="M31 99V65m58 35V74" stroke="#8ba782" stroke-width="3"/><path d="M12 69c1-32 39-38 44 0-10 6-33 7-44 0Z" fill="#abb99e"/><path d="M68 77c0-25 35-26 38 0-10 5-27 5-38 0Z" fill="#c5cfac"/><circle cx="29" cy="60" r="4" fill="#e9eedb"/><circle cx="42" cy="66" r="3" fill="#e9eedb"/><path d="M46 96c2-20 26-34 41-28 3 22-17 32-41 28Z" fill="#93b48c" stroke="#7a9e74"/><path d="m47 95 28-18" stroke="#d8e4c6"/><circle cx="74" cy="35" r="13" fill="#b7a8ba"/><path d="m74 17 0-5m17 15 5-2m-10 24 4 4m-28-6-5 3m1-20-5-2" stroke="#a38fa6" stroke-width="3" stroke-linecap="round"/><circle cx="70" cy="32" r="2" fill="#eee8e7"/>' : '<path d="M60 108C8 74 19 33 43 39c11 1 17 12 17 12s7-16 22-12c35 9 12 48-22 69Z" fill="#c7aa8b" opacity=".6"/><path d="M30 91c20-19 40-18 60-2l-5 17H36Z" fill="#a3b68e"/><path d="M39 78V51h15v27m5 1V40h16v39m5 5V58h13v26" fill="#dce2c8" stroke="#8da580" stroke-width="1.5"/><path d="m37 51 10-12 9 12m1-11 10-17 10 17m0 18 10-14 8 14" fill="#81a48b"/><path d="M46 60v5m20-15v6m20 9v5" stroke="#bd9f59" stroke-width="3"/><path d="M18 91h19l6-9 9 19 9-25 8 15h35" stroke="#6e997e" stroke-width="2"/><path d="M67 16v-8m-4 4h8" stroke="#c0a35e"/>';
+    return base + back + art + '</svg>';
+  }
+  function leafIcon() { return '<svg viewBox="0 0 120 130" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M30 103C12 51 45 23 98 23c3 58-15 88-68 80Z" fill="#cedbc1" stroke="#90aa83" stroke-width="1.5"/><path d="m31 103 48-60m-33 43-6-26m19 10 26-1" stroke="#88a17d" stroke-width="1.5"/><path d="M29 107c-2 7-4 10-9 14" stroke="#88a17d" stroke-width="2"/></svg>'; }
+  for (const element of document.querySelectorAll('[data-icon]')) element.innerHTML = caseIcon(element.dataset.icon);
+  // Read-only diagnostics used by automated input tests and future bug reports.
+  window.GiantCure = Object.freeze({ snapshot: () => ({ screen: state.screen, phase: state.phase, id: state.id, progress: state.progress, remaining: state.remaining, elapsed: state.elapsed, mistakes: state.mistakes, modal: !!state.modal, result: state.result ? { ...state.result } : null, game: state.game && state.game.getDebugState ? state.game.getDebugState() : null }) });
+  updateRecords();
+  requestAnimationFrame(frame);
+})();
+
+  </script>
+</body>
+</html>
