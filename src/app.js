@@ -15,7 +15,7 @@
       instruction: 'WASD 移动 · Q 扫描状态 · E 与近处目标交互',
       mechanic: '键盘与鼠标 · 约 3–5 分钟', recordKey: 'giant-cure-journey-v1',
       successTitle: '一颗心，重新有了光。',
-      successText: '你修复了河流与传导。巨人的下一声呼吸，正在远方等待。',
+      successText: '你修复了河流与传导。巨人缓缓睁开眼，胸口重新有了起伏。肺叶深处，仍有微弱的求救。',
       poem: '心脏已稳定 · 下一个求救信号来自肺部'
     }
   };
@@ -33,7 +33,8 @@
     caseId: 'heartJourney', finding: '心区血流信号减弱', detail: '具体病因待近距离确认'
   });
   const diagnosis = { phase: 'idle', caseId: null, token: 0, frame: null };
-  const transition = { phase: 'idle', caseId: null, token: 0, frame: null, settle: null, abort: null, context: null };
+  const clinic = { phase: 'idle', elapsed: 0, paused: false };
+  const transition = { phase: 'idle', caseId: null, token: 0, frame: null, settle: null, abort: null, context: null, skipped: false, preparation: 0 };
   const forwardedGameKeys = new Set();
   function readRecord(key) {
     try {
@@ -73,13 +74,19 @@
     ], 'CASE ARCHIVE / FIELD NOTES', 'archive');
   }
   function updateDiagnosisControls() {
-    const scanning = diagnosis.phase === 'scanning', ready = diagnosis.phase === 'ready';
+    const scanning = diagnosis.phase === 'scanning', ready = diagnosis.phase === 'ready' && clinic.phase === 'ready', busy = clinicActive();
     $('diagnosis-panel').dataset.diagnosisPhase = diagnosis.phase;
+    $('diagnosis-panel').dataset.clinicPhase = clinic.phase;
+    $('diagnosis-panel').dataset.clinicPaused = String(clinic.paused);
     $('diagnosis-panel').setAttribute('aria-busy', String(scanning));
-    $('diagnosis-action').disabled = scanning || transition.phase !== 'idle' || !playableCaseIds().includes(screeningCase.caseId);
-    $('diagnosis-action-label').textContent = scanning ? '检查中…' : ready ? '前往治疗' : '开始检查';
-    $('case-archive').disabled = scanning || transition.phase !== 'idle';
-    $('diagnosis-report').hidden = !ready;
+    $('diagnosis-action').hidden = !ready;
+    $('diagnosis-action').disabled = !ready || transition.phase !== 'idle' || !playableCaseIds().includes(screeningCase.caseId);
+    $('diagnosis-action-label').textContent = '进入体内治疗';
+    $('clinic-continue').hidden = !busy || !clinic.paused;
+    $('clinic-skip').hidden = !busy || clinic.paused;
+    $('clinic-skip').disabled = clinic.paused;
+    $('case-archive').disabled = busy || transition.phase !== 'idle';
+    $('diagnosis-report').hidden = !['report', 'ready'].includes(clinic.phase);
   }
   function resetDiagnosis() {
     diagnosis.token++;
@@ -87,35 +94,50 @@
     Object.assign(diagnosis, { phase: 'idle', caseId: null, frame: null });
     $('diagnosis-panel').style.setProperty('--scan-progress', '0');
     $('diagnosis-monitor').style.opacity = '';
+    Object.assign(clinic, { phase: 'idle', elapsed: 0, paused: false });
+    $('diagnosis-panel').style.setProperty('--clinic-scene-opacity', '0');
+    $('diagnosis-panel').style.setProperty('--clinic-body-opacity', '1');
     $('diagnosis-status').textContent = '生命信号待采集';
     updateDiagnosisControls();
   }
-  function beginScreening() {
-    if (state.screen !== 'cases' || state.modal || diagnosis.phase !== 'idle' || transition.phase !== 'idle' || !playableCaseIds().includes(screeningCase.caseId)) return;
-    const token = ++diagnosis.token, startedAt = performance.now(), duration = reducedMotion ? 160 : 2800;
-    diagnosis.phase = 'scanning';
-    $('diagnosis-status').textContent = '采集生命信号';
+  function clinicActive() { return ['arriving', 'examining', 'report'].includes(clinic.phase); }
+  function clinicPresentation() {
+    const write = (id, value) => { if ($(id).textContent !== value) $(id).textContent = value; };
+    const arrival = reducedMotion ? .16 : 4, examination = reducedMotion ? .16 : 4.5, report = reducedMotion ? .16 : 1.5;
+    clinic.phase = clinic.elapsed < arrival ? 'arriving' : clinic.elapsed < arrival + examination ? 'examining' : clinic.elapsed < arrival + examination + report ? 'report' : 'ready';
+    if (clinic.phase === 'ready') clinic.elapsed = arrival + examination + report;
+    const scan = Math.max(0, Math.min(1, (clinic.elapsed - arrival) / examination));
+    diagnosis.phase = ['arriving', 'examining'].includes(clinic.phase) ? 'scanning' : 'ready';
+    diagnosis.caseId = diagnosis.phase === 'ready' ? screeningCase.caseId : null;
+    const reveal = clinic.phase === 'arriving' ? 0 : clinic.phase === 'examining' ? Math.max(0, Math.min(1, (scan - .5) * 2)) : 1;
+    $('diagnosis-panel').style.setProperty('--scan-progress', String(scan));
+    $('diagnosis-panel').style.setProperty('--clinic-scene-opacity', String(1 - reveal));
+    $('diagnosis-panel').style.setProperty('--clinic-body-opacity', String(reveal));
+    $('diagnosis-panel').style.setProperty('--clinic-report-progress', String(clinic.phase === 'ready' ? 1 : Math.max(0, Math.min(1, (clinic.elapsed - arrival - examination) / report))));
+    write('cases-title', clinic.phase === 'arriving' ? '巨人来诊' : clinic.phase === 'examining' ? '医生问诊' : '生命诊断');
+    write('clinic-step', clinic.phase === 'arriving' ? '01 / 来诊' : clinic.phase === 'examining' ? '02 / 听诊' : '03 / 初筛报告');
+    write('diagnosis-status', clinic.paused ? '接诊已暂停 · 等你回来' : clinic.phase === 'arriving' ? '“医生，我的胸口有些沉。”' : clinic.phase === 'examining' ? scan < .5 ? '“深呼吸，让我听听你的心跳。”' : '正在比对心肺与循环信号…' : '心区异常已定位');
+    write('clinic-caption', clinic.phase === 'arriving' ? '一位远道而来的病人，正在等待帮助。' : clinic.phase === 'examining' ? '巨人医生初筛中 · 体内病因仍待近距离确认' : '医生：“小医疗兵，接下来交给你了。”');
+    write('diagnosis-finding', screeningCase.finding);
+    write('diagnosis-detail', screeningCase.detail);
     updateDiagnosisControls();
-    if (reducedMotion) $('diagnosis-monitor').style.opacity = '.35';
-    function animate(now) {
-      if (diagnosis.token !== token || diagnosis.phase !== 'scanning' || state.screen !== 'cases') return;
-      if (document.hidden) { resetDiagnosis(); return; }
-      const progress = Math.min(1, Math.max(0, (now - startedAt) / duration));
-      $('diagnosis-panel').style.setProperty('--scan-progress', String(progress));
-      const status = progress < .35 ? '采集生命信号' : progress < .73 ? '检查循环状态' : '定位异常';
-      if ($('diagnosis-status').textContent !== status) $('diagnosis-status').textContent = status;
-      if (reducedMotion) $('diagnosis-monitor').style.opacity = String(.35 + .65 * progress);
-      if (progress < 1) { diagnosis.frame = requestAnimationFrame(animate); return; }
-      if (!playableCaseIds().includes(screeningCase.caseId)) { resetDiagnosis(); return; }
-      Object.assign(diagnosis, { phase: 'ready', caseId: screeningCase.caseId, frame: null });
-      $('diagnosis-monitor').style.opacity = '';
-      $('diagnosis-finding').textContent = screeningCase.finding;
-      $('diagnosis-detail').textContent = screeningCase.detail;
-      $('diagnosis-status').textContent = '异常已定位';
-      updateDiagnosisControls();
-      $('diagnosis-action').focus({ preventScroll: true });
-    }
-    diagnosis.frame = requestAnimationFrame(animate);
+  }
+  function beginClinic() {
+    Object.assign(clinic, { phase: 'arriving', elapsed: 0, paused: false });
+    clinicPresentation(); lastFrame = null;
+  }
+  function completeClinic() {
+    if (!clinicActive()) return;
+    clinic.elapsed = reducedMotion ? .48 : 10; clinic.paused = false;
+    clearInput(); clinicPresentation(); $('diagnosis-action').focus({ preventScroll: true });
+  }
+  function pauseClinic() {
+    if (state.screen !== 'cases' || !clinicActive() || clinic.paused) return;
+    clinic.paused = true; clearInput(); clinicPresentation();
+  }
+  function resumeClinic() {
+    closeModal(); if (!clinicActive()) return;
+    clinic.paused = false; lastFrame = null; clinicPresentation(); $('clinic-skip').focus({ preventScroll: true });
   }
 
   function resize() {
@@ -146,13 +168,14 @@
     for (const id of screens) $(id).hidden = id !== name;
     $('folio-page').textContent = { home: '001', cases: '002', treatment: '003', result: '004' }[name];
     $('app').classList.toggle('journey-mode', name === 'treatment');
-    if (name !== 'treatment') $('app').classList.remove('journey-exterior');
+    if (name !== 'treatment') $('app').classList.remove('journey-exterior', 'exterior-finishing');
     document.body.classList.toggle('landscape-treatment', name === 'treatment');
     W = name === 'treatment' ? 1280 : 720; H = name === 'treatment' ? 720 : 1280;
     resize();
+    updateExteriorControls();
   }
   function goHome() { cancelEntry(false); loadToken++; closeModal(); clearInput(); state.phase = 'idle'; state.game = null; particles = []; showScreen('home'); }
-  function goCases() { cancelEntry(false); loadToken++; closeModal(); clearInput(); state.phase = 'idle'; state.game = null; particles = []; showScreen('cases'); }
+  function goCases() { cancelEntry(false); loadToken++; closeModal(); clearInput(); state.phase = 'idle'; state.game = null; particles = []; showScreen('cases'); beginClinic(); }
   function requestHome() {
     if (state.screen === 'treatment' && ['playing', 'paused'].includes(state.phase)) {
       pauseGame();
@@ -208,12 +231,17 @@
   const clamp01 = value => Math.max(0, Math.min(1, value));
   const smooth = value => { const p = clamp01(value); return p * p * (3 - 2 * p); };
   function entryFrame(duration, draw) {
-    const token = transition.token, start = performance.now();
+    const token = transition.token; let start = performance.now(), skipped = transition.skipped;
+    if (skipped) duration = Math.min(duration, 100);
     return new Promise((resolve, reject) => {
       transition.settle = resolve;
       draw(0);
       function animate(now) {
         if (token !== transition.token) { resolve(false); return; }
+        if (transition.skipped && !skipped) {
+          skipped = true; start = now;
+          duration = transition.phase === 'preparing' ? 1 : transition.phase === 'arriving' ? 200 : 100;
+        }
         const p = clamp01((now - start) / duration);
         try { draw(p); }
         catch (error) { transition.frame = null; transition.settle = null; reject(error); return; }
@@ -240,6 +268,8 @@
     $('entry-transition').setAttribute('aria-busy', 'false');
     $('entry-transition-ghost').replaceChildren();
     $('entry-transition-status').textContent = '';
+    $('entry-preparation').hidden = true;
+    $('entry-transition-skip').disabled = false;
     $('diagnosis-monitor').style.visibility = '';
     document.body.classList.remove('entry-in-progress');
     $('app').style.removeProperty('--entry-hud-opacity');
@@ -255,16 +285,18 @@
     loadToken++; transition.token++;
     if (transition.frame !== null) cancelAnimationFrame(transition.frame);
     transition.settle?.(false); transition.abort?.({ canceled: true });
-    Object.assign(transition, { phase: 'idle', caseId: null, frame: null, settle: null, abort: null, context: null });
+    Object.assign(transition, { phase: 'idle', caseId: null, frame: null, settle: null, abort: null, context: null, skipped: false, preparation: 0 });
     clearInput(); Object.assign(state, { phase: 'idle', game: null, id: null, progress: 0, elapsed: 0, activeTime: 0, cameraRoom: null, hud: {} });
     particles = []; lastFrame = null;
     if (restore) {
       showScreen('cases');
       if (context.diagnosis.phase === 'ready') {
         Object.assign(diagnosis, { phase: 'ready', caseId: context.diagnosis.caseId });
+        Object.assign(clinic, { phase: 'ready', elapsed: reducedMotion ? .48 : 10, paused: false });
         $('diagnosis-panel').style.setProperty('--scan-progress', '1');
         $('diagnosis-status').textContent = '异常已定位';
         $('diagnosis-finding').textContent = screeningCase.finding; $('diagnosis-detail').textContent = screeningCase.detail;
+        clinicPresentation();
       }
     }
     releaseEntryUI();
@@ -275,7 +307,7 @@
     closeModal(); clearInput();
     const load = ++loadToken, token = ++transition.token;
     const current = () => load === loadToken && token === transition.token;
-    Object.assign(transition, { phase: 'departing', caseId: id, context });
+    Object.assign(transition, { phase: mode === 'diagnosis' && !reducedMotion ? 'preparing' : 'departing', caseId: id, context, skipped: false, preparation: 0 });
     try {
     prepareChapter(id, 'entering');
     const full = mode === 'diagnosis' && !reducedMotion;
@@ -287,26 +319,48 @@
     ghost.replaceChildren(); ghost.style.transform = ''; ghost.style.opacity = full ? '1' : '0';
     if (full) {
       const clone = $('diagnosis-monitor').cloneNode(true);
-      clone.removeAttribute('id'); for (const element of clone.querySelectorAll('[id]')) element.removeAttribute('id');
+      const identities = new Map();
+      for (const element of [clone, ...clone.querySelectorAll('[id]')]) if (element.id) { identities.set(element.id, `entry-ghost-${element.id}`); element.id = identities.get(element.id); }
+      for (const element of [clone, ...clone.querySelectorAll('*')]) for (const attribute of [...element.attributes]) {
+        let value = attribute.value;
+        for (const [oldId, newId] of identities) { value = value.replaceAll(`url(#${oldId})`, `url(#${newId})`); if (value === `#${oldId}`) value = `#${newId}`; }
+        if (value !== attribute.value) element.setAttribute(attribute.name, value);
+      }
+      for (const [selector, id] of [['.anatomy-silhouette', 'anatomy-skin'], ['.anatomy-lungs', 'anatomy-lung'], ['.anatomy-heart', 'anatomy-heart']]) {
+        const element = clone.querySelector(selector); if (element) element.style.fill = `url(#${identities.get(id)})`;
+      }
       clone.style.visibility = ''; ghost.append(clone); captureEntrySource();
       $('diagnosis-monitor').style.visibility = 'hidden';
     }
     veil.style.opacity = '0'; $('entry-transition-focus').style.opacity = '0';
     $('entry-transition-status').textContent = '';
     $('entry-transition').hidden = false; $('entry-transition').setAttribute('aria-busy', 'true');
+    $('entry-transition-skip').hidden = !full;
+    $('entry-transition-skip').disabled = false;
     document.body.classList.add('entry-in-progress'); $('app').style.setProperty('--entry-hud-opacity', '0');
     $('cases').style.setProperty('--entry-source-opacity', '1');
     for (const screen of screens) $(screen).inert = true;
     document.querySelector('.app-header').inert = true; $('help').disabled = true;
     updateDiagnosisControls();
     $('entry-transition').tabIndex = -1; $('entry-transition').focus({ preventScroll: true });
+    if (transition.phase === 'preparing') {
+      $('entry-preparation').hidden = false;
+      if (!await entryFrame(2000, p => {
+        transition.preparation = p;
+        const preparation = $('entry-preparation');
+        window.GiantCureClinicArt?.drawPreparation(preparation.getContext('2d'), p, reducedMotion);
+        $('entry-transition-status').textContent = p < .4 ? '小医疗兵正在检查药剂与装备…' : p < .78 ? '医疗背包就绪 · 进入微缩装置' : '目标锁定：巨人心区';
+      }) || !current()) return;
+      $('entry-preparation').hidden = true; $('entry-transition-status').textContent = '';
+      transition.phase = 'departing';
+    }
     if (!await entryFrame(coverDuration, p => {
-      if (full) {
+      if (full && !transition.skipped) {
         const point = captureEntrySource(), push = smooth(p / .7), scale = 1 + .9 * push;
         ghost.style.transform = `translate(${(innerWidth / 2 - point.x) * push}px, ${(innerHeight / 2 - point.y) * push}px) scale(${scale})`;
         $('cases').style.setProperty('--entry-source-opacity', String(1 - push));
         veil.style.opacity = String(smooth((p - .7) / .3));
-      } else veil.style.opacity = String(smooth(p));
+      } else { ghost.style.opacity = '0'; veil.style.opacity = String(smooth(p)); }
     }) || !current()) return;
     transition.phase = 'waiting'; veil.style.opacity = '1';
     $('entry-transition-status').textContent = '正在准备治疗场景…';
@@ -320,19 +374,19 @@
     const center = (value, total, half) => total <= half * 2 ? total / 2 : Math.max(half, Math.min(total - half, value));
     const start = { x: center(g.player.x, size.width, viewport.w / 2 / .88), y: center(g.player.y, size.height, viewport.h / 2 / .88), zoom: .88 };
     transition.phase = 'arriving';
-    if (!await entryFrame(arriveDuration, p => {
-      const cameraProgress = full ? smooth(p * 1.5) : 1;
+    if (!await entryFrame(transition.skipped ? 100 : arriveDuration, p => {
+      const moving = full && !transition.skipped, cameraProgress = moving ? smooth(p * 1.5) : 1;
       for (const key of ['x', 'y', 'zoom']) view.camera[key] = start[key] + (end[key] - start[key]) * cameraProgress;
       if (p === 0) drawPage(0);
-      veil.style.opacity = String(1 - (full ? smooth(p * 1.5) : smooth(p)));
-      $('app').style.setProperty('--entry-hud-opacity', String(full ? clamp01((p - 2 / 3) * 3) : p));
-      if (full) {
+      veil.style.opacity = String(1 - (moving ? smooth(p * 1.5) : smooth(p)));
+      $('app').style.setProperty('--entry-hud-opacity', String(moving ? clamp01((p - 2 / 3) * 3) : p));
+      if (moving) {
         const rect = canvas.getBoundingClientRect();
         entryFocus({ x: rect.x + (viewport.x + viewport.w / 2 + (g.player.x - view.camera.x) * view.camera.zoom) * rect.width / W, y: rect.y + (viewport.y + viewport.h / 2 + (g.player.y - view.camera.y) * view.camera.zoom) * rect.height / H }, .65 * (1 - cameraProgress), 1.8 - .8 * cameraProgress);
       }
     }) || !current()) return;
     Object.assign(view.camera, end);
-    Object.assign(transition, { phase: 'idle', caseId: null, context: null, abort: null });
+    Object.assign(transition, { phase: 'idle', caseId: null, context: null, abort: null, preparation: 0 });
     clearInput(); lastFrame = null; releaseEntryUI();
     state.phase = 'playing'; feedback(cases[id].instruction);
     canvas.tabIndex = -1; canvas.focus({ preventScroll: true });
@@ -352,7 +406,16 @@
     write('journey-integrity', Math.max(0, Math.round(h.integrity ?? 100)));
     $('integrity-fill').style.width = `${Math.max(0, Math.min(100, h.integrity ?? 100))}%`;
     write('journey-ammo', `${h.ammo ?? 24} / 24`);
-    write('journey-reload', h.reloadRemaining > 0 ? `装填中 ${h.reloadRemaining.toFixed(1)}s` : '无限备弹');
+    const reloading = h.reloadRemaining > 0, ammo = h.ammo ?? 24;
+    const stage = reloading ? h.reloadStage || 'eject' : 'idle';
+    write('journey-reload', reloading ? `${({ eject: '退出药剂匣', insert: '插入新药剂', lock: '锁定供药' })[stage] || '装填中'} ${h.reloadRemaining.toFixed(1)}s` : ammo === 0 ? '空仓 · 按 R 装填' : ammo <= 6 ? '药剂不足 · 按 R 装填' : '无限备药');
+    $('journey-magazine').dataset.reloadStage = stage;
+    $('journey-magazine').dataset.ammoState = ammo === 0 ? 'empty' : ammo <= 6 ? 'low' : 'ready';
+    const reloadProgress = reloading ? Math.max(0, Math.min(1, h.reloadProgress ?? 1 - h.reloadRemaining / 1.7)) : 0;
+    $('reload-fill').style.width = `${reloadProgress * 100}%`;
+    $('reload-track').setAttribute('aria-valuenow', String(Math.round(reloadProgress * 100)));
+    $('journey-reload-button').dataset.reloading = String(reloading);
+    $('journey-reload-button').setAttribute('aria-label', reloading ? '正在装填药剂' : '装填药剂，快捷键 R');
     $('journey-scan').setAttribute('aria-pressed', String(!!h.scanner));
     write('journey-checkpoint', `安全节点 · ${h.checkpoint || '血管入口'}　/　重启 ${h.retries || 0} 次`);
     write('journey-dash-label', h.dashUnlocked ? '循环冲刺 · 已解锁' : '循环冲刺 · 等待心脏恢复');
@@ -385,7 +448,12 @@
   function finishGame(won, reason = '') {
     if (state.phase !== 'playing') return;
     const chapter = state.game.getDebugState();
-    clearInput(); state.phase = 'finishing'; state.finishWait = won ? 1.8 : .8;
+    const exterior = won && chapter.endingScene === 'exterior';
+    // The controller clamps its final time slice. Use that same boundary for
+    // natural playback and a skipped recovery before rounding the saved time.
+    if (exterior) { state.elapsed = chapter.elapsed; state.activeTime = chapter.elapsed; }
+    clearInput(); state.phase = 'finishing'; state.finishWait = exterior ? .2 : won ? 1.8 : .8;
+    updateExteriorControls(chapter);
     if (won) state.progress = 1;
     state.result = { won, reason, seconds: Math.ceil(state.elapsed), progress: state.progress, integrity: chapter.integrity, retries: chapter.retries };
     if (won) {
@@ -419,7 +487,25 @@
     $('result-next').onclick = r.won ? goCases : retryCheckpoint;
     showScreen('result');
   }
-  function pauseGame() { if (state.phase === 'playing') { clearInput(); state.phase = 'paused'; } }
+  function updateExteriorControls(chapter = state.game?.getDebugState()) {
+    const exterior = state.screen === 'treatment' && chapter?.endingScene === 'exterior';
+    $('app').classList.toggle('exterior-finishing', exterior && state.phase === 'finishing');
+    const button = $('exterior-skip');
+    if (!button) return;
+    button.hidden = !exterior || state.phase !== 'playing' || state.modal;
+    button.disabled = button.hidden;
+  }
+  function skipExterior() {
+    if (state.screen !== 'treatment' || state.phase !== 'playing' || state.modal || !state.game) return;
+    const chapter = state.game.getDebugState();
+    if (chapter.endingScene !== 'exterior' || chapter.finished) return;
+    const remaining = Math.max(0, chapter.endingDuration - chapter.ending);
+    const button = $('exterior-skip');
+    if (button) button.disabled = true;
+    clearInput(); state.elapsed += remaining; state.activeTime += remaining;
+    state.game.update(remaining); updateExteriorControls();
+  }
+  function pauseGame() { if (state.phase === 'playing') { clearInput(); state.phase = 'paused'; updateExteriorControls(); } }
   function showPause() {
     if (!['playing', 'paused'].includes(state.phase)) return;
     pauseGame();
@@ -429,12 +515,13 @@
       { label: '返回诊断室', action: goCases }
     ]);
   }
-  function resumeGame() { closeModal(); if (state.phase === 'paused') { state.phase = 'playing'; lastFrame = null; } }
+  function resumeGame() { closeModal(); if (state.phase === 'paused') { state.phase = 'playing'; lastFrame = null; updateExteriorControls(); } }
   function showHelp() {
     if (state.phase === 'finishing' || transition.phase !== 'idle') return;
     if (state.screen === 'cases') {
-      openDialog('听见生命的求救', '<p>点击“开始检查”，等待监测屏定位异常，再选择“前往治疗”。</p><p class="dialog-tip">初筛只定位异常区域。进入身体后，再近距离检查具体病因。</p><p>病例档案可查看巡诊记录和后续病例。标注“待开放”的内容暂不可出诊。</p>', [
-        { label: '明白了 ↗', primary: true, action: closeModal }
+      pauseClinic();
+      openDialog('听见生命的求救', '<p>先迎接病人，由巨人医生听诊、定位异常。初筛报告完成后，点击出发，跟随小医疗兵进入体内。</p><p class="dialog-tip">初筛只定位异常区域。进入身体后，再近距离检查具体病因。接诊可跳过；报告会等你准备好。</p><p>接诊已暂停，关闭帮助后点击“继续接诊”恢复。</p>', [
+        { label: clinicActive() ? '继续接诊 ↗' : '明白了 ↗', primary: true, action: clinicActive() ? resumeClinic : closeModal }
       ], 'LIFE DIAGNOSTICS / FIELD GUIDE');
       return;
     }
@@ -463,11 +550,12 @@
       .filter(element => !element.disabled && !element.closest('[hidden], [inert]') && element.getClientRects().length);
   }
   function openDialog(title, body, buttons, kicker = 'A MOMENT OF CARE', variant = '') {
-    if (diagnosis.phase === 'scanning') resetDiagnosis();
+    if (clinicActive()) pauseClinic();
     if ($('modal').hidden) previousFocus = document.activeElement;
     const dialog = $('modal').querySelector('.dialog');
     dialog.classList.toggle('archive-dialog', variant === 'archive');
     state.modal = true; $('dialog-title').textContent = title; $('dialog-kicker').textContent = kicker;
+    updateExteriorControls();
     $('dialog-body').innerHTML = body; $('dialog-actions').replaceChildren();
     buttons.forEach((item, index) => {
       const button = document.createElement('button');
@@ -482,6 +570,7 @@
   }
   function closeModal() {
     $('modal').hidden = true; state.modal = false;
+    updateExteriorControls();
     for (const id of screens) $(id).inert = false;
     document.querySelector('.app-header').inert = false;
     $('modal').querySelector('.dialog').classList.remove('archive-dialog');
@@ -512,14 +601,24 @@
   document.addEventListener('keydown', event => {
     if (transition.phase !== 'idle') {
       if (event.code === 'Escape') { event.preventDefault(); cancelEntry(); }
-      else if (event.key === 'Tab') { event.preventDefault(); $('entry-transition-home').focus({ preventScroll: true }); }
-      else if (gameKeys.has(event.code) && !(event.code === 'Space' && !event.repeat && event.target === $('entry-transition-home'))
+      else if (event.key === 'Tab') {
+        event.preventDefault();
+        const controls = [$('entry-transition-skip'), $('entry-transition-home')].filter(el => !el.hidden && !el.disabled);
+        const index = controls.indexOf(document.activeElement), step = event.shiftKey ? -1 : 1;
+        controls[index < 0 ? (step > 0 ? 0 : controls.length - 1) : (index + step + controls.length) % controls.length]?.focus({ preventScroll: true });
+      }
+      else if (gameKeys.has(event.code) && !(event.code === 'Space' && !event.repeat && [$('entry-transition-home'), $('entry-transition-skip')].includes(event.target))
         || event.repeat && ['Enter', 'Space'].includes(event.code)) event.preventDefault();
       return;
     }
     if (event.code === 'Escape') {
       event.preventDefault();
+      if (state.screen === 'cases' && clinicActive() && !state.modal) { goHome(); return; }
       if (state.phase === 'playing') showPause(); else if (state.phase === 'paused') resumeGame(); else if (state.modal) closeModal();
+      return;
+    }
+    if (event.target === $('exterior-skip') && ['Enter', 'Space'].includes(event.code)) {
+      if (event.repeat) event.preventDefault();
       return;
     }
     if (acceptsInput() && gameKeys.has(event.code)) {
@@ -537,12 +636,12 @@
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) return;
     if (transition.phase !== 'idle') { cancelEntry(); return; }
-    if (diagnosis.phase === 'scanning') resetDiagnosis();
+    pauseClinic();
     if (state.phase === 'playing') showPause();
   });
   window.addEventListener('blur', () => {
     if (transition.phase !== 'idle') { cancelEntry(); return; }
-    if (diagnosis.phase === 'scanning') resetDiagnosis();
+    pauseClinic();
     if (state.phase === 'playing') showPause(); else clearInput();
   });
   $('brand').onclick = requestHome;
@@ -553,13 +652,16 @@
   $('diagnosis-action').onclick = () => {
     if (state.screen !== 'cases' || state.modal) return;
     if (diagnosis.phase === 'ready' && playableCaseIds().includes(diagnosis.caseId)) startGame(diagnosis.caseId, 'diagnosis');
-    else beginScreening();
   };
+  $('clinic-skip').onclick = completeClinic;
+  $('clinic-continue').onclick = resumeClinic;
   $('diagnosis-action').addEventListener('keydown', event => {
     if (event.repeat && ['Enter', 'Space'].includes(event.code)) event.preventDefault();
   });
   $('case-archive').onclick = openCaseArchive;
   $('entry-transition-home').onclick = goHome;
+  $('entry-transition-skip').onclick = () => { if (transition.phase !== 'idle') { transition.skipped = true; clearInput(); $('entry-transition-skip').disabled = true; } };
+  if ($('exterior-skip')) $('exterior-skip').onclick = skipExterior;
   $('dialog-body').addEventListener('click', event => {
     const card = event.target.closest('button[data-case]');
     if (card && state.modal && $('modal').querySelector('.dialog').classList.contains('archive-dialog')) startGame(card.dataset.case, 'archive');
@@ -590,7 +692,11 @@
         hit: { notes: [659.25], duration: .12, volume: .03, spacing: 0 },
         hitWeak: { notes: [880, 1318.51], duration: .13, volume: .04, spacing: .055 },
         treatment: { notes: [523.25, 659.25], duration: .09, volume: .018, spacing: .035 },
-        wall: { notes: [164.81], duration: .055, volume: .016, spacing: 0, type: 'triangle' }
+        wall: { notes: [164.81], duration: .055, volume: .016, spacing: 0, type: 'triangle' },
+        reloadOut: { notes: [196, 130.81], duration: .065, volume: .028, spacing: .055, type: 'triangle' },
+        reloadIn: { notes: [293.66, 392], duration: .075, volume: .03, spacing: .055, type: 'triangle' },
+        reloadReady: { notes: [523.25, 783.99], duration: .13, volume: .035, spacing: .06 },
+        empty: { notes: [98], duration: .04, volume: .024, spacing: 0, type: 'triangle' }
       })[kind];
       const notes = profile?.notes || (heartbeat ? [110, 73.42] : kind === 'flow' ? [146.83, 220, 293.66, 440] : kind === 'win' ? [523.25, 659.25, 783.99, 1046.5] : kind === 'miss' || kind === 'lose' ? [261.63, 220] : [440]);
       notes.forEach((hz, i) => {
@@ -631,6 +737,7 @@
     if (!state.game) return;
     const g = state.game.getDebugState(), roomChanged = state.cameraRoom !== g.room;
     $('app').classList.toggle('journey-exterior', g.endingScene === 'exterior');
+    updateExteriorControls(g);
     const size = g.worldSize || { width: g.room === 'heart' ? 1800 : 1600, height: g.room === 'heart' ? 1200 : 1000 };
     const cue = g.cameraCue || { kind: 'follow' };
     const progress = Math.max(0, Math.min(1, cue.progress || 0));
@@ -682,13 +789,26 @@
     for (let i = 0; i < 44; i++) { ctx.globalAlpha = .12 + (i % 4) * .025; ctx.beginPath(); ctx.arc((i * 193 + 37) % W, (i * 293 + 117) % H, .7 + i % 2 * .3, 0, 7); ctx.fill(); }
     ctx.globalAlpha = 1;
     if (state.screen === 'home' && window.GiantCureCover) window.GiantCureCover.draw(ctx, reducedMotion ? 0 : time, caseIds.filter(id => records[id].wins).length / caseIds.length);
-    if (state.screen === 'cases') drawBotanical(638, 1175, time, .7);
+    if (state.screen === 'cases') {
+      drawBotanical(638, 1175, time, .7);
+      if (window.GiantCureClinicArt) {
+        const scene = $('clinic-scene'), sceneCtx = scene.getContext('2d');
+        window.GiantCureClinicArt.draw(sceneCtx, { ...clinic, reducedMotion }, clinic.elapsed, window.GiantCureAssets?.images || {});
+      }
+    }
     if (state.screen === 'result') { drawBotanical(79, 651, time, .55); drawBotanical(656, 725, time, .6, -1); }
-    if (state.screen === 'treatment' && state.game) { ctx.save(); state.game.draw(ctx, state.activeTime, view); ctx.restore(); }
+    if (state.screen === 'treatment' && state.game) { ctx.save(); state.game.draw(ctx, state.activeTime, { ...view, reducedMotion }); ctx.restore(); }
   }
   function frame(now) {
     const raw = lastFrame === null ? 0 : Math.max(0, (now - lastFrame) / 1000); lastFrame = now;
     const dt = Math.min(raw, .1);
+    if (state.screen === 'cases' && clinicActive() && !clinic.paused && !state.modal) {
+      if (raw > 2 || document.hidden) pauseClinic();
+      else {
+        const previous = clinic.phase; clinic.elapsed += raw; clinicPresentation();
+        if (previous !== 'ready' && clinic.phase === 'ready') $('diagnosis-action').focus({ preventScroll: true });
+      }
+    }
     if (state.phase === 'playing' && raw > 2) showPause();
     if (state.phase === 'playing' && !state.modal) {
       let pending = raw;
@@ -735,9 +855,10 @@
     remaining: null, elapsed: state.elapsed, modal: state.modal,
     result: state.result ? { ...state.result } : null,
     diagnosis: { phase: diagnosis.phase, caseId: diagnosis.caseId },
+    clinic: { phase: clinic.phase, elapsed: clinic.elapsed, paused: clinic.paused },
     transition: { phase: transition.phase, caseId: transition.caseId },
     game: state.game ? state.game.getDebugState() : null,
-    view: { viewport: { ...view.viewport }, camera: { ...view.camera } },
+    view: { viewport: { ...view.viewport }, camera: { ...view.camera }, reducedMotion },
     logicalSize: { width: W, height: H }, reducedMotion,
     particles: particles.map(p => ({ ...p })), activeTime: state.activeTime
   }) });

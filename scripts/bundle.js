@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
-const assetNames = ['entry', 'main', 'heart', 'exterior'];
+const assetNames = ['entry', 'main', 'heart', 'exterior', 'clinic', 'recoveryValley', 'recoveryGiant', 'recoveryEyes'];
 const sources = Object.fromEntries(assetNames.map(name => {
   const file = path.join(root, 'assets', 'heart-journey', name + '.png');
   if (!fs.existsSync(file)) throw new Error('Missing chapter illustration: ' + file);
@@ -14,6 +14,6 @@ const games = assetScript + ['journey-art', 'heart-journey'].map(name => `\n// =
 const html = read('src/index.template.html')
   .replace('/* STYLES */', () => read('src/styles.css'))
   .replace('  /* GAMES */', () => games)
-  .replace('  /* APP */', () => (fs.existsSync(path.join(root, 'src/cover.js')) ? read('src/cover.js') : '') + '\n' + read('src/app.js'));
+  .replace('  /* APP */', () => ['cover', 'clinic-art', 'app'].map(name => read(`src/${name}.js`)).join('\n'));
 fs.writeFileSync(path.join(root, 'index.html'), html);
 console.log(`Created standalone index.html (${(Buffer.byteLength(html)/1024).toFixed(1)} KB)`);
