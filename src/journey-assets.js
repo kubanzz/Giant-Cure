@@ -8,14 +8,9 @@
     assets.ready = Promise.all(Object.entries(sources).map(([name, source]) => new Promise((resolve, reject) => {
       const image = new Image();
       image.onload = () => { assets.images[name] = image; resolve(image); };
-      image.onerror = () => {
-        const error = new Error('插画载入失败：' + name);
-        // Decorative plates have drawing fallbacks; a damaged recovery layer
-        // must not prevent entering the chapter or completing treatment.
-        if (name === 'clinic') { delete assets.images[name]; assets.clinicError = error; resolve(null); }
-        else if (name.startsWith('recovery')) { delete assets.images[name]; assets.recoveryError = error; resolve(null); }
-        else reject(error);
-      };
+      // Only the three playable room backgrounds are image resources. Clinic
+      // and recovery art are shared vector drawing; their legacy errors stay null.
+      image.onerror = () => { delete assets.images[name]; reject(new Error('插画载入失败：' + name)); };
       image.src = source;
     }))).then(() => assets.images).catch(error => { assets.error = error; throw error; });
     // Preloading starts before the player clicks a chapter; its UI handles failures.

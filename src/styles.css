@@ -58,15 +58,9 @@ button:active{transform:translateY(2px)}
 .page-heading>p:last-child{font-size:19px;color:#8b9986;margin-top:17px;letter-spacing:1px}
 .diagnosis-heading h2{letter-spacing:5px}
 .diagnosis-panel{--scan-progress:0;position:absolute;top:286px;left:48px;right:48px;height:839px}
-.diagnosis-monitor{position:absolute;top:0;left:0;right:0;height:570px;overflow:hidden;border:1px solid #557b68;border-radius:17px;background-color:#193f35;background-image:linear-gradient(#96b8970c 1px,transparent 1px),linear-gradient(90deg,#96b8970c 1px,transparent 1px),radial-gradient(ellipse at 50% 40%,#37624c55,transparent 70%);background-size:30px 30px,30px 30px,100% 100%;box-shadow:inset 0 0 55px #0d2d2655,0 8px 24px #34583c0a}
-.monitor-caption{position:absolute;top:23px;left:26px;right:26px;display:flex;justify-content:space-between;color:#9cb79b;font-size:10px;letter-spacing:2px;z-index:1}
-.monitor-caption>span:last-child{color:#829f83}
-.monitor-caption i{display:inline-block;width:5px;height:5px;margin-right:7px;border-radius:50%;background:#87b18d;vertical-align:middle}
-.diagnosis-body{position:absolute;top:38px;left:0;width:100%;height:500px}
-.clinic-scene{position:absolute;inset:0;width:100%;height:100%;z-index:2;opacity:var(--clinic-scene-opacity,0);pointer-events:none}
-.diagnosis-panel[data-diagnosis-phase=scanning][data-clinic-paused=true] .wave-trace{animation-play-state:paused}
-.diagnosis-body,.diagnosis-wave{opacity:var(--clinic-body-opacity,1)}
-.monitor-caption{z-index:4}
+.diagnosis-monitor{position:absolute;top:0;left:0;right:0;height:570px;overflow:hidden;background:var(--paper)}
+.diagnosis-body{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none}
+.clinic-scene{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
 .clinic-step{position:absolute;top:-32px;right:1px;color:#a48e5c;font:12px var(--sans);letter-spacing:2px}
 .clinic-caption{position:absolute;top:631px;left:0;right:0;text-align:center;color:#97a08b;font-size:15px;line-height:23px;letter-spacing:.5px}
 .clinic-controls{position:absolute;top:752px;left:0;right:0;text-align:center}
@@ -76,48 +70,11 @@ button:active{transform:translateY(2px)}
 .diagnosis-panel .diagnosis-action{top:768px;font-size:23px}
 .diagnosis-panel .diagnosis-placeholder{top:20px}
 .diagnosis-panel .diagnosis-report{opacity:var(--clinic-report-progress,1)}
-.diagnosis-panel[data-clinic-phase=arriving] .monitor-caption,.diagnosis-panel[data-clinic-phase=examining] .monitor-caption{color:#66836b}
-.diagnosis-panel[data-clinic-phase=arriving] .monitor-caption>span:last-child{color:#789179}
-.anatomy-silhouette{fill:url(#anatomy-skin);stroke:#a8c2a1;stroke-width:1.6}
-.anatomy-head{fill:#a9bd9633;stroke:#a8c2a1;stroke-width:1.6}
-.anatomy-hair{fill:#87a98a99;stroke:#91b392;stroke-width:.8}
-.anatomy-face{stroke:#abc4a3;stroke-width:1;fill:none;opacity:.65}
-.giant-outline .anatomy-ribs{fill:none;stroke:#ceccb0;stroke-width:1.4;opacity:.42}
-.anatomy-lungs{fill:url(#anatomy-lung);stroke:#9db9a2;stroke-width:.8}
-.anatomy-bronchi{fill:none;stroke:#b7c4a7;stroke-width:1.4;opacity:.68}
-.anatomy-diaphragm{fill:none;stroke:#a6b79a;stroke-width:1;opacity:.5}
-.anatomy-vessels{fill:none;stroke:#c5ab84;stroke-width:2;opacity:.68}
-.anatomy-vessels .vessel-vein{stroke:#8eb6b5;stroke-width:1.5;opacity:.65}
-.anatomy-vessels .vessel-twigs{stroke-width:.8;opacity:.65}
-.anatomy-heart{fill:url(#anatomy-heart);stroke:#d7b58d;stroke-width:1.1}
-.anatomy-heart-detail{fill:none;stroke:#e1c39c;stroke-width:1.2;opacity:.78}
-.anatomy-leaves{fill:#abc19177;stroke:#b1c49b77;stroke-width:.7}
-.anatomy-annotations{fill:#97b59b;stroke:#92b197;stroke-width:.65;opacity:.6}
-.anatomy-annotations text{stroke:none;font:10px var(--sans);letter-spacing:1px}
-.anatomy-annotations path{fill:none}
-.body-reference{stroke:#91b79a;stroke-width:1;opacity:.13;stroke-dasharray:3 7}
-.body-reference>path:last-child{stroke-dasharray:none}
-.giant-outline{fill:#91b9920c;stroke:#a0bda1;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.giant-outline .body-detail{fill:none;stroke:#88ac8b;stroke-width:1;opacity:.6}
-.giant-outline .body-flow{fill:none;stroke:#9cbc88;stroke-width:1.3;opacity:.4}
-.diagnosis-target{opacity:0;stroke:#d4b579;stroke-width:1.5;fill:none}
-.diagnosis-target>circle:nth-child(2){fill:#d4b5793d}
-.diagnosis-target .target-leader{stroke-width:1;opacity:.7}
-.diagnosis-target text{fill:#d9c08e;stroke:none;font:15px var(--serif);letter-spacing:2px}
+
+.diagnosis-target{opacity:0;stroke:#b99c61;stroke-width:1;fill:none}
+.diagnosis-target>circle:nth-child(2){fill:#b99c6155;stroke:none}
+.diagnosis-target text{fill:#927d4f;stroke:none;font:16px var(--serif);letter-spacing:3px}
 .diagnosis-panel[data-diagnosis-phase=ready] #diagnosis-target{opacity:1}
-.diagnosis-scan-line{display:none;position:absolute;top:64px;left:23px;right:23px;height:1px;transform:translateY(calc(var(--scan-progress)*416px));background:#bdd7a1;box-shadow:0 0 10px #b1d19577;pointer-events:none}
-.diagnosis-scan-line:before{content:"";position:absolute;bottom:0;left:0;right:0;height:55px;background:linear-gradient(transparent,#bcdaa416)}
-.diagnosis-panel[data-diagnosis-phase=scanning] .diagnosis-scan-line{display:block}
-.diagnosis-wave{position:absolute;left:25px;right:25px;bottom:19px;height:48px;display:flex;align-items:center;gap:16px;border-top:1px solid #9db48a1f;padding-top:10px;color:#9bb18e}
-.diagnosis-wave>span:first-child{font-size:10px;letter-spacing:2px}
-.diagnosis-wave svg{display:block;flex:1;min-width:0;height:37px;overflow:hidden;fill:none;stroke-width:1.4}
-.wave-baseline{stroke:#abc897;opacity:.1}
-.wave-trace{stroke:#a2c797;opacity:.25;stroke-linecap:round;stroke-linejoin:round}
-.signal-dot{width:5px;height:5px;flex:none;border-radius:50%;background:#a3c394;opacity:.35}
-.diagnosis-panel[data-diagnosis-phase=scanning] .wave-trace{opacity:.85;stroke-dasharray:110 600;animation:diagnosis-pulse 1.6s linear infinite}
-.diagnosis-panel[data-diagnosis-phase=scanning] .signal-dot,.diagnosis-panel[data-diagnosis-phase=ready] .signal-dot{opacity:1}
-.diagnosis-panel[data-diagnosis-phase=ready] .wave-trace{opacity:.8}
-@keyframes diagnosis-pulse{from{stroke-dashoffset:710}to{stroke-dashoffset:0}}
 .diagnosis-status{position:absolute;top:594px;left:0;right:0;text-align:center;color:#6d8868;font:22px var(--serif);letter-spacing:3px;line-height:30px}
 .diagnosis-report-space{position:absolute;top:640px;left:0;right:0;height:92px;border-top:1px solid #dbe3d0}
 .diagnosis-placeholder{position:absolute;top:29px;left:0;right:0;text-align:center;font-size:15px;color:#a1ac96;letter-spacing:2px}
@@ -223,8 +180,6 @@ button:active{transform:translateY(2px)}
 @media(max-width:1100px){.desktop-note{display:none}
 }
 @media(prefers-reduced-motion:reduce){button,#progress-fill{transition:none}
-.diagnosis-panel[data-diagnosis-phase=scanning] .diagnosis-scan-line{display:none}
-.diagnosis-panel[data-diagnosis-phase=scanning] .wave-trace{animation:none;stroke-dasharray:none}
 }
 @media(max-width:600px){#app{border-radius:0;box-shadow:none}
 }
@@ -261,6 +216,12 @@ body{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
 .journey-tools{display:flex;gap:10px;margin-top:16px}
 .journey-tools button{flex:1;height:49px;border-radius:8px;border:1px solid #cedac1;background:#edf2e3;color:#688767;font-size:16px;letter-spacing:1px}
 .journey-tools button:hover,.journey-tools button[aria-pressed=true]{background:#d9e6cd;color:#346e60;border-color:#9eb58d}
+.journey-toolbelt{display:flex;gap:6px}
+.journey-toolbelt button{flex:1;min-width:0;border:1px solid #c5d3b8;border-radius:6px;background:#f2f4e8;color:#627e65;font:13px var(--sans);letter-spacing:0;white-space:nowrap}
+.journey-toolbelt button[aria-pressed=true]{background:#d8e6cf;border-color:#668e71;color:#285e4d;box-shadow:inset 0 -2px #668e71}
+.journey-toolbelt button:disabled{opacity:.48;background:#edf0e5;cursor:default}
+.journey-toolbelt button:focus-visible{outline:2px solid #a88137;outline-offset:2px}
+.journey-toolbelt kbd{font-size:10px;margin-right:3px;padding:0 3px}
 kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px 5px;color:#79906e;background:#f3f5e9;display:inline-block;line-height:1.3;letter-spacing:0}
 .journey-tools kbd{font-size:15px;margin-right:5px}
 .journey-hud>p{margin-top:11px;font-size:13px;letter-spacing:1px;color:#9aa88b}
@@ -299,11 +260,15 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 .journey-mode .journey-vitals>span{white-space:nowrap}
 .journey-mode .journey-vitals strong{font-size:20px;margin-left:5px}
 .journey-mode .journey-vitals small{display:block;font-size:10px;margin:3px 0 0;text-align:right}
+.journey-mode .journey-vitals #journey-equipment{text-align:left;color:#6d856a}
+.journey-mode #journey-equipment[data-equipment=gel]{color:#438d8b}
+.journey-mode #journey-equipment[data-equipment=steady]{color:#9a7e40}
 .journey-mode .integrity-track{display:block;width:96px;height:3px;margin:4px 0 0}
 .journey-mode .journey-tools{position:absolute;right:24px;top:646px;width:326px;gap:8px;margin:0}
 .journey-mode .journey-tools button{height:34px;font-size:12px;letter-spacing:0;flex:none;padding:0 9px}
 .journey-mode .journey-tools button:nth-child(2){flex:1}
 .journey-mode .journey-tools kbd{font-size:11px;margin-right:3px;padding:1px 3px}
+.journey-mode .journey-toolbelt{position:absolute;right:24px;top:685px;width:326px;height:28px}
 .journey-mode #journey-checkpoint{position:absolute;right:25px;top:64px;font-size:10px;letter-spacing:0;margin:0;color:#8b9a80}
 .journey-telemetry{position:absolute;left:25px;right:290px;top:63px;display:flex;align-items:center;gap:14px;font-size:14px;line-height:18px;color:#617b60;white-space:nowrap}
 .journey-telemetry #journey-room{color:#3e7760;font-weight:600;flex:none;letter-spacing:1px}
@@ -312,7 +277,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 .journey-telemetry #journey-scanner-info{overflow:hidden;text-overflow:ellipsis}
 .journey-mode .journey-task{position:absolute;left:38px;right:380px;top:645px;font-size:18px;line-height:25px;letter-spacing:.5px;color:#356d59;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .journey-mode .game-feedback{top:674px;left:38px;right:380px;height:21px;text-align:left;font-size:14px;letter-spacing:.2px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.journey-mode .journey-keys{left:38px;right:25px;top:701px;display:flex;justify-content:space-between;font-size:11px;letter-spacing:0;color:#71896d}
+.journey-mode .journey-keys{left:38px;right:370px;top:701px;display:flex;justify-content:space-between;font-size:11px;letter-spacing:0;color:#71896d}
 .journey-mode .journey-keys p{gap:6px;margin:0}
 .journey-mode .journey-keys p>span:last-child{margin-left:9px}
 .journey-mode .journey-keys kbd{font-size:8px;padding:0 3px;line-height:1.2}
@@ -328,7 +293,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 .journey-mode .dialog .secondary-button{height:42px;font-size:15px;margin-top:9px}
 .journey-mode .dialog .text-button{font-size:14px;min-height:38px;margin-top:5px}
 .journey-mode #toast{left:auto;right:35px;bottom:108px;max-width:430px;padding:12px 22px;font-size:14px}
-.journey-mode.journey-exterior .journey-vitals,.journey-mode.journey-exterior .journey-tools,.journey-mode.journey-exterior .journey-telemetry,.journey-mode.journey-exterior #journey-checkpoint,.journey-mode.journey-exterior .journey-keys,.journey-mode.journey-exterior .treatment-stats,.journey-mode.journey-exterior .journey-task,.journey-mode.journey-exterior .game-feedback,.journey-mode.journey-exterior .brand,.journey-mode.journey-exterior #help,.journey-mode.journey-exterior .treatment-heading>p,.journey-mode.journey-exterior .treatment-heading h2{visibility:hidden;pointer-events:none}
+.journey-mode.journey-exterior .journey-vitals,.journey-mode.journey-exterior .journey-tools,.journey-mode.journey-exterior .journey-toolbelt,.journey-mode.journey-exterior .journey-telemetry,.journey-mode.journey-exterior #journey-checkpoint,.journey-mode.journey-exterior .journey-keys,.journey-mode.journey-exterior .treatment-stats,.journey-mode.journey-exterior .journey-task,.journey-mode.journey-exterior .game-feedback,.journey-mode.journey-exterior .brand,.journey-mode.journey-exterior #help,.journey-mode.journey-exterior .treatment-heading>p,.journey-mode.journey-exterior .treatment-heading h2{visibility:hidden;pointer-events:none}
 .exterior-skip{position:absolute;right:38px;bottom:29px;min-height:44px;padding:10px 18px;border:1px solid #b6c7ab;border-radius:9px;background:#f7f6edf2;color:#3c705c;font-size:16px;line-height:22px;letter-spacing:.5px;box-shadow:0 3px 15px #244d3510;transition:none}
 .exterior-skip span{margin-left:12px;color:#a08a56}
 .exterior-skip:hover{background:#e8efdf;border-color:#8fae85}
@@ -339,11 +304,9 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 
 /* The entry transition uses screen pixels; its animation is driven by the app. */
 .entry-transition{position:fixed;inset:0;z-index:30;pointer-events:none}
-.entry-transition-ghost{position:fixed;overflow:hidden;border-radius:17px;z-index:0;transform-origin:0 0}
+.entry-transition-ghost{position:fixed;overflow:hidden;z-index:0;transform-origin:0 0}
 .entry-transition-ghost>.diagnosis-monitor{position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;transform-origin:0 0}
 .entry-transition-ghost .diagnosis-target{opacity:1}
-.entry-transition-ghost .wave-trace{opacity:.8}
-.entry-transition-ghost .signal-dot{opacity:1}
 .entry-transition-veil{position:absolute;inset:0;z-index:1;background:#193f35;opacity:0}
 .entry-transition-focus{position:fixed;left:0;top:0;z-index:2;width:50px;height:50px;margin:-25px 0 0 -25px;border:1px solid #dac08b;border-radius:50%;background:#d8bb7721;box-shadow:0 0 22px #d3ae5b55,inset 0 0 14px #d2b56f22;transform-origin:center;opacity:0}
 .entry-transition-focus:after{content:"";position:absolute;inset:8px;border:1px solid #e3cd9e55;border-radius:50%}
@@ -356,8 +319,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 .entry-transition-skip:hover{background:#315b4e}
 .entry-transition-skip:disabled{opacity:.45}
 .entry-transition-skip:focus-visible{outline:2px solid #d9bb7b;outline-offset:4px}
-.entry-preparation{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);height:100dvh;width:auto;max-width:100vw;object-fit:contain;z-index:2;background:#f7f6ed;box-shadow:0 0 0 100vw #f7f6ed}
-.entry-transition:has(.entry-preparation:not([hidden])) .entry-transition-status{top:76%;color:#527d67;text-shadow:none;font-size:18px}
+.entry-transition[data-phase=preparing] .entry-transition-status{top:76%;color:#527d67;text-shadow:none;font-size:18px}
 .reload-track{display:block;margin-top:3px;height:3px;width:100%;background:#dce4d1;border-radius:3px;overflow:hidden}
 #reload-fill{display:block;height:100%;width:0;background:#baa267}
 #journey-magazine[data-reload-stage=idle] .reload-track{opacity:.35}
@@ -366,6 +328,6 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 #journey-magazine[data-reload-stage]:not([data-reload-stage=idle]) strong{color:#9b854c}
 .journey-mode #journey-reload-button[data-reloading=true]{border-color:#b89e65;background:#e9e1c7;color:#806a39}
 body.entry-in-progress #clinic-step,body.entry-in-progress #clinic-caption,body.entry-in-progress .clinic-controls{opacity:var(--entry-source-opacity,1);pointer-events:none}
-body.entry-in-progress .app-header,body.entry-in-progress .page-folio,body.entry-in-progress #treatment .treatment-heading,body.entry-in-progress #treatment .treatment-stats,body.entry-in-progress #treatment .journey-telemetry,body.entry-in-progress #treatment .journey-task,body.entry-in-progress #treatment .game-feedback,body.entry-in-progress #treatment .journey-hud,body.entry-in-progress #treatment .journey-keys{opacity:var(--entry-hud-opacity,0);pointer-events:none}
+body.entry-in-progress .app-header,body.entry-in-progress .page-folio,body.entry-in-progress #treatment .treatment-heading,body.entry-in-progress #treatment .treatment-stats,body.entry-in-progress #treatment .journey-telemetry,body.entry-in-progress #treatment .journey-task,body.entry-in-progress #treatment .game-feedback,body.entry-in-progress #treatment .journey-hud,body.entry-in-progress #treatment .journey-toolbelt,body.entry-in-progress #treatment .journey-keys{opacity:var(--entry-hud-opacity,0);pointer-events:none}
 body.entry-in-progress .app-header button,body.entry-in-progress .app-header nav,body.entry-in-progress #treatment button{pointer-events:none}
 body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .diagnosis-status,body.entry-in-progress #cases .diagnosis-report-space,body.entry-in-progress #cases .diagnosis-action,body.entry-in-progress #cases .case-archive,body.entry-in-progress #cases .case-back{opacity:var(--entry-source-opacity,1);pointer-events:none}

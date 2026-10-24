@@ -90,20 +90,40 @@ async function node(page, id) { const p = (await game(page)).nodes.find(p => p.i
 async function portal(page, id) { const p = (await game(page)).portals.find(p => p.id === id); assert(p, 'portal exists: ' + id); return p; }
 async function interact(page, target) { await moveTo(page, target); await page.keyboard.press('KeyE'); await tick(page, 32); }
 async function discover(page, target) { await scan(page); await moveTo(page, target); await tick(page, 1400); }
+async function equip(page, id) {
+  await page.mouse.up(); await page.keyboard.press(({ precision: 'Digit1', sprayer: 'Digit2', probe: 'Digit3' })[id]);
+  assert.equal((await game(page)).tool, id);
+}
 async function diagnose(page) {
   await discover(page, await node(page, 'flow')); assert((await game(page)).scanned.flow); assert((await portal(page, 'to-main')).locked);
   await discover(page, await node(page, 'pressure')); assert(!(await portal(page, 'to-main')).locked);
   await interact(page, await portal(page, 'to-main')); assert.equal((await game(page)).room, 'main');
   const clot = (await game(page)).clot; await discover(page, { x: clot.x, y: clot.y + 145 }); assert.equal((await game(page)).stage, 'bypass');
 }
-async function connectBypasses(page) {
-  for (const id of ['A1', 'A2', 'B1']) await interact(page, await node(page, id)); await moveTo(page, await node(page, 'B2'));
-  for (let i = 0; !(await game(page)).beat.safe && i < 120; i++) await tick(page, 16);
-  await page.keyboard.press('KeyE'); await tick(page, 1340); assert.equal((await game(page)).stage, 'combat'); assert.equal((await game(page)).checkpoint, 'bypass');
+async function collectSupply(page, id) {
+  for (let i = 0; i < 150; i++) {
+    const supply = (await game(page)).supplies.find(s => s.id === id); assert(supply);
+    if (supply.state === 'collected') return;
+    if (supply.state === 'ready') { await interact(page, supply); assert.equal((await game(page)).supplies.find(s => s.id === id).state, 'collected'); return; }
+    assert.notEqual(supply.state, 'waiting', 'the delivery has been requested by gameplay'); await tick(page, 32);
+  }
+  assert.fail('delivery did not arrive: ' + id);
+}
+// Compatibility helper name only: V2 treats one alternative branch; no E sequence.
+async function connectBypasses(page, id = 'left') {
+  await clearInterference(page); await equip(page, 'precision');
+  const branch = (await game(page)).branches.find(b => b.id === id); assert(branch);
+  await moveTo(page, { x: branch.x, y: branch.y + 90 }); await scan(page, false); await mouseAt(page, branch);
+  await page.mouse.down();
+  try { for (let i = 0; i < 250 && !(await game(page)).branches.find(b => b.id === id).complete; i++) await tick(page, 32); }
+  finally { await page.mouse.up(); }
+  const s = await game(page); assert(s.branches.find(b => b.id === id).complete); assert.equal(s.checkpoint, 'bypass'); assert.equal(s.pressure, 'safe');
+  await collectSupply(page, 'lysis'); assert((await game(page)).tools.find(t => t.id === 'sprayer').unlocked);
 }
 async function approachHunter(page) {
-  for (let attempt = 0; attempt < 16; attempt++) {
-    const s = await game(page), enemy = s.enemies.find(e => e.hp > 0); assert(enemy);
+  for (let attempt = 0; attempt < 160; attempt++) {
+    const s = await game(page), enemy = s.enemies.find(e => e.hp > 0);
+    if (!enemy) { assert(s.encounter.pending || s.spawnTelegraphs.length, 'a Hunter is alive or pending'); await tick(page, 32); continue; }
     const covered = s.obstacles.some(r => r.blocking !== false && crosses(s.player, enemy, r));
     if (distance(s.player, enemy) >= 70 && distance(s.player, enemy) < 180 && !covered) return;
     const candidates = Array.from({ length: 16 }, (_, n) => ({ x: enemy.x + Math.cos(n * Math.PI / 8) * 150, y: enemy.y + Math.sin(n * Math.PI / 8) * 150 }))
@@ -113,41 +133,60 @@ async function approachHunter(page) {
   }
   assert.fail('native movement can approach a Hunter for aimed fire');
 }
-async function fightTutorial(page) {
-  await scan(page); let held = false;
+async function clearInterference(page) {
+  await equip(page, 'precision'); await scan(page); let firing = false, dodge = null, dodgeUntil = 0;
+  const held = new Set();
+  const release = async () => { for (const key of held) await page.keyboard.up(key); held.clear(); if (firing) { await page.mouse.up(); firing = false; } };
   try {
-    for (let i = 0; i < 1200 && (await game(page)).stage === 'combat'; i++) {
-      const s = await game(page), enemy = s.enemies.find(e => e.hp > 0);
-      if (!enemy) { await tick(page, 64); continue; }
-      if (distance(enemy, s.player) > 210 || s.obstacles.some(r => r.blocking !== false && crosses(s.player, enemy, r))) { if (held) { await page.mouse.up(); held = false; } await approachHunter(page); continue; }
-      if (s.ammo === 0) { if (held) { await page.mouse.up(); held = false; } await page.keyboard.press('KeyR'); await tick(page, 1720); continue; }
-      await mouseAt(page, enemy.weakpoint); if (!held) { await page.mouse.down(); held = true; } await tick(page, 32); assert(!(await game(page)).failed);
+    for (let i = 0; i < 5000; i++) {
+      const s = await game(page); assert(!s.failed, 'defensive native input survives');
+      const alive = s.enemies.filter(e => e.hp > 0).sort((a, b) => distance(a, s.player) - distance(b, s.player)), enemy = alive[0];
+      if (!enemy && !s.encounter.pending && !s.spawnTelegraphs.length) return;
+      if (!enemy) { await release(); await tick(page, 32); continue; }
+      const covered = s.obstacles.some(r => r.blocking !== false && crosses(s.player, enemy, r));
+      const danger = alive.find(e => ['telegraph', 'lunge'].includes(e.state) && distance(s.player, e) < 290);
+      if (danger && s.elapsed >= dodgeUntil) {
+        const d = distance(danger, s.player) || 1, dx = (s.player.x - danger.x) / d, dy = (s.player.y - danger.y) / d;
+        dodge = [1, -1].map(sign => ({ x: s.player.x - dy * 140 * sign, y: s.player.y + dx * 140 * sign })).find(p => p.x > s.bounds.left + 25 && p.x < s.bounds.right - 25 && p.y > s.bounds.top + 25 && p.y < s.bounds.bottom - 25 && !s.obstacles.some(r => r.blocking !== false && overlaps(p, r, 22))); dodgeUntil = s.elapsed + .85;
+      }
+      if ((!dodge || s.elapsed >= dodgeUntil) && (distance(s.player, enemy) > 205 || covered)) { await release(); await approachHunter(page); continue; }
+      let waypoint = dodge && s.elapsed < dodgeUntil ? nextWaypoint(s, dodge) : null;
+      if (!waypoint && distance(s.player, enemy) < 95) {
+        const d = distance(s.player, enemy) || 1;
+        waypoint = nextWaypoint(s, { x: Math.max(s.bounds.left + 30, Math.min(s.bounds.right - 30, s.player.x + (s.player.x - enemy.x) / d * 100)), y: Math.max(s.bounds.top + 30, Math.min(s.bounds.bottom - 30, s.player.y + (s.player.y - enemy.y) / d * 100)) });
+      }
+      const wanted = new Set(waypoint ? ['ShiftLeft'] : []);
+      if (waypoint) { if (waypoint.x - s.player.x < -3) wanted.add('KeyA'); if (waypoint.x - s.player.x > 3) wanted.add('KeyD'); if (waypoint.y - s.player.y < -3) wanted.add('KeyW'); if (waypoint.y - s.player.y > 3) wanted.add('KeyS'); }
+      for (const key of held) if (!wanted.has(key)) { await page.keyboard.up(key); held.delete(key); }
+      for (const key of wanted) if (!held.has(key)) { await page.keyboard.down(key); held.add(key); }
+      const aim = enemy.state === 'recover' && enemy.weakpoint ? enemy.weakpoint : enemy, projected = project(await snapshot(page), aim), viewport = (await snapshot(page)).view.viewport;
+      if (projected.x <= viewport.x || projected.x >= viewport.x + viewport.w || projected.y <= viewport.y || projected.y >= viewport.y + viewport.h) { if (firing) { await page.mouse.up(); firing = false; } await tick(page, 32); continue; }
+      await mouseAt(page, aim); if (!firing) { await page.mouse.down(); firing = true; } await tick(page, 32);
     }
-  } finally { if (held) await page.mouse.up(); }
-  assert.equal((await game(page)).stage, 'clot');
+    assert.fail('finite encounter did not clear through native input');
+  } finally { await release(); }
 }
+async function fightTutorial(page) { await clearInterference(page); assert.equal((await game(page)).stage, 'clot'); }
 function segmentDistance(point, from, to) {
   const dx = to.x - from.x, dy = to.y - from.y, length = dx * dx + dy * dy;
   const t = length ? Math.max(0, Math.min(1, ((point.x - from.x) * dx + (point.y - from.y) * dy) / length)) : 0;
   return distance(point, { x: from.x + t * dx, y: from.y + t * dy });
 }
 function therapyPosition(s, id, avoidEnemies = false) {
-  const w = s.weakpoints.find(p => p.id === id), clot = s.obstacles.find(r => r.kind === 'clot');
+  const w = s.weakpoints.find(p => p.id === id), clot = s.obstacles.find(r => r.kind === 'clot'), range = w.kind === 'fiber' ? 135 : 210;
   return [-120, -60, 0, 60, 120].flatMap(offset => [{ x: w.x + offset, y: clot.y - 50 }, { x: clot.x + clot.w + 55, y: w.y + offset }, { x: w.x + offset, y: clot.y + clot.h + 55 }, { x: clot.x - 55, y: w.y + offset }])
-    .filter(p => distance(p, w) <= (w.scanned ? s.toolRange - 10 : s.scanRange - 12) && !s.obstacles.some(r => r.kind !== 'clot' && r.blocking !== false && (overlaps(p, r, 20) || crosses(p, w, r))) && (!avoidEnemies || !s.enemies.some(e => e.hp > 0 && segmentDistance(e, p, w) < 35)))
+    .filter(p => distance(p, w) <= range && !s.obstacles.some(r => r.kind !== 'clot' && r.blocking !== false && (overlaps(p, r, 20) || crosses(p, w, r))) && (!avoidEnemies || !s.enemies.some(e => e.hp > 0 && segmentDistance(e, p, w) < 35)))
     .sort((a, b) => distance(a, s.player) - distance(b, s.player))[0];
 }
 async function soften(page, id, onPartial, leaveAlive = false) {
-  await scan(page); await moveTo(page, therapyPosition(await game(page), id)); await tick(page, 1400);
-  assert((await game(page)).weakpoints.find(p => p.id === id).scanned); await scan(page, false); let held = false, observedPartial = false, crowded = false;
+  if (!leaveAlive) await clearInterference(page);
+  const weak = (await game(page)).weakpoints.find(p => p.id === id); await equip(page, weak.requiredTool); await moveTo(page, therapyPosition(await game(page), id));
+  await scan(page, false); let held = false, observedPartial = false;
   try {
     for (let i = 0; i < 600 && !(await game(page)).weakpoints.find(p => p.id === id).complete; i++) {
-      const s = await game(page), living = s.enemies.filter(e => e.hp > 0), threat = living.filter(e => distance(e, s.player) < 190 && !s.obstacles.some(r => r.blocking !== false && crosses(s.player, e, r))).sort((a, b) => distance(a, s.player) - distance(b, s.player))[0];
-      if (!crowded && s.enemies.filter(e => e.hp > 0).length >= 3) { await capture(page, 'combat-crowded'); crowded = true; }
-      if (s.ammo === 0) { if (held) { await page.mouse.up(); held = false; } await page.keyboard.press('KeyR'); await tick(page, 1720); }
-      if (threat && (!leaveAlive || living.length > 1)) { await scan(page); await mouseAt(page, threat.weakpoint); if (!held) { await page.mouse.down(); held = true; } await tick(page, 32); continue; }
+      const s = await game(page); assert(!s.failed, 'treatment survives interference before retrying input');
       await scan(page, false); await mouseAt(page, s.weakpoints.find(p => p.id === id)); const ray = (await game(page)).toolPreview;
-      if (ray.hitType !== 'treatment' || ray.targetId !== id) { if (held) { await page.mouse.up(); held = false; } const alternate = therapyPosition(await game(page), id, true); assert(alternate, 'alternate treatment angle is available'); await moveTo(page, alternate, 6); await tick(page, 16); continue; }
+      if (ray.hitType !== 'treatment' || !(ray.targetId === id || ray.targets.some(t => t.targetId === id))) { if (held) { await page.mouse.up(); held = false; } const alternate = therapyPosition(await game(page), id, true); assert(alternate, 'alternate treatment angle is available'); await moveTo(page, alternate, 6); await tick(page, 16); continue; }
       if (!held) { await page.mouse.down(); held = true; } await tick(page, 32); assert(!(await game(page)).failed, 'treatment survives interference');
       if (onPartial && !observedPartial && (await game(page)).weakpoints.find(p => p.id === id).progress > .2) { observedPartial = true; if (held) { await page.mouse.up(); held = false; } await onPartial(id); }
     }
@@ -155,18 +194,30 @@ async function soften(page, id, onPartial, leaveAlive = false) {
   await tick(page, 220); assert((await game(page)).weakpoints.find(p => p.id === id).complete, 'sustained local therapy completes ' + id);
 }
 async function restoreFlow(page, beforeRelease, duringBurst, duringTherapy) {
-  for (const [index, w] of (await game(page)).weakpoints.entries()) await soften(page, w.id, index === 0 ? duringTherapy : undefined, index === 2);
-  assert((await game(page)).enemies.some(e => e.hp > 0), 'living interferers do not block release');
+  for (const [index, w] of (await game(page)).weakpoints.entries()) await soften(page, w.id, index === 0 ? duringTherapy : undefined);
   await moveTo(page, await node(page, 'release')); if (beforeRelease) await beforeRelease(); await page.keyboard.press('KeyE'); await tick(page, 32); assert.equal((await game(page)).stage, 'burst');
   if (duringBurst) await duringBurst();
   await tick(page, 4100); assert.equal((await game(page)).checkpoint, 'flow');
 }
 async function enterHeart(page) { await interact(page, await portal(page, 'to-heart')); assert.equal((await game(page)).room, 'heart'); await tick(page, 1600); }
 async function connectHeart(page, onRecovery) {
-  await interact(page, await node(page, 'C1')); assert.equal((await game(page)).conduction.length, 0);
-  await discover(page, await node(page, 'heart-signal')); assert((await game(page)).scanned['heart-signal']);
-  for (const id of ['C1', 'C2', 'C3']) await interact(page, await node(page, id)); assert.equal((await game(page)).stage, 'recovery');
-  if (onRecovery) await onRecovery(); await tick(page, Math.max(0, 6100 - (await game(page)).recovery * 1000)); assert((await game(page)).dashUnlocked); assert.equal((await game(page)).heartbeat, 'stable');
+  await clearInterference(page); await interact(page, await node(page, 'C1')); assert.equal((await game(page)).conduction.length, 0); assert(!(await game(page)).heartConnected);
+  await discover(page, (await game(page)).fault); assert((await game(page)).fault.scanned); await collectSupply(page, 'probe');
+  const fault = (await game(page)).fault; await equip(page, 'probe'); await moveTo(page, { x: fault.x, y: fault.y + 90 }); await scan(page, false); await mouseAt(page, fault);
+  await page.mouse.down();
+  try { for (let i = 0; i < 250 && !(await game(page)).fault.complete; i++) await tick(page, 32); }
+  finally { await page.mouse.up(); }
+  assert((await game(page)).fault.complete); assert.equal((await game(page)).stage, 'recovery');
+  const justRepaired = await game(page); assert.equal(justRepaired.conductionSignal.verifiedBeats, 0);
+  assert.equal(justRepaired.conductionSignal.samples.find(p => p.id === 'C3').output, false, 'repair is followed by a real downstream pulse check');
+  if (onRecovery) await onRecovery();
+  for (let i = 0; i < 400 && !(await game(page)).dashUnlocked; i++) {
+    const current = await game(page);
+    if (current.conductionSignal.verifiedBeats === 0) assert.equal(current.conductionSignal.samples.find(p => p.id === 'C3').output, false);
+    else assert(current.conductionSignal.samples.find(p => p.id === 'C3').output);
+    await tick(page, 32);
+  }
+  const s = await game(page); assert(s.dashUnlocked); assert(s.conductionSignal.verifiedBeats >= s.conductionSignal.requiredBeats); assert.equal(s.heartbeat, 'stable');
 }
 async function exitAndSuppress(page) {
   const barrier = (await game(page)).obstacles.find(r => r.kind === 'dashBarrier');
@@ -175,6 +226,7 @@ async function exitAndSuppress(page) {
   await page.keyboard.down('KeyW'); await page.keyboard.press('Space'); await tick(page, 350); await page.keyboard.up('KeyW');
   assert((await game(page)).crossedBarrier); assert(!overlaps((await game(page)).player, barrier));
   const growth = (await game(page)).growth; await discover(page, growth); assert((await game(page)).growth.scanned);
+  await equip(page, 'precision');
   if ((await game(page)).ammo < 8) { await page.keyboard.press('KeyR'); await tick(page, 1720); }
   await mouseAt(page, growth); await page.mouse.down(); await tick(page, 1550); await page.mouse.up(); assert.equal((await game(page)).stage, 'ending');
 }
@@ -211,4 +263,4 @@ async function inspectFit(page) {
   const fit = await page.evaluate(() => { const r = document.querySelector('#app').getBoundingClientRect(); return { x: r.x, y: r.y, right: r.right, bottom: r.bottom, w: innerWidth, h: innerHeight, scroll: document.documentElement.scrollWidth }; });
   assert(fit.x >= -.5 && fit.y >= -.5 && fit.right <= fit.w + .5 && fit.bottom <= fit.h + .5, 'game fits viewport'); assert(fit.scroll <= fit.w, 'no horizontal overflow');
 }
-module.exports = { snapshot, game, tick, ready, click, primary, waitForEntry, setup, start, project, mouseScreen, mouseAt, moveTo, scan, node, portal, interact, discover, diagnose, connectBypasses, approachHunter, fightTutorial, soften, restoreFlow, enterHeart, connectHeart, exitAndSuppress, waitForExterior, recoveryAt, canvasPixels, capture, inspectFit };
+module.exports = { snapshot, game, tick, ready, click, primary, waitForEntry, setup, start, project, mouseScreen, mouseAt, moveTo, scan, equip, node, portal, interact, discover, diagnose, collectSupply, connectBypasses, approachHunter, clearInterference, fightTutorial, soften, restoreFlow, enterHeart, connectHeart, exitAndSuppress, waitForExterior, recoveryAt, canvasPixels, capture, inspectFit };

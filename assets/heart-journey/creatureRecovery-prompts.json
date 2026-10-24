@@ -1,0 +1,92 @@
+{
+  "schema": 1,
+  "mode": "built-in image_gen",
+  "purpose": "Same nonhuman ecological biped patient in arrival and 8-second recovery ending",
+  "identityReference": "assets/heart-journey/clinicArrival.png",
+  "master": {
+    "path": "assets/heart-journey/creatureRecovery-reference.png",
+    "runtimeFallback": "assets/heart-journey/exterior.png",
+    "size": [
+      1859,
+      846
+    ],
+    "source": "C:/Users/SEASUN/.codex/generated_images/01a16161-8df2-7ef3-a6d7-f651168eb9c0/exec-3d5e9493-24de-4a81-a9d6-c614c598ac67.png",
+    "prompt": "Use case: illustration-story. Asset type: wide ending keyframe for the same giant ecological patient shown on the LEFT of the reference image. Input image 1 is an identity and medium reference, not a composition to copy. Create a beautiful finished wide landscape watercolor and colored pencil illustration on warm textured parchment, about 1860 by 846 pixels (2.2:1 aspect). The SAME immense nonhuman bipedal seedpod creature rests reclining diagonally against a mountainside after treatment. Keep its golden closed seedpod sensory crown with one fine luminous vertical slit, branching golden filaments; no face, eyes, nose or mouth. Ivory and pale sage layered petal armor, rooted torso, miniature moss forests, little waterfalls and feathered leaf arm extensions; NO human skin, human hands, fingers or feet. Whole creature must fit completely inside the wide frame, not cropped. Its sensory crown is in the upper-left quadrant around x .26 y .24, broad petal chest around x .50 y .50, near leaf-arm tip resting toward bottom-right around x .77 y .80, two rooted bent legs extending right, clearly an upright biped resting against the slope rather than a lizard. The body lies across the center and foreground; the distant valley is separate and still, with tiny Mediterranean-like parchment villages, bridges, river, cloud bands and trees far smaller than the creature's ankle to convey enormous scale. Warm early evening light, gentle exhausted posture and slow healing calm, sage green, pale ivory, antique gold, muted pink sky. Leave moderate breathing room around the full silhouette and crown. Highly detailed authored storybook painting, restrained organic linework, no anatomy diagram, no machinery, no text or logos, no human anatomy. Golden crown is relaxed and CLOSED for the first frame of a later awakening animation."
+  },
+  "layers": [
+    {
+      "key": "recoveryValley",
+      "path": "assets/heart-journey/recoveryValley.png",
+      "size": [
+        1859,
+        846
+      ],
+      "source": "C:/Users/SEASUN/.codex/generated_images/01a16161-8df2-7ef3-a6d7-f651168eb9c0/exec-f9dc715a-7c01-457a-9f45-f3682e947ed5.png",
+      "prompt": "Use case: precise-object-edit. Asset type: clean stationary valley layer for an animated illustration. Input image is the EDIT TARGET, a 1860x846 wide master. Remove ONLY the enormous reclining seedpod creature, including its seedpod crown, filaments, petal torso, leaf limbs, roots and all miniature trees and waterfalls attached to it. Inpaint the revealed area as a coherent quiet mountainside, valley slopes and cloud banks. Keep every surviving background feature EXACTLY in place: distant mountains, sky, sun, river, foreground village buildings, bridges, trees and image borders. The original full-frame pixel coordinate system and exact aspect ratio must be preserved. Do not zoom, pan, recrop or rearrange the composition. Keep the same watercolor and colored pencil texture on warm parchment and exact lighting. No replacement creature, no people, no anatomy, no text. This image must form the correctly registered background below a transparent cutout extracted from the same master.",
+      "notes": "First call returned 503 authorization_unavailable; one built-in retry succeeded. No CLI used."
+    },
+    {
+      "key": "recoveryGiant",
+      "path": "assets/heart-journey/recoveryGiant.png",
+      "size": [
+        1858,
+        846
+      ],
+      "alpha": true,
+      "source": "C:/Users/SEASUN/.codex/generated_images/01a16161-8df2-7ef3-a6d7-f651168eb9c0/exec-1fe5401a-57c7-4258-933b-e862baa06801.png",
+      "prompt": "Use case: background-extraction. Asset type: registered creature animation layer with TRUE TRANSPARENCY. Input image is the EDIT TARGET and exact wide full-frame master. Extract ONLY the enormous reclining ecological seedpod creature as a genuinely transparent PNG. Preserve the ORIGINAL complete 1859 by 846 pixel framing/aspect ratio, scale, position, full silhouette, ALL exact contours and all internal details. The golden seedpod crown remains at x .26 y .17; torso x .32 y .45; leaf-arm tips lower right; rooted bent legs to right. The entire source creature including all filaments, petal plates, attached forests, moss, waterfalls, roots, arms and legs is retained pixel-perfect in the same position. Make every background area transparent, including sky and spaces between legs or filaments. Remove the distant mountains, valley, villages, river, background hillside and clouds. No crop, no centering, no resize, no new artwork, no new pose, no invented details, no human anatomy, no text. This transparent image will be layered directly over the original background without any realignment. KEEP WIDE CANVAS, no white or checkerboard background."
+    },
+    {
+      "key": "recoveryEyes",
+      "semantic": "opened sensory crown; historical key retained",
+      "path": "assets/heart-journey/recoveryEyes.png",
+      "size": [
+        1855,
+        848
+      ],
+      "source": "C:/Users/SEASUN/.codex/generated_images/01a16161-8df2-7ef3-a6d7-f651168eb9c0/exec-78514207-16ff-4c61-b5c1-86759f7664d4.png",
+      "prompt": "Use case: precise-object-edit. Asset type: final registered awakening crown keyframe. Input image is the exact EDIT TARGET, a 1859x846 wide ending master. Change ONLY the small golden seedpod sensory crown at approximately x .26 y .15 in the upper-left: open its two outer golden petal blades a little wider, reveal a softly luminous golden vertical inner seed core, and relax the branching filaments slightly outward. It is an alien botanical sensory crown, NO eyes, no face, no mouth. Keep the same creature, pose, original crown base and every other pixel of the whole image, including entire body, attached trees, limbs, mountains, sky and villages, absolutely unchanged and registered. Do not move, enlarge or recenter the crown; do not zoom or crop the canvas. Retain EXACT wide full-frame aspect ratio and coordinate system, watercolor and colored pencil paper texture. The output is a full-frame opaque image whose crown region will be crossfaded onto the original at the same coordinates. Only edit the crown and nothing else. No text."
+    }
+  ],
+  "registration": {
+    "frame": "normalized full wide master",
+    "chest": [
+      0.325,
+      0.46
+    ],
+    "crown": [
+      0.267,
+      0.155
+    ],
+    "limbTip": [
+      0.735,
+      0.85
+    ],
+    "notes": "Generated layers differ by 1–4 pixels in dimensions and are scaled to a shared normalized frame. Source-plus-valley compositing and actual renderer screenshots were inspected; crown is revealed with opaque pixels to avoid doubled filaments."
+  },
+  "validation": {
+    "harness": "Temporary isolated Edge page loading src/journey-art.js and the four final ending images; removed after QA",
+    "evidenceDirectory": "tests/screenshots/creature-recovery-exterior-*.png (ignored)",
+    "browser": "local Microsoft Edge headless",
+    "screenshots": [
+      0.8,
+      3,
+      5.5,
+      7.6
+    ],
+    "passed": [
+      "actual canvas output at four recovery times",
+      "same paused instant has identical pixels",
+      "awakening changes actual pixels",
+      "430px narrow reduced-motion render",
+      "each of recoveryValley/recoveryGiant/recoveryEyes absent renders new master fallback",
+      "no browser page errors",
+      "node syntax"
+    ],
+    "notRun": [
+      "full chapter browser regression",
+      "bundled index build"
+    ],
+    "notes": "Controller, 8-second timing and exteriorRecovery snapshot interface unchanged. No human facial details or fingers are present in runtime ending artwork. Historical recovery-reference.png is preserved."
+  }
+}

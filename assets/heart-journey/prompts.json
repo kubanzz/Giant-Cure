@@ -1,6 +1,6 @@
 {
   "tool": "built-in image_gen",
-  "generatedOn": "2026-10-21",
+  "generatedOn": "2026-10-22",
   "transparentBackground": false,
   "assets": {
     "clinic": {
@@ -8,7 +8,8 @@
       "generatedOn": "2026-10-22",
       "tool": "built-in image_gen",
       "prompt": "Use case: illustration-story. Create ONE new production background for the Giant Cure game's FOREST CLINIC arrival scene. The supplied existing giant landscape is a STYLE REFERENCE ONLY, not an edit target. Match its warm parchment watercolor and colored-pencil detail, muted sage green, ochre, soft dusty rose, elegant miniature ecological architecture. Landscape 3:2 composition. A welcoming open-air medical pavilion in an ancient forest valley built for gentle colossal forest giants: sweeping living-tree arches at the left and right edges, small cream-and-sage healing pavilion behind the right edge, delicate hanging botanical lanterns, roots, ferns, misty mountains and tiny distant houses giving enormous scale. Keep the central 75% and bottom foreground a softly lit open pale stone/earth clearing with quiet low contrast so animated giant patient and giant doctor characters can be drawn over it. Background scenery only: absolutely NO PEOPLE, NO GIANTS, NO CHARACTERS, NO silhouettes, NO foreground furniture, NO examination bed, NO medical monitor, NO lettering, NO text, NO UI, NO icons or symbols, NO watermark or borders. View slightly elevated frontal stage perspective rather than overhead. Gentle and hopeful, ecological storybook world with fine paper grain, rich hand-painted forest margins and a spacious usable quiet middle. Single full-bleed background, not a collage.",
-      "reference": "exterior.png as style reference only"
+      "reference": "exterior.png as style reference only",
+      "bundled": false
     },
     "heart": {
       "file": "heart.png",
@@ -27,8 +28,9 @@
     },
     "exterior": {
       "file": "exterior.png",
-      "prompt": "Generate a NEW landscape storybook illustration in the same elegant warm parchment watercolor/colored pencil style and restrained sage, dusty rose, ochre palette as the reference. Reference is a style anchor ONLY. No text, labels, letters, icons, UI, frames. Exterior view of a colossal gentle sleeping giant resting lengthwise in a lush quiet mountain valley, body partly covered in moss, ferns, trees and tiny ancient ecological dwellings, the giant's scale obvious from miniature forests. Not anatomical, no exposed organs, no gore, no mechanical objects. The broad chest should sit near the center of the composition (about 52% image width and 52% image height), gently lit by warm late-afternoon light; the game will add a heartbeat glow there. A small trail of gold-green light naturally suggests life returning, but no drawn heart symbol. View elevated three-quarter wide landscape, contemplative hopeful mood, distant lung-like paired forest canopies among the surrounding hills subtly foreshadow breathing, subtle paper grain, detailed hand-painted foliage, harmonious immense world, wide cinematic horizontal framing.",
-      "reference": "heart.png as style reference only"
+      "prompt": "Use case: illustration-story. Asset type: wide ending keyframe for the same giant ecological patient shown on the LEFT of the reference image. Input image 1 is an identity and medium reference, not a composition to copy. Create a beautiful finished wide landscape watercolor and colored pencil illustration on warm textured parchment, about 1860 by 846 pixels (2.2:1 aspect). The SAME immense nonhuman bipedal seedpod creature rests reclining diagonally against a mountainside after treatment. Keep its golden closed seedpod sensory crown with one fine luminous vertical slit, branching golden filaments; no face, eyes, nose or mouth. Ivory and pale sage layered petal armor, rooted torso, miniature moss forests, little waterfalls and feathered leaf arm extensions; NO human skin, human hands, fingers or feet. Whole creature must fit completely inside the wide frame, not cropped. Its sensory crown is in the upper-left quadrant around x .26 y .24, broad petal chest around x .50 y .50, near leaf-arm tip resting toward bottom-right around x .77 y .80, two rooted bent legs extending right, clearly an upright biped resting against the slope rather than a lizard. The body lies across the center and foreground; the distant valley is separate and still, with tiny Mediterranean-like parchment villages, bridges, river, cloud bands and trees far smaller than the creature's ankle to convey enormous scale. Warm early evening light, gentle exhausted posture and slow healing calm, sage green, pale ivory, antique gold, muted pink sky. Leave moderate breathing room around the full silhouette and crown. Highly detailed authored storybook painting, restrained organic linework, no anatomy diagram, no machinery, no text or logos, no human anatomy. Golden crown is relaxed and CLOSED for the first frame of a later awakening animation.",
+      "reference": "assets/heart-journey/clinicArrival.png",
+      "source": "C:/Users/SEASUN/.codex/generated_images/01a16161-8df2-7ef3-a6d7-f651168eb9c0/exec-3d5e9493-24de-4a81-a9d6-c614c598ac67.png"
     },
     "recoveryReference": {
       "file": "recovery-reference.png",
@@ -39,23 +41,82 @@
     },
     "recoveryValley": {
       "file": "recoveryValley.png",
-      "generatedOn": "2026-10-22",
-      "reference": "recovery-reference.png as edit target",
-      "prompt": "Edit supplied panorama into a CLEAN BACKGROUND PLATE for a layered game animation. Remove the ENTIRE reclining giant: head, face, hair, neck, chest, shoulders, arms, hand and ALL fingers. Reconstruct a coherent unoccupied forested valley and river behind where the giant used to be. Preserve full canvas exactly 1860x846 with identical camera, unchanged sky, mountains, right lake and foreground villages at same locations; no reframing, crop or zoom. Keep warm paper watercolor/colored pencil style. There must be NO giant, NO face, NO body-shaped hills, NO hands or human forms remaining anywhere. Natural low forested valley beneath previous body, consistent daylight and soft scenery. No text, UI. Edit only removal areas."
+      "prompt": "Use case: precise-object-edit. Asset type: clean stationary valley layer for an animated illustration. Input image is the EDIT TARGET, a 1860x846 wide master. Remove ONLY the enormous reclining seedpod creature, including its seedpod crown, filaments, petal torso, leaf limbs, roots and all miniature trees and waterfalls attached to it. Inpaint the revealed area as a coherent quiet mountainside, valley slopes and cloud banks. Keep every surviving background feature EXACTLY in place: distant mountains, sky, sun, river, foreground village buildings, bridges, trees and image borders. The original full-frame pixel coordinate system and exact aspect ratio must be preserved. Do not zoom, pan, recrop or rearrange the composition. Keep the same watercolor and colored pencil texture on warm parchment and exact lighting. No replacement creature, no people, no anatomy, no text. This image must form the correctly registered background below a transparent cutout extracted from the same master.",
+      "reference": "creatureRecovery-reference.png",
+      "source": "C:/Users/SEASUN/.codex/generated_images/01a16161-8df2-7ef3-a6d7-f651168eb9c0/exec-f9dc715a-7c01-457a-9f45-f3682e947ed5.png",
+      "transparentBackground": false
     },
     "recoveryGiant": {
       "file": "recoveryGiant.png",
-      "generatedOn": "2026-10-22",
-      "transparentBackground": true,
-      "reference": "recovery-reference.png as edit target",
-      "prompt": "Extract the reclining GIANT from the supplied image as an EXACT FULL-CANVAS ALIGNED RGBA transparent animation plate. Keep EXACT full canvas 1860x846, same original placement and scale, giant head near x400 y205, chest x870 y360, hand x1370 y630. Do not recenter, resize, zoom, rotate or recompose. Preserve precisely the giant's face CLOSED eyes, hair, neck, shoulders, chest, arm, near hand and ALL fingers in exact original pose and watercolor texture. Keep moss/trees and little villages growing directly on the giant. Remove ALL surrounding sky, mountains, lake, ground, river, foreground scenery and detached foliage to genuine transparent alpha, NOT a checkered drawing or solid background. Keep entire body including skin between shoulder, chest and wrist, coherent connected silhouette with natural feathered watercolor edges. No new elements, no text. Extraction/edit of reference, not new illustration. Entire canvas transparent except original giant in exact original location."
+      "prompt": "Use case: background-extraction. Asset type: registered creature animation layer with TRUE TRANSPARENCY. Input image is the EDIT TARGET and exact wide full-frame master. Extract ONLY the enormous reclining ecological seedpod creature as a genuinely transparent PNG. Preserve the ORIGINAL complete 1859 by 846 pixel framing/aspect ratio, scale, position, full silhouette, ALL exact contours and all internal details. The golden seedpod crown remains at x .26 y .17; torso x .32 y .45; leaf-arm tips lower right; rooted bent legs to right. The entire source creature including all filaments, petal plates, attached forests, moss, waterfalls, roots, arms and legs is retained pixel-perfect in the same position. Make every background area transparent, including sky and spaces between legs or filaments. Remove the distant mountains, valley, villages, river, background hillside and clouds. No crop, no centering, no resize, no new artwork, no new pose, no invented details, no human anatomy, no text. This transparent image will be layered directly over the original background without any realignment. KEEP WIDE CANVAS, no white or checkerboard background.",
+      "reference": "creatureRecovery-reference.png",
+      "source": "C:/Users/SEASUN/.codex/generated_images/01a16161-8df2-7ef3-a6d7-f651168eb9c0/exec-1fe5401a-57c7-4258-933b-e862baa06801.png",
+      "transparentBackground": true
     },
     "recoveryEyes": {
       "file": "recoveryEyes.png",
-      "generatedOn": "2026-10-22",
+      "prompt": "Use case: precise-object-edit. Asset type: final registered awakening crown keyframe. Input image is the exact EDIT TARGET, a 1859x846 wide ending master. Change ONLY the small golden seedpod sensory crown at approximately x .26 y .15 in the upper-left: open its two outer golden petal blades a little wider, reveal a softly luminous golden vertical inner seed core, and relax the branching filaments slightly outward. It is an alien botanical sensory crown, NO eyes, no face, no mouth. Keep the same creature, pose, original crown base and every other pixel of the whole image, including entire body, attached trees, limbs, mountains, sky and villages, absolutely unchanged and registered. Do not move, enlarge or recenter the crown; do not zoom or crop the canvas. Retain EXACT wide full-frame aspect ratio and coordinate system, watercolor and colored pencil paper texture. The output is a full-frame opaque image whose crown region will be crossfaded onto the original at the same coordinates. Only edit the crown and nothing else. No text.",
+      "reference": "creatureRecovery-reference.png",
+      "source": "C:/Users/SEASUN/.codex/generated_images/01a16161-8df2-7ef3-a6d7-f651168eb9c0/exec-78514207-16ff-4c61-b5c1-86759f7664d4.png",
+      "transparentBackground": false
+    },
+    "clinicArrival": {
+      "file": "clinicArrival.png",
+      "reference": "recoveryValley.png — style only",
+      "prompt": "Use case: illustration-story. Create one polished production opening keyframe for the game GIANT CURE. Input image is ONLY a painting, color and landscape style reference; invent totally different creatures.\nA world of imaginative gentle COLOSSAL NONHUMAN life. Patient stands upright on TWO thick asymmetrical root-strut legs, vertical silhouette and two long folded frond-like forelimbs, but NOT human anatomy. Torso is a huge elongated living seedpod with overlapping rounded pale lichen-green shell plates, breathing seams, hanging moss, forests and tiny waterfalls; NO chest muscles or waist or skin. Head is a small tilted hollow seed-crown of curved woody petals and branching coral antennae, a single deep soft amber sensory cleft with no nose, lips, chin, human eyes or face. Strange beautiful evolutionary design, unmistakably alive and compassionate, not a man in a tree costume and not a robot. Patient is slightly stooped in illness with one tapered split frond resting at the upper torso.\nAnother similarly colossal healer creature waits at right on a hillside, turned towards the patient: older pale ivory fan-mushroom crown, mossy layered pod body, long slender vine-frond forelimbs, a light cream lichen mantle and enormous brass-and-vine acoustic listening instrument. It has no human face or fingers either. Both BIPEDAL UPRIGHT creatures; do not use ordinary human silhouettes or quadrupeds.\nWide valley camera but panel canvas approximately 1312x1200. Patient occupies left-center x18%-63%, crown near y9%, two root-feet near y83%. Healer occupies right x72%-96%, crown y24%, feet near y76%. Entire bodies visible, dramatic giant scale: foreground tiny cream village roofs and arch bridge, very tiny trees BELOW their ankles, layered cloud wisps around lower legs, far hills behind. A foot lifting and weight settling naturally in arrival pose. Leaves slightly wilted, subdued worried patient posture. Clear readable upper torso with large calm painted shell planes for later medical scan. Warm morning parchment watercolor and fine colored pencil, sophisticated detailed ecological fantasy, muted sage, warm ivory, ochre, dusty rose clouds, tactile brushwork and soft atmosphere, same illustrative quality throughout. No text, no diagram, no labels, no UI, no icons, no human people in foreground, no anatomical skeleton, no human hands, no human faces. Single full-bleed illustration."
+    },
+    "clinicExam": {
+      "file": "clinicExam.png",
+      "reference": "clinicArrival.png",
+      "transparentBackground": false,
+      "prompt": "Use case: illustration-story. Create the NEXT clinical scene with exactly the SAME TWO fantastical bipedal forest creatures in the reference, identical detailed watercolor/pencil painting style, sage ivory and gold on warm paper. Keep the patient's unique seed-petal crown with single amber sensory cleft, branching gold antennae, huge overlapping pale lichen pod plates, drooping leaf forelimbs, root legs, miniature forests and cascades. No human face, no skin, no muscles, no human fingers. Keep healer's ivory fan crown and vine limbs, cream lichen mantle. Now a medium shot in the same mountain valley: patient at LEFT leaning back against a wooded hillside (not lying down fully), crown at(25%,16%), upper torso large and open from(25%,27%)to(56%,68%). Healer at RIGHT bends forwards from side, carefully presses the SMALL round end of an enormous brass-and-vine listening tube directly against the patient's upper torso at(43%,45%). Healer vine forelimb approaches this point from the right and supports only the small brass cup; the tube loops back to healer's crown, making physical contact readable. NOT a trumpet pointed at the patient, actual small diaphragm firmly touching shell. Patient's own forelimbs relaxed lower and outside this upper torso scan region. Leave a broad calm pale living shell plane around the contact point, no dense trees or instrument obscuring the whole chest. Tiny village roofs and treetops bottom foreground show colossal scale. One unified full-bleed composition approximately1312x1200, warm morning light with mist, detailed painting of equal quality in creatures and scenery. No text, UI, symbols, anatomy diagram, overlays or exposed organs. This is an illustration of a gentle healer listening to an imaginative creature, not two ordinary humans."
+    },
+    "clinicArrivalGround": {
+      "file": "clinicArrivalGround.png",
+      "reference": "clinicArrival.png",
+      "transparentBackground": false,
+      "prompt": "Use case: precise-object-edit. Edit this image into the exact CLEAN BACKGROUND PLATE for animation. Remove BOTH ENTIRE forest creatures and ALL their attached roots, foliage, heads, limbs, waterfalls, acoustic instrument. Reconstruct empty continuous forest valley and mountain sky where they were. Keep entire image canvas1312x1200 and unchanged camera, skyline, foreground tiny villages, bridge and stream in original positions. Do not recrop, zoom or reframe. No creature-shaped hills, no characters, no silhouettes. Same detailed warm paper watercolor painting. No text/UI. Only erase creatures and reconstruct scenery behind them."
+    },
+    "clinicArrivalCast": {
+      "file": "clinicArrivalCast.png",
+      "reference": "clinicArrival.png",
       "transparentBackground": true,
-      "reference": "recoveryGiant.png as edit target; runtime samples feathered eye regions only",
-      "prompt": "Edit ONLY the eyes of this exact transparent GIANT animation plate. Preserve the ENTIRE full canvas 1860x846 and EXACT pixel registration/placement, scale and pose of the face, hair, entire body, hand, attached trees and villages. Do not crop, zoom, recenter or change silhouette. The giant near eyelid centered approximately(455,155) should gently half-open: a narrow relaxed eye with warm dark brown iris, small restrained white sclera, relieved soft gaze up to the sky. The far eyelid near(524,126) may open slightly too. Keep tilted face expression tranquil and compassionate, NOT wide awake surprised. All the rest of the giant remains absolutely unchanged. Preserve genuine transparent background. Return full aligned giant plate, NOT isolated eyes; our code will sample only the eye area. No other changes, no text, no UI. Ensure recognizable small half-open eyelid rather than a bright glowing white eye."
+      "prompt": "Use case: background-extraction. Extract BOTH complete upright forest creatures and the healer's brass instrument from this exact reference as one full-canvas aligned TRANSPARENT RGBA layer. Full canvas MUST remain1312x1200; preserve exact original placement, size, posture and all texture. Patient crown centered around(55%,10%), root feet around(27%,76%)and(51%,81%); healer crown(86%,24%), feet around(91%,66%). Do not recenter, scale, zoom, rearrange or crop subjects. Include all original foliage and waterfalls growing ON their bodies and their dangling vine/leaf arms. Remove all detached landscape, sky, mountains, foreground villages, ground, river and clouds to actual transparent alpha. Maintain original empty margins. No new elements or artistic redesign. This is exact registration extraction, not a new composition. No text."
+    },
+    "clinicExamGround": {
+      "file": "clinicExamGround.png",
+      "reference": "clinicExam.png",
+      "transparentBackground": false,
+      "prompt": "Use case: precise-object-edit. From this exact painting remove BOTH complete giant creatures and their attached foliage, roots, arms, heads, instrument, vines. Restore empty background mountain valley, forested hills and mist behind them. Preserve EXACT full1312x1200 canvas, camera, foreground village roofs, bridge, river and distant mountain positions. No crop, zoom, recenter or reframe. Background only, no creatures, no humanoid hills, no brass instrument. Match existing warm watercolor pencil style. No text/UI."
+    },
+    "clinicExamCast": {
+      "file": "clinicExamCast.png",
+      "reference": "clinicExam.png",
+      "transparentBackground": true,
+      "prompt": "Use case: background-extraction. Produce an animation cutout by extracting BOTH complete ecological creatures from this exact image. Preserve full1312x1200 transparent canvas, exact original scale/placement/pose: patient crown centered(32%,12%), patient's large upper torso around(33%,38%), healer crown(64%,17%), patient feet near(30%,88%)and(65%,90%), healer feet(88%,78%). Absolutely do NOT enlarge, recenter or crop. All empty original margin retained. Remove ALL detached sky/ground/mountains/mist/foreground villages to genuine alpha. Also REMOVE the ENTIRE extended horizontal vine forelimb and round listening cup between patient chest(40%,36%)and healer elbow(76%,42%), including the looped listening tube from that extended arm up around healer head. Fill underneath missing brass cup with the patient's same pale overlapping living shell, preserving upper torso shape. Keep patient's own low frond arms and all body-attached forests. Keep both creatures' identities and exact painting texture. No text/UI, no redesigned faces."
+    },
+    "clinicExamArm": {
+      "file": "clinicExamArm.png",
+      "reference": "clinicExam.png",
+      "transparentBackground": true,
+      "prompt": "Use case: background-extraction. Extract ONLY the healer's extended horizontal VINE FORELIMB, its small brass listening cup and looping listening tube from this exact painting as a transparent full-canvas1312x1200 plate. Keep EXACT original coordinates: brass contact diaphragm centered about(40%,36.5%), vine forelimb extends from it toward(76%,42%), listening tube loops from(76%,42%) up around(82%,12%) to the healer's head. Entire rest of canvas genuine transparent, NO bodies, NO heads, NO patient shell, NO ground, NO scenery, NO text. Do not zoom/recenter/crop to fit the object; retain every original empty margin. Preserve original painted object colors/detail/size. This is a thin curved vine forelimb and medical acoustic instrument together, not a new illustration.",
+      "finalEdit": {
+        "tool": "built-in image_gen",
+        "prompt": "Use case: precise-object-edit. Edit this transparent1312x1200 animation layer. Remove ONLY the entire large ivory fan-shaped HEAD/CROWN at upper center around(60%,18%) including its golden flower stamens and hanging roots directly below that fan. Leave actual empty alpha where the fan head was. Preserve the existing long U-shaped brown and gold vine tubing, its leaves, the medical forelimb and small round brass listening diaphragm at left around(36%,43%). The tube at the top right must remain, but NO face, NO fan head or crown remains anywhere. Keep EXACT full canvas and EXACT pixel positions, size, colors, curves and texture of the remaining vine forelimb/instrument. Absolutely no recenter, crop, zoom, redesign, added elements or new heads. Transparent background preserved. Result is ONLY an arm and listening tube/cup, NOT a character.",
+        "registration": {
+          "scale": 0.84,
+          "x": 0.093,
+          "y": 0.037,
+          "heart": [
+            0.395,
+            0.398
+          ],
+          "masterHeart": [
+            0.399,
+            0.363
+          ]
+        }
+      }
     }
   }
 }

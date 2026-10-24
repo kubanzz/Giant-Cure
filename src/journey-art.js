@@ -4,25 +4,6 @@
   const PAPER = '#f5f0df', INK = '#2f675a', GOLD = '#c6a15b', TAU = Math.PI * 2;
   const FONT = '"PingFang SC","Microsoft YaHei",sans-serif';
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  // All recovery layers share this normalized illustration frame. Local mesh
-  // anchors deliberately exclude the distant valley, so only the giant moves.
-  const RECOVERY_ART = {
-    chest: { x: .51, y: .44, rx: .20, ry: .23 },
-    shoulder: { x: .24, y: .53, rx: .18, ry: .18 },
-    hand: { x: .82, y: .76, rx: .19, ry: .23 },
-    fingers: [
-      { x: .735, y: .860, rx: .040, ry: .115, spread: -1 },
-      { x: .795, y: .910, rx: .032, ry: .105, spread: -.4 },
-      { x: .855, y: .910, rx: .030, ry: .105, spread: .3 },
-      { x: .902, y: .860, rx: .029, ry: .110, spread: .9 }
-    ],
-    trees: [ { x:.245,y:.364,rx:.07,ry:.055 }, { x:.47,y:.50,rx:.08,ry:.055 }, { x:.675,y:.65,rx:.08,ry:.06 } ],
-    windows: [ [.148,.117], [.095,.274], [.173,.426], [.222,.435], [.484,.301], [.536,.30], [.650,.822], [.633,.835] ],
-    eyes: [ {x:452/1860,y:155/846,rx:65/1860,ry:38/846}, {x:530/1860,y:125/846,rx:32/1860,ry:20/846} ],
-    birdOrigin: { x: .47, y: .44 }
-  };
-  const recoveryMeshes = new WeakMap();
-  const recoveryEyePatches = new WeakMap();
   function smooth(a, b, value) { const t = clamp((value - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
   function shape(c, draw, fill, stroke, width) {
     c.beginPath(); draw(c);
@@ -58,7 +39,7 @@
     labels.push({ value, x, y, dx: dx || 0, dy: dy || 0, color: color || INK, size: size || 14 });
   }
   function drawWorldLabels(c, labels, view) {
-    const p = view.viewport, cam = view.camera;
+    const p = view.viewport, cam = view.camera, occupied = [];
     labels.forEach(item => {
       const ax = p.x + p.w / 2 + (item.x - cam.x) * cam.zoom;
       const ay = p.y + p.h / 2 + (item.y - cam.y) * cam.zoom;
@@ -66,8 +47,32 @@
       c.font = '600 ' + item.size + 'px ' + FONT;
       const half = Math.max(19, c.measureText(item.value).width / 2 + 11), hh = (item.size + 14) / 2;
       const x = clamp(ax + item.dx, p.x + half + 8, p.x + p.w - half - 8);
-      const y = clamp(ay + item.dy, p.y + hh + 8, p.y + p.h - hh - 8);
+      const desiredY = clamp(ay + item.dy, p.y + hh + 8, p.y + p.h - hh - 8);
+      let y = desiredY;
+      for(const offset of [0,-32,32,-64,64,-96,96]) {
+        const candidate = clamp(desiredY + offset, p.y + hh + 8, p.y + p.h - hh - 8);
+        if(!occupied.some(rect=>Math.abs(x-rect.x)<half+rect.half+4&&Math.abs(candidate-rect.y)<hh+rect.hh+4)){y=candidate;break;}
+      }
+      occupied.push({x,y,half,hh});
+      if(Math.abs(y-desiredY)>1) {
+        c.save();c.setLineDash([2,4]);line(c,[{x:ax,y:ay},{x,y:y+(ay>y?hh:-hh)}],'rgba(101,133,102,.43)',1);c.restore();
+      }
       badge(c, item.value, x, y, item.color, item.size);
+    });
+  }
+  function progressRing(c, x, y, radius, progress, color) {
+    oval(c,x,y,radius,radius,null,0,'rgba(246,240,215,.86)',4);
+    oval(c,x,y,radius,radius,null,0,'rgba(105,139,112,.27)',2);
+    if(progress>0)shape(c,p=>p.arc(x,y,radius,-Math.PI/2,-Math.PI/2+TAU*clamp(progress,0,1)),null,color||'#4b927a',4);
+  }
+  function scans(c,s,hideLabels,labels) {
+    if(!s.scanner)return;
+    (s.scanTargets||[]).forEach(target=>{
+      if(target.complete||(!target.inRange&&!target.progress))return;
+      const progress=clamp(Number(target.progress)||0,0,1);
+      const color=target.inRange?'#398b74':'#9b9476';
+      progressRing(c,target.x,target.y,39,progress,color);
+      if(!hideLabels)worldBadge(labels,target.inRange?'扫描 '+Math.round(progress*100)+'%':'扫描暂存 · 靠近继续',target.x,target.y,0,-58,color,12);
     });
   }
   function line(c, points, color, width) {
@@ -279,6 +284,16 @@
     }
   }
   function node(c, n, s, hideLabels, labels) {
+    if(n.kind==='sample') {
+      const signal=s.conductionSignal,sample=signal&&(signal.samples||[]).find(item=>item.id===n.id);
+      const healthy=!!(sample&&sample.healthy),live=!!(sample&&sample.output),color=live?'#b28d42':healthy?'#6c9c83':'#917b87';
+      oval(c,n.x,n.y+12,25,9,'rgba(63,92,76,.17)');
+      round(c,n.x-16,n.y-19,32,36,8);c.fillStyle='#f3ecd2';c.fill();c.strokeStyle=color;c.lineWidth=2;c.stroke();
+      line(c,[{x:n.x-11,y:n.y},{x:n.x-5,y:n.y},{x:n.x-2,y:n.y-7},{x:n.x+2,y:n.y+8},{x:n.x+6,y:n.y},{x:n.x+12,y:n.y}],color,2);
+      if(live)glow(c,n.x,n.y,36,'rgba(237,206,122,.26)');
+      if(!hideLabels&&s.scanner)worldBadge(labels,(n.label||'被动采样点')+(sample?' · 输入'+(sample.input?'有':'无')+' / 输出'+(sample.output?'有':'无'):''),n.x,n.y,0,38,color,12);
+      return;
+    }
     const near = s.nearestId === n.id, show = s.scanner || near || n.selected || n.complete;
     const color = n.complete ? '#a68542' : n.selected ? '#b68b44' : '#4f8a75';
     if (show) glow(c, n.x, n.y, near ? 58 : 40, n.complete ? 'rgba(245,205,112,.35)' : 'rgba(199,232,187,.43)');
@@ -288,7 +303,7 @@
     if (n.complete) line(c, [{ x:n.x-6,y:n.y },{ x:n.x-1,y:n.y+5 },{ x:n.x+7,y:n.y-6 }], color, 2.5);
     else if (show && !hideLabels) label(c, (String(n.label).match(/[ABC]\s*$/) || [''])[0].trim() || (n.kind === 'release' ? '◎' : '≈'), n.x, n.y, 16, color, 700);
     if (!hideLabels && show) worldBadge(labels, n.label, n.x, n.y, 0, 38, color);
-    if (!hideLabels && s.scanner && n.scanned && n.symptom) worldBadge(labels, n.symptom, n.x, n.y, 0, 69, '#657b58', 13);
+    if (!hideLabels && s.scanner && n.scanned && n.symptom && !(n.id==='heart-signal'&&s.conductionSignal)) worldBadge(labels, n.symptom, n.x, n.y, 0, 69, '#657b58', 13);
     if (!hideLabels && near) worldBadge(labels, 'E', n.x, n.y, 35, -27, INK, 13);
     if (s.scanner && !n.complete) { c.save(); c.setLineDash([3, 7]); oval(c, n.x, n.y, 33, 33, null, 0, '#659c83', 1.3); c.restore(); }
   }
@@ -314,7 +329,10 @@
     c.restore();
   }
   function links(c, s) {
-    (s.links || []).forEach(l => {
+    // V2 flow follows the actual vessel paths, and conduction has its own
+    // sampled signal layer. Legacy straight connection strokes would imply a
+    // shortcut through tissue or a live bridge across the diagnosed break.
+    (s.links || []).filter(l=>!(l.kind==='bypass'&&s.branches)&&!(l.kind==='conduction'&&s.conductionSignal)).forEach(l => {
       const a=l.from,b=l.to;if(!a||!b)return;
       c.save(); c.shadowColor='#f2ce76'; c.shadowBlur=14;
       shape(c,p=>{p.moveTo(a.x,a.y);p.quadraticCurveTo((a.x+b.x)/2+25,(a.y+b.y)/2-28,b.x,b.y);},null,l.complete?'#d6ae55':'#8eb694',5);
@@ -328,9 +346,102 @@
       glow(c, source.x, source.y, 47, 'rgba(239,208,125,.26)');
     }
   }
+  function branchLesions(c,s,hideLabels,labels) {
+    if(s.room!=='main')return;
+    (s.branches||[]).forEach(branch=>{
+      const r=branch.radius||28,progress=clamp(Number(branch.progress)||0,0,1),done=!!branch.complete;
+      c.save();c.translate(branch.x,branch.y);
+      oval(c,0,11,r*1.12,r*.48,'rgba(71,85,62,.19)');
+      if(done){
+        glow(c,0,0,r*1.8,'rgba(215,223,154,.27)');
+        oval(c,0,0,r*.70,r*.70,'rgba(229,223,174,.72)',0,'#7b9b76',2);
+        line(c,[{x:-11,y:0},{x:-3,y:8},{x:12,y:-9}],'#5d8c71',3);
+      }else{
+        const mass=r*(1-progress*.48);
+        for(let i=0;i<6;i++){const a=i*TAU/6;oval(c,Math.cos(a)*mass*.44,Math.sin(a)*mass*.42,mass*.63,mass*.57,i%2?'#aa997a':'#b7a17d',a,'#827d61',1.4);}
+        for(let i=0;i<5;i++){
+          const y=(i-2)*7;
+          shape(c,p=>{p.moveTo(-mass*.8,y);p.bezierCurveTo(-mass*.3,y-10-progress*8,mass*.2,y+10+progress*8,mass*.8,y-2);},null,'rgba(244,221,170,'+(.78-progress*.42)+')',2.2);
+        }
+        if(progress>0)progressRing(c,0,0,r+8,progress,'#b39246');
+      }
+      c.restore();
+      if(!hideLabels&&(s.scanner||s.nearestId===branch.id||Math.hypot(s.player.x-branch.x,s.player.y-branch.y)<150))worldBadge(labels,done?'侧支已疏通':branch.scanned?'局部堵塞 · 精准治疗':branch.label||'侧支局部堵塞',branch.x,branch.y,0,57,done?'#5c886b':'#876d46',12);
+    });
+  }
+  function supplyCrate(c,x,y,color,open,scale) {
+    c.save();c.translate(x,y);c.scale(scale||1,scale||1);
+    oval(c,0,15,25,9,'rgba(64,87,65,.17)');
+    round(c,-20,-16,40,32,6);c.fillStyle=open?'#e6ddbb':'#e6e5c8';c.fill();c.strokeStyle=color;c.lineWidth=2;c.stroke();
+    round(c,-23,open?-25:-19,46,9,3);c.fillStyle=open?'#c4caae':'#b7ccb0';c.fill();c.stroke();
+    line(c,[{x:-12,y:-8},{x:-12,y:11}],color,2);line(c,[{x:12,y:-8},{x:12,y:11}],color,2);
+    medicalCross(c,0,-1,13,color);c.restore();
+  }
+  function supplies(c,s,hideLabels,labels) {
+    const chest=s.chest;
+    if(chest&&chest.room===s.room) {
+      supplyCrate(c,chest.x,chest.y,chest.claimed?'#8a997b':'#8b7b47',!!chest.claimed,1.04);
+      if(!hideLabels&&!chest.claimed&&(s.scanner||Math.hypot(s.player.x-chest.x,s.player.y-chest.y)<180))worldBadge(labels,'E · 可选医疗补给',chest.x,chest.y,0,47,'#867442',12);
+    }
+    (s.supplies||[]).filter(item=>item.room===s.room&&['transit','ready'].includes(item.state)).forEach(item=>{
+      const ready=item.state==='ready',color=item.tool==='probe'?'#aa8b48':'#4f917c';
+      if(!ready&&item.route&&item.route.length>1){c.save();c.setLineDash([5,10]);line(c,item.route,'rgba(93,143,116,.34)',2);c.restore();}
+      glow(c,item.x,item.y,ready?62:39,ready?'rgba(231,210,144,.32)':'rgba(167,212,176,.26)');
+      supplyCrate(c,item.x,item.y,color,false,.86);
+      if(!ready){
+        leaf(c,item.x-25,item.y+5,18,-.9,'#9db58b');leaf(c,item.x+25,item.y+5,18,.9,'#9db58b');
+        progressRing(c,item.x,item.y,31,clamp(Number(item.progress)||0,0,1),color);
+      }
+      if(!hideLabels)worldBadge(labels,ready?'E · 领取'+(item.label||'医疗工具'):'血流运输 · '+(item.label||'医疗补给'),item.x,item.y,0,s.room==='heart'?-49:49,color,12);
+    });
+  }
+  function conduction(c,s,hideLabels,labels,reduced) {
+    if(s.room!=='heart'||!s.conductionSignal)return;
+    const signal=s.conductionSignal,points=signal.points||[],fault=s.fault;
+    if(points.length>1){
+      line(c,points,'rgba(89,111,91,.18)',13);
+      const stop=signal.faultPosition||fault;
+      if(!signal.repaired&&stop&&points.length>=3){
+        const upstream=[...points.slice(0,2),stop],downstream=[stop,...points.slice(2)];
+        line(c,upstream,'#9da48a',6);
+        c.save();c.setLineDash([5,9]);line(c,downstream,'#9a8895',4);c.restore();
+        c.save();c.setLineDash([4,13]);line(c,upstream,'rgba(246,235,178,.70)',1.7);c.restore();
+      }else{
+        line(c,points,signal.repaired?'#bdad68':'#9da48a',6);
+        c.save();c.setLineDash([4,13]);line(c,points,'rgba(246,235,178,.70)',1.7);c.restore();
+      }
+    }
+    (signal.pulses||[]).forEach(pulse=>{
+      if(!Number.isFinite(pulse.x)||!Number.isFinite(pulse.y))return;
+      glow(c,pulse.x,pulse.y,reduced?24:32,'rgba(244,210,115,.41)');
+      oval(c,pulse.x,pulse.y,7,7,'#f5d58b',0,'#fff0bc',1.5);
+    });
+    if(fault){
+      const progress=clamp(Number(fault.progress)||0,0,1),done=!!fault.complete;
+      c.save();c.translate(fault.x,fault.y);
+      if(!done){
+        oval(c,0,0,38,27,'rgba(235,229,207,.95)',-.5);
+        line(c,[{x:-25,y:17},{x:-7,y:4},{x:-13,y:-6},{x:0,y:-1},{x:8,y:-17},{x:28,y:-19}],'#8c6b7d',5);
+        [-1,1].forEach(side=>{oval(c,side*23,-side*16,8,8,'#c9c5a4',0,'#92788a',2);});
+        if(progress>0)progressRing(c,0,0,38,progress,'#b89a49');
+      }else{
+        glow(c,0,0,40,'rgba(226,206,130,.28)');
+        line(c,[{x:-25,y:17},{x:25,y:-18}],'#e1cc7b',6);
+        line(c,[{x:-25,y:17},{x:25,y:-18}],'#fff1bb',2);
+        [-1,1].forEach(side=>oval(c,side*21,-side*15,7,7,'#d7cc8c',0,'#7c9874',1.7));
+      }
+      c.restore();
+      if(!hideLabels&&(s.scanner||fault.scanned||done))worldBadge(labels,done?'传导桥已修复':fault.scanned?'输入有 / 输出无 · 探针修复':'传导出现中断',fault.x,fault.y,0,53,done?'#7b8749':'#946c80',12);
+    }
+    if(!hideLabels&&signal.repaired&&['conduction','recovery'].includes(s.stage)) {
+      const end=points[points.length-1];
+      if(end)worldBadge(labels,'脉冲复测 '+Math.min(signal.requiredBeats||3,signal.verifiedBeats||0)+' / '+(signal.requiredBeats||3),end.x,end.y,0,49,'#8e783e',13);
+    }
+  }
   function clot(c, s, hideLabels, labels) {
     const a=s.clot;if(s.room!=='main'||!a||a.removed)return;
-    const r=a.radius||125,weakpoints=s.weakpoints||[],soft=weakpoints.reduce((v,p)=>v+p.progress,0)/Math.max(1,weakpoints.length);
+    const r=a.radius||125,weakpoints=s.weakpoints||[],fibers=weakpoints.filter(p=>p.kind==='fiber'),core=weakpoints.find(p=>p.kind==='core');
+    const outerLayers=fibers.length?fibers:weakpoints,soft=outerLayers.reduce((v,p)=>v+(p.progress||0),0)/Math.max(1,outerLayers.length);
     const burst=s.stage==='burst'?clamp(s.burst/4,0,1):0;
     c.save();c.translate(a.x,a.y);
     if(burst>.45)c.globalAlpha=1-clamp((burst-.45)/.55,0,1);
@@ -350,13 +461,13 @@
     }
     if(parts===1) {
       for(let i=0;i<32;i++) {
-        const angle=i*TAU/32,wp=weakpoints[i%Math.max(1,weakpoints.length)],loose=wp?wp.progress:0;
+        const angle=i*TAU/32,wp=outerLayers[i%Math.max(1,outerLayers.length)],loose=wp?wp.progress:0;
         const inner=r*(.14+Math.sin(i*2.8)*.06),outer=r*(.83+Math.sin(i*3.9)*.035);
         const sx=Math.cos(angle)*inner,sy=Math.sin(angle)*inner*.8,ex=Math.cos(angle)*outer,ey=Math.sin(angle)*outer*.8;
         const slack=Math.sin(i*1.8)*9+loose*20,alpha=.13+(1-loose)*.17;
         shape(c,p=>{p.moveTo(sx,sy);p.bezierCurveTo(sx-slack,sy+20+loose*9,ex+slack,ey-18-loose*5,ex,ey);},null,'rgba(224,208,166,'+alpha+')',1.1+loose*.5);
       }
-      weakpoints.forEach((wp,i)=>{
+      outerLayers.forEach((wp,i)=>{
         const progress=clamp(wp.progress,0,1);if(progress<=0)return;
         const px=wp.x-a.x,py=wp.y-a.y;
         for(let k=0;k<5;k++) {
@@ -368,15 +479,43 @@
     }
     const crack=2+soft*6;
     shape(c,p=>{p.moveTo(-35,-r*.75);p.lineTo(-15,-20);p.lineTo(12,0);p.lineTo(-16,27);p.lineTo(-5,r*.7);p.moveTo(12,0);p.lineTo(r*.65,-25);},null,soft>.3?'#ead4a0':'#626e5a',crack);
+    if(core&&core.exposed){
+      glow(c,core.x-a.x,core.y-a.y,46,'rgba(244,205,116,.45)');
+      shape(c,p=>{p.moveTo(-35,-r*.72);p.lineTo(-23,-18);p.lineTo(6,1);p.lineTo(-27,30);p.lineTo(-16,r*.71);},null,'rgba(249,230,175,.66)',2);
+    }
     c.restore();
     if(!burst)(s.weakpoints||[]).forEach((p,i)=>{
+      if(p.kind==='core') {
+        const exposed=!!p.exposed,done=!!p.complete,color=done?'#7b935f':exposed?'#a86e4d':'#868569';
+        if(exposed)glow(c,p.x,p.y,40,done?'rgba(218,222,151,.53)':'rgba(245,189,113,.45)');
+        oval(c,p.x,p.y,exposed?22:19,exposed?19:16,done?'#cfce96':exposed?'#cb9b73':'#9b9b7c',0,color,2);
+        if(exposed){
+          shape(c,q=>{q.moveTo(p.x,p.y-12);q.lineTo(p.x+11,p.y);q.lineTo(p.x,p.y+12);q.lineTo(p.x-11,p.y);q.closePath();},done?'#e5dda5':'#f1d8a2',color,1.4);
+          if(p.progress>0&&!done)progressRing(c,p.x,p.y,27,p.progress,'#cba04f');
+        }else{
+          for(let k=0;k<3;k++)line(c,[{x:p.x-22,y:p.y-10+k*10},{x:p.x+22,y:p.y+5+k*6}],'#c4b487',4);
+        }
+        if(!hideLabels&&(s.scanner||exposed))worldBadge(labels,done?'核心已软化':exposed?'暴露核心 · 精准治疗':'核心仍被纤维保护',p.x,p.y,0,44,color,12);
+        return;
+      }
+      if(p.kind==='fiber') {
+        const progress=clamp(Number(p.progress)||0,0,1),color=p.complete?'#9c935d':'#99734e';
+        for(let k=0;k<5;k++) {
+          const spread=(k-2)*6,offset=progress*12*(k%2?1:-1);
+          shape(c,q=>{q.moveTo(p.x-22+offset,p.y+spread);q.bezierCurveTo(p.x-6,p.y+spread-20,p.x+10,p.y+spread+20,p.x+22-offset,p.y+spread);},null,p.complete?'rgba(205,195,144,.31)':'#d8bd83',3.4-progress*1.7);
+        }
+        if(p.complete)line(c,[{x:p.x-8,y:p.y},{x:p.x-1,y:p.y+6},{x:p.x+10,y:p.y-9}],'#7e905e',3);
+        else if(progress>0)progressRing(c,p.x,p.y,28,progress,'#d0a357');
+        if(!hideLabels&&(s.scanner||p.scanned||progress>0)&&!(s.precision&&s.toolPreview&&s.toolPreview.targetId===p.id))worldBadge(labels,p.complete?'纤维已裂解':(p.label||'纤维外层')+' · 喷雾裂解',p.x,p.y,0,-44,color,12);
+        return;
+      }
       if(!p.scanned&&!p.complete)return;
       glow(c,p.x,p.y,30,p.complete?'rgba(247,218,124,.65)':'rgba(237,155,113,.45)');
       oval(c,p.x,p.y,12,12,p.complete?'#e7ce8b':'#db9a77',0,p.complete?'#a18540':'#8f5a47',2);
       if(!hideLabels)label(c,p.complete?'✓':String(i+1),p.x,p.y,13,p.complete?'#796734':'#733f34',700);
       if(p.progress>0&&!p.complete)shape(c,a=>a.arc(p.x,p.y,18,-Math.PI/2,-Math.PI/2+TAU*p.progress),null,'#ffe4a0',4);
     });
-    if(!hideLabels&&s.scanner)worldBadge(labels,'纤维性血栓 · '+Math.round(soft*100)+'% 已软化',a.x,a.y,0,r*.65+30,'#735f43');
+    if(!hideLabels&&s.scanner)worldBadge(labels,fibers.length?'血栓外层 · '+fibers.filter(p=>p.complete).length+'/2 已裂解':'纤维性血栓 · '+Math.round(soft*100)+'% 已软化',a.x,a.y,0,-r-39,'#735f43');
   }
   function hunter(c,e,s,hideLabels,labels) {
     if(e.hp<=0)return;
@@ -399,7 +538,7 @@
     oval(c,e.x,e.y,25*squeeze,25/squeeze,e.hitFlash?'#e7c29e':'#b2a0b1',0,'#817188',2);
     for(let i=0;i<7;i++){const a=i*TAU/7;oval(c,e.x+Math.cos(a)*23,e.y+Math.sin(a)*23,4,7,'#9f8ca2',a);}
     oval(c,e.x+5,e.y-3,8,10,'#806b8c');
-    if(s.scanner&&e.weakpoint){const w=e.weakpoint;glow(c,w.x,w.y,20,'rgba(255,209,113,.6)');oval(c,w.x,w.y,w.radius||11,w.radius||11,'#f0cb7e',0,'#fff0b5',1.8);}
+    if(s.scanner&&e.weakpoint&&e.weakpoint.exposed!==false){const w=e.weakpoint;glow(c,w.x,w.y,20,'rgba(255,209,113,.6)');oval(c,w.x,w.y,w.radius||11,w.radius||11,'#f0cb7e',0,'#fff0b5',1.8);}
     if(!hideLabels&&!purify&&e.state==='telegraph')worldBadge(labels,'扑击预警',e.x,e.y,0,-38,'#a16450');
     c.restore();
   }
@@ -434,12 +573,17 @@
     const stride=reduced?0:Math.sin((p.walkDistance||0)*.115)*(moving?1:0);
     const breath=reduced?0:Math.sin(time*2.8)*.50;
     const firing=!!s.shot&&s.shot.age<.16,shotKick=firing&&!reduced?(1-clamp(s.shot.age/.16,0,1))*2.6:0;
-    const reloading=s.reloadRemaining>0,reloadProgress=reloading?clamp(s.reloadProgress===undefined?1-s.reloadRemaining/1.7:s.reloadProgress,0,1):0;
+    const reloading=s.reloadRemaining>0,reloadProgress=reloading?clamp(s.reloadProgress===undefined?1-s.reloadRemaining/(s.reloadDuration||1.7):s.reloadProgress,0,1):0;
     const stage=reloading?(s.reloadStage||(reloadProgress<.45/1.7?'eject':reloadProgress<1.25/1.7?'insert':'lock')):'idle';
-    const ammo=s.ammo===undefined?24:s.ammo,toolLight=reloading?stage==='lock'?'#f4d582':'#dfae78':ammo===0?'#c16e59':ammo<=6?'#d4a04d':'#a9dcc2';
+    const tool=s.tool||'precision',toolColor=tool==='sprayer'?'#68a888':tool==='probe'?'#bd9c57':'#739ea0';
+    const ammo=s.ammo===undefined?24:s.ammo,toolLight=reloading?stage==='lock'?'#f4d582':'#dfae78':ammo===0?'#c16e59':ammo<=6?'#d4a04d':toolColor;
     const motionAngle=moving?Math.atan2(velocity.y,velocity.x)+Math.PI/2:rotation;
     c.save();
     if(s.scanner){const r=90+s.beat.phase*50;oval(c,p.x,p.y,r,r,null,0,'rgba(66,137,111,'+(.28-s.beat.phase*.16)+')',1.5);}
+    if(s.shield>0) {
+      oval(c,p.x,p.y,31,34,null,0,'rgba(177,165,94,.64)',2.3);
+      if(!hideLabels)worldBadge(labels,'护膜 '+Math.round(s.shield),p.x,p.y,0,55,'#97834b',11);
+    }
     if(p.dashing&&!reduced)for(let i=1;i<=5;i++)oval(c,p.x-Math.cos(a)*i*12,p.y-Math.sin(a)*i*12,16-i*2,11-i,'rgba(240,201,112,'+(.35-i*.05)+')',a);
     glow(c,p.x,p.y,43,'rgba(255,242,183,.48)');oval(c,p.x,p.y+16,25,11,'rgba(48,80,64,.24)');
     c.translate(p.x,p.y);if(p.invulnerable)c.globalAlpha=reduced?.78:Math.floor(time*12)%2?.58:1;
@@ -476,8 +620,17 @@
     medicLimb(c,[{x:12,y:0},{x:16,y:-9},{x:right.x,y:right.y}],'#e8e4c7',6);
     c.save();c.translate(0,shotKick);
     round(c,-5,-30,10,18,3);c.fillStyle='#d9e4ce';c.fill();c.strokeStyle='#3d7462';c.lineWidth=1.7;c.stroke();
-    round(c,-3.3,-35,6.6,8,2);c.fillStyle='#558b76';c.fill();
-    line(c,[{x:-2,y:-33},{x:2,y:-33}],'#e4e8c5',1.7);
+    if(tool==='sprayer') {
+      shape(c,q=>{q.moveTo(-4,-29);q.lineTo(-10,-37);q.lineTo(10,-37);q.lineTo(4,-29);q.closePath();},'#739e7e','#3f765f',1.6);
+      [-1,0,1].forEach(k=>oval(c,k*5.6,-36,1.4,1.4,'#e4e9bd'));
+    }else if(tool==='probe') {
+      line(c,[{x:-3,y:-29},{x:-6,y:-41},{x:-2,y:-45}],'#c8b374',2.8);
+      line(c,[{x:3,y:-29},{x:6,y:-41},{x:2,y:-45}],'#c8b374',2.8);
+      oval(c,0,-37,2.5,3.5,'#f4dd92');
+    }else{
+      round(c,-3.3,-35,6.6,8,2);c.fillStyle='#558b76';c.fill();
+      line(c,[{x:-2,y:-33},{x:2,y:-33}],'#e4e8c5',1.7);
+    }
     round(c,-2.5,-27,5,9,1.5);c.fillStyle=toolLight;c.fill();
     if(!reloading||stage==='lock'){round(c,-7,-18,6,7,1.5);c.fillStyle=ammo===0?'#b4b69e':'#d9b96e';c.fill();}
     if(stage==='lock')glow(c,0,-24,15,'rgba(246,211,123,.45)');
@@ -509,8 +662,16 @@
       if(!hideLabels)worldBadge(labels,ammo===0?'药匣已空 · R 装填':'药剂余量 '+ammo+' · R 装填',p.x,p.y,0,-56,ammo===0?'#a26950':'#9a7b42',12);
     }
     const aim=s.aim;
-    oval(c,aim.x,aim.y,s.precision?8:12,s.precision?8:12,null,0,s.precision?'#a57e38':'#3d7b67',1.6);
-    [-1,1].forEach(k=>{line(c,[{x:aim.x+k*17,y:aim.y},{x:aim.x+k*8,y:aim.y}],'#457b66',1.4);line(c,[{x:aim.x,y:aim.y+k*17},{x:aim.x,y:aim.y+k*8}],'#457b66',1.4);});
+    if(tool==='sprayer') {
+      oval(c,aim.x,aim.y,s.precision?14:19,s.precision?14:19,null,0,'#4d8b6e',1.5);
+      [-1,0,1].forEach(k=>oval(c,aim.x+k*7,aim.y,2,2,'#75a282'));
+    }else if(tool==='probe') {
+      shape(c,q=>{q.moveTo(aim.x,aim.y-13);q.lineTo(aim.x+10,aim.y);q.lineTo(aim.x,aim.y+13);q.lineTo(aim.x-10,aim.y);q.closePath();},null,'#a68a47',1.8);
+      oval(c,aim.x,aim.y,3,3,'#d3b86d');
+    }else{
+      oval(c,aim.x,aim.y,s.precision?8:12,s.precision?8:12,null,0,s.precision?'#a57e38':'#3d7b67',1.6);
+      [-1,1].forEach(k=>{line(c,[{x:aim.x+k*17,y:aim.y},{x:aim.x+k*8,y:aim.y}],'#457b66',1.4);line(c,[{x:aim.x,y:aim.y+k*17},{x:aim.x,y:aim.y+k*8}],'#457b66',1.4);});
+    }
   }
   function barrier(c,o,s,hideLabels,labels) {
     const unlocked=s.dashUnlocked;
@@ -530,6 +691,7 @@
     if(!hideLabels&&(s.scanner||g.scanned||s.stage==='ending'))worldBadge(labels,regrowing?'同一组织 · 再次生长':suppressed?'已暂时压制':g.scanned?'异常组织 · 特征未知':'未知生物信号',x,y,0,44,regrowing?'#8b5f83':INK);
   }
   function toolPalette(result) {
+    if(result.tool==='probe')return { color:'#aa8b45',light:'#fff0b5',shape:result.blocked?'wall':result.hitType==='treatment'?'probe':['hunter','ineffective','healthy'].includes(result.hitType)?'unknown':'none' };
     if(result.weakpoint)return { color:'#b88a32',light:'#fff0b2',shape:'weakpoint' };
     if(result.hitType==='treatment'||result.kind==='treatment')return { color:'#428c77',light:'#dff0c2',shape:'treatment' };
     if(result.blocked||result.hitType==='wall'||result.hitType==='clot'||result.kind==='blocked')return { color:'#968568',light:'#ead8ac',shape:'wall' };
@@ -537,8 +699,50 @@
     if(result.hitType==='undiagnosed'||result.kind==='warning')return { color:'#9b7b57',light:'#f1ddb1',shape:'unknown' };
     return { color:'#72917f',light:'#e5eac7',shape:'none' };
   }
+  function sprayRay(c,result,preview) {
+    const origin=result.from,direction=Math.atan2(result.to.y-origin.y,result.to.x-origin.x),range=result.range||145,angle=result.angle||Math.PI/3;
+    const points=Array.isArray(result.fanPoints)?result.fanPoints:[];
+    c.save();c.lineCap='round';
+    if(points.length>1){
+      shape(c,p=>{p.moveTo(origin.x,origin.y);points.forEach(point=>p.lineTo(point.x,point.y));p.closePath();},preview?'rgba(99,158,120,.10)':'rgba(141,190,141,.25)','#6eaa81',preview?1.2:1.7);
+      // These endpoints come from the controller's occlusion query. Mist never
+      // implies a treatment cone reaching through an intervening solid wall.
+      points.forEach((point,index)=>{
+        if(index%2)return;
+        const dx=point.x-origin.x,dy=point.y-origin.y,distance=Math.hypot(dx,dy),start=Math.min(34,distance);
+        if(distance<1)return;
+        const from={x:origin.x+dx/distance*start,y:origin.y+dy/distance*start};
+        if(preview){c.setLineDash([2,9]);line(c,[from,point],'rgba(79,141,102,.35)',1);c.setLineDash([]);}
+        else{
+          line(c,[from,point],'rgba(218,235,175,.56)',2);
+          for(let k=0;k<3;k++){
+            const t=clamp(.28+k*.25+(Number(result.age)||0)*.8,0,1);
+            oval(c,origin.x+dx*t,origin.y+dy*t,1.8+k*.5,1.8+k*.5,'rgba(238,241,192,.88)');
+          }
+        }
+      });
+    }else{
+      // Legacy snapshots have no shared fan outline: show range edges only.
+      [-1,1].forEach(side=>{
+        const a=direction+side*angle/2;
+        c.setLineDash([3,10]);line(c,[{x:origin.x+Math.cos(a)*34,y:origin.y+Math.sin(a)*34},{x:origin.x+Math.cos(a)*range,y:origin.y+Math.sin(a)*range}],'rgba(100,151,115,.30)',1.2);c.setLineDash([]);
+      });
+    }
+    (result.targets||[]).forEach(target=>{
+      if(!Number.isFinite(target.x)||!Number.isFinite(target.y))return;
+      const effective=target.hitType==='treatment'||target.kind==='treatment',color=effective?'#4f9470':'#9d8761';
+      oval(c,target.x,target.y,preview?9:13,preview?9:13,null,0,color,2);
+      if(effective)medicalCross(c,target.x,target.y,8,color);
+    });
+    if(result.blocked){
+      const p=result.to,dx=-Math.sin(direction)*8,dy=Math.cos(direction)*8;
+      line(c,[{x:p.x-dx,y:p.y-dy},{x:p.x+dx,y:p.y+dy}],'#9e8764',2.5);
+    }
+    c.restore();
+  }
   function toolRay(c,result,preview) {
     if(!result||!result.from||!result.to)return;
+    if(result.tool==='sprayer'){sprayRay(c,result,preview);return;}
     const palette=toolPalette(result),p=result.to,a=Math.atan2(p.y-result.from.y,p.x-result.from.x);
     const distance=Math.hypot(p.x-result.from.x,p.y-result.from.y),nozzle=Math.min(35,distance);
     // Keep the rendered beam collinear with the shared query. The hidden
@@ -549,7 +753,11 @@
     line(c,[from,p],palette.color,preview?1.8:4.5);
     c.setLineDash([]);
     if(!preview)line(c,[from,p],palette.light,1.4);
-    if(palette.shape==='weakpoint') {
+    if(palette.shape==='probe') {
+      oval(c,p.x,p.y,preview?11:15,preview?11:15,null,0,palette.color,2);
+      line(c,[{x:p.x-7,y:p.y},{x:p.x-2,y:p.y-5},{x:p.x+2,y:p.y+5},{x:p.x+7,y:p.y}],palette.color,1.8);
+      if(!preview)oval(c,p.x,p.y,20,20,null,0,palette.light,2);
+    } else if(palette.shape==='weakpoint') {
       const r=preview?10:14;
       shape(c,q=>{q.moveTo(p.x,p.y-r);q.lineTo(p.x+r,p.y);q.lineTo(p.x,p.y+r);q.lineTo(p.x-r,p.y);q.closePath();},null,palette.color,2);
       oval(c,p.x,p.y,3.5,3.5,palette.light,0,palette.color,1);
@@ -572,7 +780,7 @@
   function preview(c,s,hideLabels,labels) {
     const result=s.precision&&s.toolPreview;if(!result)return;
     toolRay(c,result,true);
-    if(!hideLabels&&result.label)worldBadge(labels,result.label,result.to.x,result.to.y,0,-29,toolPalette(result).color,13);
+    if(!hideLabels&&result.label)worldBadge(labels,result.label,result.to.x,result.to.y,0,result.tool==='sprayer'?-40:-29,toolPalette(result).color,13);
   }
   function edgeGuidance(c,s,v) {
     const guidance=s.guidance;if(!guidance||!guidance.target)return;
@@ -601,146 +809,25 @@
     if(s.stage==='recovery') {const t=s.recovery;if(t>.65){const r=(t-.65)*240;oval(c,900,700,r,r*.65,null,0,'rgba(255,221,139,'+Math.max(0,.6-t*.07)+')',5);glow(c,900,700,220+s.beat.pulse*70,'rgba(255,221,133,.20)');}}
     if(s.heartConnected)for(let i=0;i<22;i++){const x=180+(i*137)%1450,y=1080-((i*97+time*17)%980);oval(c,x,y,i%3?1.8:3,i%3?1.8:3,'rgba(231,180,78,.55)');}
   }
-  function recoveryWeight(x,y,anchor) {
-    const distance=Math.pow((x-anchor.x)/anchor.rx,2)+Math.pow((y-anchor.y)/anchor.ry,2);
-    return distance<1?Math.pow(1-distance,2):0;
-  }
-  function recoveryPose(time,reduced) {
-    const awakening=smooth(1.85,3.85,time),ecology=smooth(3.85,6,time);
-    // The first deep breath resolves into a slow, regular resting breath.
-    // Reduced motion is a single soft change of posture, with no oscillation.
-    const first=Math.sin(clamp(time/2.6,0,1)*Math.PI),rest=Math.sin(Math.max(0,time-2.6)*TAU/4.4);
-    return { time,reduced,awakening,ecology,breath:reduced?smooth(0,3,time)*.22:first*.95+rest*smooth(2.6,4.3,time)*.25 };
-  }
-  function recoveryPoint(x,y,pose) {
-    const chest=RECOVERY_ART.chest,shoulder=RECOVERY_ART.shoulder,hand=RECOVERY_ART.hand;
-    const breathing=recoveryWeight(x,y,chest)*pose.breath;
-    let dx=(x-chest.x)*breathing*.045,dy=-breathing*.019;
-    dy-=recoveryWeight(x,y,shoulder)*pose.breath*.007;
-    const relax=recoveryWeight(x,y,hand)*pose.awakening;
-    dx+=relax*.008;dy+=relax*.006;
-    RECOVERY_ART.fingers.forEach(finger=>{
-      const spread=recoveryWeight(x,y,finger)*pose.awakening;
-      dx+=spread*.009*finger.spread;dy+=spread*.012;
-    });
-    if(!pose.reduced)RECOVERY_ART.trees.forEach((tree,index)=>{
-      const sway=recoveryWeight(x,y,tree)*pose.ecology;
-      dx+=sway*Math.sin(pose.time*1.1+index*1.9)*.0017;
-    });
-    return {x:x+dx,y:y+dy};
-  }
-  function recoveryMesh(image) {
-    let mesh=recoveryMeshes.get(image);if(mesh)return mesh;
-    const columns=34,rows=24;
-    mesh={columns,rows,vertices:[]};
-    for(let row=0;row<=rows;row++)for(let col=0;col<=columns;col++)mesh.vertices.push({x:col/columns,y:row/rows});
-    recoveryMeshes.set(image,mesh);return mesh;
-  }
-  function recoveryTriangle(c,img,a,b,d,aa,bb,dd) {
-    // Affine texture mapping in small triangles, with subpixel overlap to close
-    // Canvas clipping seams. The cropped source keeps each draw inexpensive.
-    const determinant=(b.x-a.x)*(d.y-a.y)-(b.y-a.y)*(d.x-a.x);if(Math.abs(determinant)<.00001)return;
-    const m11=((bb.x-aa.x)*(d.y-a.y)-(dd.x-aa.x)*(b.y-a.y))/determinant;
-    const m12=((bb.y-aa.y)*(d.y-a.y)-(dd.y-aa.y)*(b.y-a.y))/determinant;
-    const m21=((dd.x-aa.x)*(b.x-a.x)-(bb.x-aa.x)*(d.x-a.x))/determinant;
-    const m22=((dd.y-aa.y)*(b.x-a.x)-(bb.y-aa.y)*(d.x-a.x))/determinant;
-    const cx=(aa.x+bb.x+dd.x)/3,cy=(aa.y+bb.y+dd.y)/3;
-    const expanded=[aa,bb,dd].map(vertex=>{const distance=Math.hypot(vertex.x-cx,vertex.y-cy)||1;return {x:vertex.x+(vertex.x-cx)/distance*.42,y:vertex.y+(vertex.y-cy)/distance*.42};});
-    c.save();c.beginPath();c.moveTo(expanded[0].x,expanded[0].y);c.lineTo(expanded[1].x,expanded[1].y);c.lineTo(expanded[2].x,expanded[2].y);c.closePath();c.clip();
-    c.transform(m11,m12,m21,m22,aa.x-m11*a.x-m21*a.y,aa.y-m12*a.x-m22*a.y);
-    const sx=Math.max(0,Math.min(a.x,b.x,d.x)-1),sy=Math.max(0,Math.min(a.y,b.y,d.y)-1);
-    const sw=Math.min(img.width-sx,Math.max(a.x,b.x,d.x)-sx+1),sh=Math.min(img.height-sy,Math.max(a.y,b.y,d.y)-sy+1);
-    c.drawImage(img,sx,sy,sw,sh,sx,sy,sw,sh);c.restore();
-  }
-  function recoveryGiant(c,img,pose) {
-    const mesh=recoveryMesh(img),columns=mesh.columns,rows=mesh.rows;
-    const points=mesh.vertices.map(p=>{const at=recoveryPoint(p.x,p.y,pose);return {x:at.x*img.width,y:at.y*img.height};});
-    const source=index=>({x:mesh.vertices[index].x*img.width,y:mesh.vertices[index].y*img.height});
-    const moved=index=>Math.abs(points[index].x-mesh.vertices[index].x*img.width)+Math.abs(points[index].y-mesh.vertices[index].y*img.height)>.015;
-    // Unchanged cells share one draw per run. The local mesh never deforms the
-    // valley and avoids spending hundreds of texture draws on empty pixels.
-    for(let row=0;row<rows;row++){
-      let staticStart=-1;
-      const flush=end=>{if(staticStart<0)return;const sx=staticStart*img.width/columns,sy=row*img.height/rows,sw=(end-staticStart)*img.width/columns,sh=img.height/rows;c.drawImage(img,sx,sy,sw,sh,sx,sy,sw,sh);staticStart=-1;};
-      for(let col=0;col<columns;col++){
-        const a=row*(columns+1)+col,b=a+1,d=a+columns+1,e=d+1;
-        if(!moved(a)&&!moved(b)&&!moved(d)&&!moved(e)){if(staticStart<0)staticStart=col;continue;}
-        flush(col);recoveryTriangle(c,img,source(a),source(b),source(e),points[a],points[b],points[e]);recoveryTriangle(c,img,source(a),source(e),source(d),points[a],points[e],points[d]);
-      }
-      flush(columns);
-    }
-  }
-  function recoveryEyePatch(image) {
-    let patch=recoveryEyePatches.get(image);if(patch)return patch;
-    const eyes=RECOVERY_ART.eyes,x=Math.floor(Math.min(...eyes.map(eye=>(eye.x-eye.rx)*image.width)));
-    const y=Math.floor(Math.min(...eyes.map(eye=>(eye.y-eye.ry)*image.height)));
-    const width=Math.ceil(Math.max(...eyes.map(eye=>(eye.x+eye.rx)*image.width)))-x;
-    const height=Math.ceil(Math.max(...eyes.map(eye=>(eye.y+eye.ry)*image.height)))-y;
-    const canvas=document.createElement('canvas'),mask=document.createElement('canvas');
-    canvas.width=mask.width=width;canvas.height=mask.height=height;
-    const context=canvas.getContext('2d'),maskContext=mask.getContext('2d');
-    context.drawImage(image,x,y,width,height,0,0,width,height);
-    eyes.forEach(eye=>{
-      maskContext.save();maskContext.translate(eye.x*image.width-x,eye.y*image.height-y);maskContext.scale(eye.rx*image.width,eye.ry*image.height);
-      const feather=maskContext.createRadialGradient(0,0,0,0,0,1);feather.addColorStop(0,'#fff');feather.addColorStop(.63,'#fff');feather.addColorStop(1,'rgba(255,255,255,0)');
-      maskContext.fillStyle=feather;maskContext.fillRect(-1,-1,2,2);maskContext.restore();
-    });
-    context.globalCompositeOperation='destination-in';context.drawImage(mask,0,0);
-    patch={canvas,x:x/image.width,y:y/image.height,w:width/image.width,h:height/image.height};
-    recoveryEyePatches.set(image,patch);return patch;
-  }
-  function recoveryEcology(c,pose,width,height,pulse) {
-    RECOVERY_ART.windows.forEach((window,index)=>{
-      const light=smooth(3.8+index*.16,5.15+index*.10,pose.time);if(!light)return;
-      const at=recoveryPoint(window[0],window[1],pose),x=at.x*width,y=at.y*height;
-      c.save();c.globalAlpha=light;glow(c,x,y,width*.012,'rgba(255,212,126,.31)');
-      oval(c,x,y,width*.0013,height*.0031,'rgba(255,230,161,'+(.70+(pose.reduced?0:pulse*.15))+')');c.restore();
-    });
-    if(pose.reduced)return;
-    const start=RECOVERY_ART.birdOrigin;
-    for(let index=0;index<4;index++){
-      const flight=clamp((pose.time-4.12-index*.20)/3.2,0,1);if(flight<=0||flight>=1)continue;
-      const x=(start.x+flight*.28+index*.016)*width,y=(start.y-flight*.22+Math.sin(flight*Math.PI)*-.025+index*.014)*height;
-      const flap=Math.sin(pose.time*7+index*1.6),wing=width*(.0032+index*.0003),alpha=smooth(0,.12,flight)*(1-smooth(.78,1,flight));
-      c.save();c.globalAlpha=alpha*.72;c.lineWidth=Math.max(.8,width*.00085);c.strokeStyle='#526e5d';c.lineCap='round';
-      c.beginPath();c.moveTo(x-wing,y-flap*wing*.55);c.quadraticCurveTo(x-wing*.35,y-wing*.30,x,y);c.quadraticCurveTo(x+wing*.35,y-wing*.30,x+wing,y-flap*wing*.55);c.stroke();c.restore();
-    }
-  }
   function recoveryCaptions(c,p,time) {
-    const first=time<2?'山谷间，传来一次深长的呼吸':time<4?'他缓缓睁开眼，手指也舒展开来':time<6?'林梢轻动，沉睡的村落重新亮起灯火':'心脏已稳定 · 肺部仍在等待巡诊';
+    const first=time<2?'山谷间，传来一次深长的呼吸':time<4?'胸口的微光，重新合上平稳的心跳':time<6?'林梢轻动，沉睡的村落重新亮起灯火':'心脏已稳定 · 肺部仍在等待巡诊';
     const size=p.w<650?14:18;
     badge(c,first,p.x+p.w/2,p.y+p.h-59,INK,size);
     badge(c,'巨人初步苏醒 · 下一程，呼吸系统',p.x+p.w/2,p.y+p.h-26,'#8c7350',p.w<650?11:12);
   }
   function exterior(c,s,v) {
-    const p=v.viewport,assets=window.GiantCureAssets&&window.GiantCureAssets.images||{};
-    const layered=!!(assets.recoveryValley&&assets.recoveryGiant&&assets.recoveryEyes);
-    const img=layered?assets.recoveryValley:assets.exterior;
-    const recovery=s.exteriorRecovery||{},time=clamp(Number(recovery.elapsed)||0,0,Number(recovery.duration)||8);
-    const reduced=!!(v.reducedMotion||s.reducedMotion),pose=recoveryPose(time,reduced),pulse=clamp(s.beat&&s.beat.pulse||0,0,1);
-    c.save();round(c,p.x,p.y,p.w,p.h,16);c.clip();c.fillStyle=PAPER;c.fillRect(p.x,p.y,p.w,p.h);
-    if(img){
-      const cover=Math.max(p.w/img.width,p.h/img.height),cw=img.width*cover,ch=img.height*cover;
-      c.save();c.filter='blur(20px)';c.globalAlpha=.35;c.drawImage(img,p.x+(p.w-cw)/2,p.y+(p.h-ch)/2,cw,ch);c.restore();
-      // Contain every layer as one frame: face, chest and near hand remain in
-      // view on narrow displays as well as the landscape game viewport.
-      const pullback=reduced?1:1-smooth(6,8,time)*.035;
-      const scale=Math.min(p.w/img.width,p.h/img.height)*pullback,w=img.width*scale,h=img.height*scale,x=p.x+(p.w-w)/2,y=p.y+(p.h-h)/2;
-      c.save();c.translate(x,y);c.scale(scale,scale);c.drawImage(img,0,0);
-      if(layered){
-        c.save();c.scale(img.width/assets.recoveryGiant.width,img.height/assets.recoveryGiant.height);recoveryGiant(c,assets.recoveryGiant,pose);c.restore();
-        if(pose.awakening>0){
-          const eyes=recoveryEyePatch(assets.recoveryEyes);
-          c.save();c.globalAlpha=pose.awakening;c.drawImage(eyes.canvas,eyes.x*img.width,eyes.y*img.height,eyes.w*img.width,eyes.h*img.height);c.restore();
-        }
-        recoveryEcology(c,pose,img.width,img.height,pulse);
-      }
-      const chest=layered?recoveryPoint(RECOVERY_ART.chest.x,RECOVERY_ART.chest.y,pose):{x:.52,y:.52},light=reduced?.24+smooth(0,5,time)*.12:.20+pulse*.18;
-      glow(c,chest.x*img.width,chest.y*img.height,img.width*(.045+(reduced?0:pulse*.012)),'rgba(255,214,137,'+light+')');
-      c.restore();
-    }
-    // The short ending fade is driven by the same paused simulation clock.
-    const fade=smooth(7.65,8,time);if(fade){c.fillStyle='rgba(245,240,223,'+(fade*.48)+')';c.fillRect(p.x,p.y,p.w,p.h);}
+    const p=v.viewport,recovery=s.exteriorRecovery||{};
+    const time=clamp(Number(recovery.elapsed)||0,0,Number(recovery.duration)||8);
+    const reducedMotion=!!(v.reducedMotion||s.reducedMotion);
+    c.save();round(c,p.x,p.y,p.w,p.h,16);c.clip();c.fillStyle='#f7f6ed';c.fillRect(p.x,p.y,p.w,p.h);
+    // The exact same patient is drawn on the cover, during diagnosis and here.
+    // This clock is frozen with gameplay; drawing never reads wall time or assets.
+    window.GiantCureGiantArt.draw(c,{
+      bounds:{x:p.x+20,y:p.y+8,w:p.w-40,h:p.h-95},
+      time,restored:smooth(1.8,6,time),reducedMotion,heartVisible:true,recovering:true
+    });
+    const fade=smooth(7.65,8,time);
+    if(fade){c.fillStyle='rgba(247,246,237,'+(fade*.48)+')';c.fillRect(p.x,p.y,p.w,p.h);}
     if(!v.hideLabels)recoveryCaptions(c,p,time);
     c.restore();
   }
@@ -753,9 +840,11 @@
     if(s.endingScene==='exterior'){exterior(c,s,v);return;}
     c.save();round(c,p.x,p.y,p.w,p.h,16);c.clip();
     c.translate(p.x+p.w/2,p.y+p.h/2);c.scale(cam.zoom,cam.zoom);c.translate(-cam.x,-cam.y);
-    drawBackground(c,s,reduced?0:simulationTime);links(c,s);
-    (s.portals||[]).forEach(a=>portal(c,a,s,hide,labels));(s.nodes||[]).forEach(a=>node(c,a,s,hide,labels));
+    drawBackground(c,s,reduced?0:simulationTime);links(c,s);conduction(c,s,hide,labels,reduced);
+    (s.portals||[]).forEach(a=>portal(c,a,s,hide,labels));
+    (s.nodes||[]).filter(a=>!(s.branches||[]).some(branch=>branch.nodeId===a.id)).forEach(a=>node(c,a,s,hide,labels));
     (s.valves||[]).forEach(a=>valve(c,a,s,hide,labels));clot(c,s,hide,labels);
+    branchLesions(c,s,hide,labels);supplies(c,s,hide,labels);scans(c,s,hide,labels);
     (s.obstacles||[]).filter(a=>a.kind==='dashBarrier').forEach(a=>barrier(c,a,s,hide,labels));
     if(s.room==='heart'&&(s.dashUnlocked||s.stage==='ending'))growth(c,s.growth,s,hide,labels);
     spawnTelegraphs(c,s,hide,labels,reduced);
