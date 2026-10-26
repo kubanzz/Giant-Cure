@@ -1,0 +1,16 @@
+{
+  "asset": "scanGiant.png",
+  "authoredOn": "2026-10-26",
+  "method": "Canvas 2D hand drawing, explicitly selected by the user",
+  "renderer": "@napi-rs/canvas",
+  "sources": ["scripts/render-scan-giant.cjs", "scripts/scan-giant-foliage.cjs"],
+  "renderCommand": "node scripts/render-scan-giant.cjs",
+  "imageSize": { "width": 2464, "height": 1104 },
+  "sceneSize": { "width": 1232, "height": 552 },
+  "heart": { "x": 418, "y": 250 },
+  "reference": "The user's second attached image, upper reclining-giant illustration",
+  "brief": "对照原图手绘：头左脚右的细长卧躺巨人，圆润简笔面孔、短弧闭眼、浅米色平涂身体、宽阔重叠叶裙、浅纸底、灰绿圆钝植物与少量白花。轮廓轻细，使用克制的纸纹与浅水彩明暗。保留人物和地面留白。",
+  "anatomy": "Separate runtime Canvas layer, clipped to the torso; the face and limbs remain unobscured",
+  "previousAssetRecord": "scanGiant-prompts.json (archived, rejected by user for style mismatch)",
+  "runtime": "PNG bundled inline; no authoring library or network required"
+}

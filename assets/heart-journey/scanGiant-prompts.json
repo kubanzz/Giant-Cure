@@ -1,0 +1,30 @@
+{
+  "status": "archived: user rejected this painting's style; no longer the runtime asset",
+  "replacedBy": "scanGiant-art.json",
+  "asset": "scanGiant.png",
+  "generatedOn": "2026-10-26",
+  "tool": "built-in image_gen",
+  "source": "C:/Users/SEASUN/.codex/generated_images/01a17429-1d77-75f3-b473-ff2ba65505e2/exec-b65b4151-67e5-4a4c-b169-42773b774cc7.png",
+  "baseSource": "C:/Users/SEASUN/.codex/generated_images/01a17429-1d77-75f3-b473-ff2ba65505e2/exec-b22d972d-dd8a-47f0-8ffa-8e33c8bc2932.png",
+  "finalEditPrompt": "Use case: precise-object-edit. The input is the exact production background painting. Change ONLY the guardian's face and beard in the leftmost area around normalized x0.12,y0.44: remove his entire beard and mustache and render a kind, clean-shaven youthful ADULT face, about 25 years old, closed eyes, gentle sleepy expression, pale warm skin, soft rounded features. Fill former beard region with the same leafy hair and neckline of the cream tunic, consistent with the existing painting. Keep the head at the EXACT same position and size, maintain leafy hair and white flowers. Preserve every other part of the image EXACTLY: clothes, full-body pose, arms, hands, feet, forest, foliage, canvas size, framing, colors, parchment texture and watercolor/colored-pencil medium. No new objects, no camera change, no zoom, no crop, no labels or text. Adult fantasy woodland guardian, fully clothed, peaceful resting pose.",
+  "referenceRole": "User reference top panel guided composition and medium; prompt was text-only.",
+  "prompt": "A detailed watercolor and colored pencil illustration on warm textured parchment for a peaceful forest fantasy game. Very wide panoramic landscape, approximately 2.23:1. Direct overhead view of one enormous gentle woodland guardian resting on his back on a clearing. He wears a complete loose long-sleeved light cream tunic and pale sage trousers, a green leaf sash at waist. His kind face has closed eyes and is surrounded by leafy hair, tiny white flowers and moss. Head on far left, fully visible face, shoulders in left center, two long straight clothed legs extending to right, feet and all hands fully within the canvas. Arms lie comfortably at his sides, one along upper edge and one along lower edge. Whole figure fully inside the frame with clear margins; the guardian fills most of image. Small forest plants grow on his clothes and mossy hair. Fine fern leaves, flowers and trees border the sides; light warm ochre parchment-colored earth in the clearing. Muted sage green, dusty olive, warm ivory, pale gold. Rich traditional storybook brushwork and delicate contour lines, calm therapeutic atmosphere, no dramatic lighting. One continuous painting, no text, no labels, no border, no collage, no game interface, no logos, no extra people. A standalone empty fantasy environment and clothed character background.",
+  "anatomy": "Not painted in the selected background; all anatomical overlays are intentionally separate program art.",
+  "suggestedAnatomicalOverlay": {
+    "heart": {
+      "x": 0.355,
+      "y": 0.43
+    },
+    "torso": {
+      "x": 0.23,
+      "y": 0.3,
+      "w": 0.205,
+      "h": 0.37
+    },
+    "digestive": {
+      "x": 0.425,
+      "y": 0.49
+    }
+  },
+  "moderationAdaptation": "A fully clothed guardian background was selected after two medical-overlay requests were rejected by image tool moderation."
+}

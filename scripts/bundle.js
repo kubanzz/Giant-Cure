@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
-const assetNames = ['entry', 'main', 'heart'];
+const assetNames = ['entry', 'main', 'heart', 'scanGiant'];
 const sources = Object.fromEntries(assetNames.map(name => {
   const file = path.join(root, 'assets', 'heart-journey', name + '.png');
   if (!fs.existsSync(file)) throw new Error('Missing chapter illustration: ' + file);

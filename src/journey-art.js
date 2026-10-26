@@ -4,6 +4,8 @@
   const PAPER = '#f5f0df', INK = '#2f675a', GOLD = '#c6a15b', TAU = Math.PI * 2;
   const FONT = '"PingFang SC","Microsoft YaHei",sans-serif';
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const MAIN_LABEL_OFFSETS = [0,-64,64,-128,128,-192,192].flatMap(x=>
+    [0,-32,32,-64,64,-96,96,-128,128].map(y=>({x,y}))).sort((a,b)=>a.x*a.x+a.y*a.y-b.x*b.x-b.y*b.y);
   function smooth(a, b, value) { const t = clamp((value - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
   function shape(c, draw, fill, stroke, width) {
     c.beginPath(); draw(c);
@@ -38,27 +40,102 @@
   function worldBadge(labels, value, x, y, dx, dy, color, size) {
     labels.push({ value, x, y, dx: dx || 0, dy: dy || 0, color: color || INK, size: size || 14 });
   }
-  function drawWorldLabels(c, labels, view) {
-    const p = view.viewport, cam = view.camera, occupied = [];
+  function drawWorldLabels(c, labels, view, state) {
+    const p = view.viewport, cam = view.camera, compact = true, occupied = [];
+    const project = point => ({ x:p.x+p.w/2+(point.x-cam.x)*cam.zoom, y:p.y+p.h/2+(point.y-cam.y)*cam.zoom });
+    if (compact) {
+      // Reserve the silhouettes before placing text, including a wound's real
+      // interaction ellipse. Lower-priority labels may be omitted entirely.
+      const bodies = [
+        { ...state.player, rx:33, ry:45 },
+        ...(state.enemies||[]).filter(e=>e.hp>0).map(e=>({ ...e, rx:36, ry:36 })),
+        ...(state.tissues||[]).map(t=>({ ...t, rx:(t.hitArea||{}).rx||60, ry:36 })),
+        ...(state.branches||[]).map(t=>({ ...t, rx:34, ry:34 })),
+        ...(state.room==='main'&&state.clot&&!state.clot.removed?[{ ...state.clot, rx:state.clot.radius||116, ry:110 }]:[]),
+        ...(state.room==='entry'&&state.entryLesion?[{...state.entryLesion,rx:40,ry:40}]:[]),
+        ...(state.room==='heart'?(state.heartSectors||[]).map(t=>({...t,rx:65,ry:62})):[]),
+        ...(state.room==='heart'&&state.syncCore?[{...state.syncCore,rx:64,ry:64}]:[])
+      ];
+      bodies.forEach(body=>occupied.push({ ...project(body), half:body.rx*cam.zoom+5, hh:body.ry*cam.zoom+5 }));
+    }
+    let shown = 0;
     labels.forEach(item => {
+      if(shown >= 2)return;
       const ax = p.x + p.w / 2 + (item.x - cam.x) * cam.zoom;
       const ay = p.y + p.h / 2 + (item.y - cam.y) * cam.zoom;
       if (ax < p.x - 10 || ax > p.x + p.w + 10 || ay < p.y - 10 || ay > p.y + p.h + 10) return;
       c.font = '600 ' + item.size + 'px ' + FONT;
       const half = Math.max(19, c.measureText(item.value).width / 2 + 11), hh = (item.size + 14) / 2;
-      const x = clamp(ax + item.dx, p.x + half + 8, p.x + p.w - half - 8);
+      if(compact && half*2+16>p.w)return;
+      const desiredX = clamp(ax + item.dx, p.x + half + 8, p.x + p.w - half - 8);
       const desiredY = clamp(ay + item.dy, p.y + hh + 8, p.y + p.h - hh - 8);
-      let y = desiredY;
-      for(const offset of [0,-32,32,-64,64,-96,96]) {
-        const candidate = clamp(desiredY + offset, p.y + hh + 8, p.y + p.h - hh - 8);
-        if(!occupied.some(rect=>Math.abs(x-rect.x)<half+rect.half+4&&Math.abs(candidate-rect.y)<hh+rect.hh+4)){y=candidate;break;}
+      let x = desiredX, y = compact ? null : desiredY;
+      const offsets=compact?MAIN_LABEL_OFFSETS:[0,-32,32,-64,64,-96,96].map(y=>({x:0,y}));
+      for(const offset of offsets) {
+        const candidateX = clamp(desiredX + offset.x, p.x + half + 8, p.x + p.w - half - 8);
+        const candidateY = clamp(desiredY + offset.y, p.y + hh + 8, p.y + p.h - hh - 8);
+        if(!occupied.some(rect=>Math.abs(candidateX-rect.x)<half+rect.half+4&&Math.abs(candidateY-rect.y)<hh+rect.hh+4)){x=candidateX;y=candidateY;break;}
       }
+      if(y===null)return;
       occupied.push({x,y,half,hh});
-      if(Math.abs(y-desiredY)>1) {
+      if(Math.abs(y-desiredY)>1||Math.abs(x-desiredX)>1) {
         c.save();c.setLineDash([2,4]);line(c,[{x:ax,y:ay},{x,y:y+(ay>y?hh:-hh)}],'rgba(101,133,102,.43)',1);c.restore();
       }
       badge(c, item.value, x, y, item.color, item.size);
+      shown++;
     });
+  }
+  // Diagnosis lives in the paused report. The world only names one current
+  // target and the nearest action; decorative scenery never becomes a lesson.
+  function focusLabels(s, labels) {
+    const candidates = new Map(), ray = s.toolPreview || {}, hint = ray.repairHint;
+    const add = (target, value, priority, color, dy) => {
+      if(!target || !value)return;
+      const id = String(target.id), previous = candidates.get(id);
+      if(previous && previous.priority<=priority)return;
+      candidates.set(id,{value,x:target.x,y:target.y,dx:0,dy:dy===undefined?-58:dy,color:color||INK,size:12,priority,id});
+    };
+    const tissues=s.tissues||[], enemies=s.enemies||[], branches=s.branches||[], points=s.weakpoints||[], sectors=s.heartSectors||[];
+    const shortName = target => {
+      const id=String(target.id||'');
+      if(id==='clot')return '主血栓';
+      if(id==='entry-lesion'||id==='pressure')return '入口凝块';
+      if(id==='sync-core')return '同步核心';
+      if(id==='heart-west')return '西区纤维';
+      if(id==='heart-east')return '东区凝块';
+      if(id.startsWith('heart-west'))return '西区传导';
+      if(id.startsWith('heart-east'))return '东区传导';
+      if(id==='main-tissue-l'||id==='heart-tissue-l')return '西侧组织';
+      if(id==='main-tissue-r'||id==='heart-tissue-r')return '东侧组织';
+      return String(target.label||'当前目标').split(' · ')[0].slice(0,10);
+    };
+    if(s.scanner) {
+      const scans=s.scanTargets||[], target=scans.find(t=>t.id===s.scanFocusId)||(!s.scanFocusId&&scans.find(t=>t.inRange&&!t.complete));
+      if(target)add(target,shortName(target)+' · '+(target.complete?'已诊断':target.inRange?'扫描 '+Math.round((target.progress||0)*100)+'%':'靠近扫描'),0,'#3f8c70',-58);
+    } else if(hint) {
+      const target=tissues.find(t=>t.id===hint.targetId)||{...hint.target,id:hint.targetId};
+      const reasons={ready:hint.requiredTool==='sprayer'?'2 清纤维':'1 修补',healthy:'组织完好',
+        'out-of-range':'距离不足','wrong-tool':'换用 '+(hint.requiredTool==='sprayer'?'2':'1'),wall:'瞄准受阻',enemy:'瞄准受阻',reloading:'装填中',coating:'2 清纤维'};
+      const value=(reasons[hint.reason]||'查看诊断')+(target.integrity===undefined?'':' · '+Math.ceil(target.integrity)+'/'+(target.maxIntegrity||50));
+      add(target,value,0,hint.reason==='ready'?'#3f8c70':hint.reason==='healthy'?'#80937c':'#ac8344');
+    } else if(['treatment','hunter','enemy','ineffective','healthy'].includes(ray.hitType)) {
+      const target=[...tissues,...enemies,...branches,...points,...sectors,...sectors.map(t=>t.relay),s.entryLesion,s.syncCore,s.fault].filter(Boolean).find(t=>t.id===ray.targetId);
+      if(target) {
+        const value=enemies.includes(target)?ray.weakpoint?'暴露弱点':'异常细胞':target.id==='sync-core'?'3 发送脉冲':
+          target.requiredTool?(target.requiredTool==='sprayer'?'2 裂解':target.requiredTool==='probe'?'3 接通':'1 疏通'):shortName(target);
+        add(target,value,0,toolPalette(ray).color);
+      }
+    }
+    const interaction=[...(s.portals||[]),...(s.nodes||[]).filter(n=>n.kind==='release'),
+      ...(s.supplies||[]).filter(t=>t.room===s.room&&t.state==='ready')].find(t=>t.id===s.nearestId);
+    if(interaction) {
+      const text='E · '+shortName(interaction)+(interaction.locked?' · 待开放':'');
+      const focused=candidates.get(String(interaction.id));
+      if(focused)focused.value=text+' · '+focused.value;
+      else add(interaction,text,1,interaction.locked?'#84917b':INK,45);
+    }
+    labels.push(...Array.from(candidates.values()).sort((a,b)=>a.priority-b.priority
+      ||Math.hypot(a.x-s.player.x,a.y-s.player.y)-Math.hypot(b.x-s.player.x,b.y-s.player.y)||a.id.localeCompare(b.id)));
   }
   function progressRing(c, x, y, radius, progress, color) {
     oval(c,x,y,radius,radius,null,0,'rgba(246,240,215,.86)',4);
@@ -67,8 +144,7 @@
   }
   function scans(c,s,hideLabels,labels) {
     if(!s.scanner)return;
-    (s.scanTargets||[]).forEach(target=>{
-      if(target.complete||(!target.inRange&&!target.progress))return;
+    (s.scanTargets||[]).filter(target=>target.id===s.scanFocusId||!s.scanFocusId&&target.inRange&&!target.complete).slice(0,1).forEach(target=>{
       const progress=clamp(Number(target.progress)||0,0,1);
       const color=target.inRange?'#398b74':'#9b9476';
       progressRing(c,target.x,target.y,39,progress,color);
@@ -228,7 +304,99 @@
     c.restore();
   }
   function recoveryFraction(s) {
-    return s.stage === 'recovery' ? clamp((s.recovery - 1.1) / Math.max(1, (s.recoveryDuration || 6) - 1.1), 0, 1) : s.heartConnected ? 1 : 0;
+    if(s.heartSectors&&s.heartSectors.length) {
+      const healed=s.heartSectors.filter(t=>t.complete).length/s.heartSectors.length;
+      return s.heartStable?1:s.stage==='recovery'?.6+Math.min(3,s.conductionSignal&&s.conductionSignal.verifiedBeats||0)/3*.4:healed*.48;
+    }
+    return s.stage === 'recovery' ? clamp((s.recovery - 1.1) / Math.max(1, (s.recoveryDuration || 6) - 1.1), 0, 1) : s.heartStable ? 1 : 0;
+  }
+  function heartDistricts(c,s,reduced) {
+    const sectors=s.heartSectors||[];if(s.room!=='heart'||!sectors.length)return;
+    const core=s.syncCore||{x:1300,y:500},phase=reduced?0:s.elapsed;
+    sectors.forEach((sector,index)=>{
+      const alive=!!sector.complete,color=alive?'#aab98c':index?'#bc9f87':'#b7af8e';
+      c.save();
+      // Broad painted terraces read as floor; only controller obstacles have
+      // the solid raised-wall treatment and collision silhouette.
+      oval(c,sector.x,sector.y+46,338,255,alive?'rgba(190,207,157,.18)':'rgba(177,151,118,.09)',index?.12:-.12);
+      for(let lane=0;lane<3;lane++)shape(c,p=>{
+        p.moveTo(sector.x-322,sector.y+150+lane*17);
+        p.bezierCurveTo(sector.x-185,sector.y+239+lane*11,sector.x+150,sector.y+230+lane*11,sector.x+322,sector.y+116+lane*17);
+      },null,alive?'rgba(132,162,112,.30)':'rgba(167,143,111,.20)',2.5);
+      const route=[{x:sector.x,y:sector.y-29},{x:sector.x,y:core.y+128},{x:core.x,y:core.y}];
+      line(c,route,'rgba(109,121,95,.11)',27);
+      if(!alive)c.setLineDash([9,15]);
+      line(c,route,alive?'rgba(186,158,79,.75)':'rgba(133,134,111,.40)',6);c.setLineDash([]);
+      line(c,route,alive?'rgba(255,232,159,.83)':'rgba(232,221,183,.43)',2);
+      if(alive)for(let k=0;k<4;k++){
+        const t=(phase*.28+k/4)%1,leg=t<.56,part=leg?t/.56:(t-.56)/.44,a=leg?route[0]:route[1],b=leg?route[1]:route[2];
+        const x=a.x+(b.x-a.x)*part,y=a.y+(b.y-a.y)*part;
+        glow(c,x,y,24,'rgba(242,204,110,.24)');oval(c,x,y,4.5,4.5,'#f2d58d');
+      }
+      for(let k=0;k<10;k++){
+        const a=(k/9)*Math.PI*.90+Math.PI*.05,x=sector.x+Math.cos(a)*283,y=sector.y+Math.sin(a)*190+50;
+        oval(c,x,y+15,18,6,'rgba(102,111,78,.10)');
+        round(c,x-11,y-14,22,29,7);c.fillStyle=color;c.fill();c.strokeStyle=alive?'#8fa374':'#9a9878';c.lineWidth=1.3;c.stroke();
+        shape(c,p=>{p.moveTo(x-15,y-12);p.quadraticCurveTo(x,y-31,x+15,y-12);},null,alive?'#91aa7c':'#a4a18a',3);
+        round(c,x-5,y-6,10,14,3);c.fillStyle=alive?'#efce82':'#939a80';c.fill();
+        if(alive){glow(c,x,y,29,'rgba(246,207,113,.16)');line(c,[{x:x-2,y:y-4},{x:x-2,y:y+4}],'#fff0b5',1.5);}
+        if(k%3===0)plant(c,x+(index?-23:23),y+10,29+k%2*8,k+index*10,alive,phase);
+      }
+      const progress=clamp(sector.progress||0,0,1),r=51;
+      c.translate(sector.x,sector.y);
+      oval(c,0,17,75,23,'rgba(91,95,69,.13)');
+      if(!sector.cleared){
+        if(s.defense&&s.defense.active){const warning=reduced?0:(s.elapsed*.32)%1;oval(c,0,0,58+warning*17,45+warning*13,null,0,'rgba(163,119,65,'+(.33*(1-warning))+')',1.8);}
+        if(sector.requiredTool==='sprayer'){
+          oval(c,0,0,46,35,'#b8ad88',-.2,'#9b8c64',2);
+          for(let k=0;k<9;k++){
+            const x=(k-4)*9,spread=progress*20;
+            shape(c,p=>{p.moveTo(x-20,-40-spread);p.bezierCurveTo(x+21,-12,x-20,13,x+18,40+spread);},null,'#c5aa70',4-progress*2);
+            shape(c,p=>{p.moveTo(-49,x*.6);p.quadraticCurveTo(0,18+progress*8,49,-x*.6);},null,'#eddb9f',1.8);
+          }
+        }else{
+          for(let k=0;k<8;k++){
+            const a=k*TAU/8,mass=1-progress*.65;
+            oval(c,Math.cos(a)*r*.45*mass,Math.sin(a)*r*.34*mass,r*.6*mass,r*.45*mass,k%2?'#b88e6b':'#c19b76',a,'#8d775a',1.8);
+          }
+          line(c,[{x:-40,y:1},{x:-10,y:-12},{x:16,y:10},{x:40,y:-3}],'#e3c28c',3);
+        }
+        if(progress>0)progressRing(c,0,0,62,progress,'#669577');
+      }else{
+        const relay=sector.relay||{},connected=!!(relay.complete||sector.complete),bridge=clamp(relay.progress||0,0,1);
+        glow(c,0,0,connected?92:57,connected?'rgba(237,208,127,.30)':'rgba(189,212,165,.22)');
+        oval(c,0,0,36,36,'rgba(240,233,202,.88)',0,connected?'#b59b55':'#8b9680',2);
+        [-1,1].forEach(side=>{
+          const x=side*(connected?22:29),y=-side*15;
+          oval(c,x,y,10,10,connected?'#ead79a':'#c3bd99',0,'#8d9879',2);
+        });
+        if(connected){line(c,[{x:-23,y:15},{x:23,y:-15}],'#c4a458',6);line(c,[{x:-23,y:15},{x:23,y:-15}],'#fff0b3',2);}
+        else{c.setLineDash([4,6]);line(c,[{x:-20,y:13},{x:20,y:-13}],'#a58c89',3);c.setLineDash([]);}
+        if(bridge>0&&!connected)progressRing(c,0,0,48,bridge,'#b3984d');
+      }
+      c.restore();
+    });
+  }
+  function synchronizationCore(c,s,reduced) {
+    if(s.room!=='heart'||!s.syncCore)return;
+    const core=s.syncCore,count=Math.min(3,s.conductionSignal&&s.conductionSignal.verifiedBeats||0),ready=s.stage==='recovery'||s.heartStable;
+    const phase=reduced?0:(s.elapsed*.45)%1;
+    c.save();c.translate(core.x,core.y);
+    oval(c,0,14,82,26,'rgba(111,115,77,.12)');
+    if(ready)glow(c,0,0,115,'rgba(238,204,117,.25)');
+    [70,56].forEach((r,index)=>oval(c,0,0,r,r,null,0,ready?'#baa366':'#b6b79a',index?2:3));
+    for(let k=0;k<12;k++){
+      const a=k*TAU/12;line(c,[{x:Math.cos(a)*61,y:Math.sin(a)*61},{x:Math.cos(a)*68,y:Math.sin(a)*68}],ready?'#d6bc75':'#aaad90',2);
+    }
+    oval(c,0,0,core.radius||34,core.radius||34,ready?'#e4d49d':'#c4c7a9',0,ready?'#9d8b4c':'#93a181',2);
+    line(c,[{x:-22,y:0},{x:-11,y:0},{x:-6,y:-13},{x:2,y:14},{x:9,y:-5},{x:14,y:0},{x:22,y:0}],ready?'#9e8545':'#8d9c7e',3);
+    if(ready&&!s.heartStable)oval(c,0,0,38+phase*13,38+phase*13,null,0,'rgba(193,157,74,'+(.55*(1-phase))+')',2);
+    for(let k=0;k<3;k++){
+      const x=(k-1)*29,y=94,active=k<count;
+      if(active)glow(c,x,y,23,'rgba(241,203,114,.40)');
+      shape(c,p=>{p.moveTo(x,y-9);p.lineTo(x+8,y);p.lineTo(x,y+9);p.lineTo(x-8,y);p.closePath();},active?'#e4bf68':'#c0c4a5',active?'#a08945':'#8e9e7f',1.8);
+    }
+    c.restore();
   }
   function heartNeighborhoods(c, s) {
     const recovering = recoveryFraction(s), pulse = s.beat.pulse;
@@ -252,8 +420,8 @@
       c.restore();
     });
   }
-  function drawBackground(c, s, time) {
-    const size = s.worldSize || { width: s.room === 'heart' ? 1800 : 1600, height: s.room === 'heart' ? 1200 : 1000 };
+  function drawBackground(c, s, time, reduced) {
+    const size = s.worldSize || { width: s.room === 'heart' ? 2600 : s.room==='main'?2200:2000, height: s.room === 'heart' ? 1700 : s.room==='main'?1400:1250 };
     c.fillStyle = '#e9e5cc'; c.fillRect(-2000, -2000, size.width + 4000, size.height + 4000);
     const recovering = recoveryFraction(s);
     const art = window.GiantCureAssets && window.GiantCureAssets.images[s.room];
@@ -275,8 +443,8 @@
       plant(c, x, y, 25 + i % 5 * 7, i, alive, time);
     }
     if (s.room === 'heart') {
-      heartNeighborhoods(c, s);
-      const spots = [[250,230],[470,200],[680,170],[1110,180],[1430,280],[1540,540],[260,550],[330,770],[1480,960],[720,1050]];
+      heartNeighborhoods(c, s);heartDistricts(c,s,!!reduced);
+      const spots = [[250,230],[470,200],[950,170],[1610,180],[2230,280],[2340,840],[260,850],[430,1170],[2180,1360],[1020,1550]];
       spots.forEach((p, i) => {
         const light = recovering > Math.hypot(p[0] - 900, p[1] - 650) / 1500;
         if (light) { glow(c, p[0], p[1], 75 + s.beat.pulse * 14, 'rgba(250,207,114,.24)'); oval(c, p[0], p[1], 4, 8, '#f7d28b'); }
@@ -304,7 +472,7 @@
     else if (show && !hideLabels) label(c, (String(n.label).match(/[ABC]\s*$/) || [''])[0].trim() || (n.kind === 'release' ? '◎' : '≈'), n.x, n.y, 16, color, 700);
     if (!hideLabels && show) worldBadge(labels, n.label, n.x, n.y, 0, 38, color);
     if (!hideLabels && s.scanner && n.scanned && n.symptom && !(n.id==='heart-signal'&&s.conductionSignal)) worldBadge(labels, n.symptom, n.x, n.y, 0, 69, '#657b58', 13);
-    if (!hideLabels && near) worldBadge(labels, 'E', n.x, n.y, 35, -27, INK, 13);
+    if (!hideLabels && near) worldBadge(labels, n.kind==='diagnostic'?'Q':'E', n.x, n.y, 35, -27, INK, 13);
     if (s.scanner && !n.complete) { c.save(); c.setLineDash([3, 7]); oval(c, n.x, n.y, 33, 33, null, 0, '#659c83', 1.3); c.restore(); }
   }
   function portal(c, p, s, hideLabels, labels) {
@@ -366,38 +534,157 @@
         if(progress>0)progressRing(c,0,0,r+8,progress,'#b39246');
       }
       c.restore();
-      if(!hideLabels&&(s.scanner||s.nearestId===branch.id||Math.hypot(s.player.x-branch.x,s.player.y-branch.y)<150))worldBadge(labels,done?'侧支已疏通':branch.scanned?'局部堵塞 · 精准治疗':branch.label||'侧支局部堵塞',branch.x,branch.y,0,57,done?'#5c886b':'#876d46',12);
+      if(!hideLabels&&(s.scanner||s.nearestId===branch.id||Math.hypot(s.player.x-branch.x,s.player.y-branch.y)<230))worldBadge(labels,done?'侧支已疏通 · 血细胞正在通过':'局部凝块阻流 · 1 精准疏通',branch.x,branch.y,0,57,done?'#5c886b':'#876d46',12);
     });
   }
-  function supplyCrate(c,x,y,color,open,scale) {
+  function entryLesion(c,s,hideLabels,labels) {
+    const a=s.entryLesion;if(s.room!=='entry'||!a)return;
+    const progress=clamp(Number(a.progress)||0,0,1),done=!!a.complete,r=a.radius||28;
+    c.save();c.translate(a.x,a.y);
+    oval(c,0,15,r*1.5,r*.55,'rgba(106,107,74,.15)');
+    if(!done){
+      const mass=r*(1-progress*.60);
+      glow(c,0,0,r*2,'rgba(188,130,86,.16)');
+      for(let i=0;i<7;i++){
+        const angle=i*TAU/7,radial=mass*(.36+(i%2)*.12);
+        oval(c,Math.cos(angle)*radial,Math.sin(angle)*radial,mass*.62,mass*.46,i%2?'#b18a69':'#c39a73',angle,'#8e7155',1.6);
+      }
+      for(let i=0;i<4;i++){
+        const y=(i-1.5)*9;
+        shape(c,p=>{p.moveTo(-mass*.9,y);p.bezierCurveTo(-mass*.3,y-8-progress*12,mass*.35,y+10+progress*12,mass*.9,y-3);},null,'rgba(245,219,163,.76)',2);
+      }
+      if(progress>0)progressRing(c,0,0,r+10,progress,'#4d9478');
+    }else{
+      glow(c,0,0,59,'rgba(204,225,162,.26)');
+      [-1,1].forEach(side=>shape(c,p=>{p.moveTo(side*18,-30);p.quadraticCurveTo(side*12,0,side*18,31);},null,'#94aa81',3));
+      for(let i=0;i<4;i++){
+        const y=37-((s.elapsed*39+i*21)%79),x=Math.sin(i*3.7)*9;
+        oval(c,x,y,7.8,4.2,'rgba(180,106,82,.73)',-Math.PI/2);
+        oval(c,x,y,3.6,1.4,'#edc89b',-Math.PI/2);
+      }
+    }
+    c.restore();
+    if(!hideLabels&&(s.scanner||Math.hypot(s.player.x-a.x,s.player.y-a.y)<235)){
+      const text=done?'凝块已溶解 · Q 复测血流':a.scanned?'凝块挡住血流 · 1 精准疏通':'血细胞滞留 · Q 检查阻流原因';
+      worldBadge(labels,text,a.x,a.y,0,-57,done?'#4d8b70':'#956d4d',13);
+    }
+  }
+  function maintenanceTissues(c,s,hideLabels,labels,reduced) {
+    (s.tissues||[]).forEach(t=>{
+      const r=t.radius||30,health=clamp(t.integrity/Math.max(1,t.maxIntegrity||50),0,1),damage=1-health;
+      const repairing=s.tool==='precision'&&(!!t.repairing||!!(s.shot&&s.shot.tool==='precision'&&s.shot.age<.22&&s.shot.targetId===t.id&&s.shot.hitType==='treatment'));
+      const repairHint=s.toolPreview&&s.toolPreview.repairHint,repairAimed=!!(repairHint&&repairHint.targetId===t.id);
+      const near=Math.hypot(s.player.x-t.x,s.player.y-t.y)<245,aimed=repairAimed||s.toolPreview&&s.toolPreview.targetId===t.id;
+      const attacked=(s.enemies||[]).some(e=>e.hp>0&&e.targetId===t.id&&['telegraph','lunge','cast'].includes(e.state));
+      const defending=!!(s.defense&&s.defense.active&&!s.defense.closed);
+      const color=t.attached?'#a88752':health<.35?'#b16950':damage>.02?'#a78453':'#6a987b';
+      c.save();c.translate(t.x,t.y);c.lineCap='round';c.lineJoin='round';
+      if(defending){
+        glow(c,0,0,63,damage>.01?'rgba(211,170,107,.20)':'rgba(164,210,150,.32)');
+        if(damage<=.01)oval(c,0,0,r+10,r+10,null,0,'rgba(104,157,115,.53)',1.5);
+      }
+      oval(c,0,17,r*1.52,r*.65,'rgba(80,100,72,.13)');
+      shape(c,p=>{p.moveTo(-r*1.55,11);p.bezierCurveTo(-r*.7,-18,r*.7,18,r*1.55,-11);},null,'#aaaf8c',27);
+      shape(c,p=>{p.moveTo(-r*1.55,8);p.bezierCurveTo(-r*.7,-21,r*.7,15,r*1.55,-14);},null,'#ddd2ac',21);
+      shape(c,p=>{p.moveTo(-r*1.5,8);p.bezierCurveTo(-r*.7,-21,r*.7,15,r*1.5,-14);},null,damage>.6?'#bca887':'#c69d7b',11);
+      if(damage>.01){
+        oval(c,5,17+damage*6,14+damage*20,8+damage*9,'rgba(172,109,85,'+(.10+damage*.19)+')',.25);
+        const opening=1.8+damage*7;
+        const crack=[{x:-10,y:-20},{x:1,y:-9},{x:-8,y:0},{x:9,y:9},{x:5,y:24}];
+        line(c,crack,'#e6dcc0',opening+5);line(c,crack,t.hitFlash>0?'#d18a66':'#9e7059',opening);
+        if(!reduced)for(let i=0;i<4;i++){
+          const phase=(s.elapsed*.65+i*.25)%1;
+          oval(c,4+Math.sin(i*2.8)*phase*(14+damage*13),11+phase*(13+damage*21),2+damage*2.5,1.2+damage*1.5,'rgba(168,105,84,'+((1-phase)*damage*.68)+')',i);
+        }
+      }else{
+        line(c,[{x:-11,y:-10},{x:-1,y:-1},{x:11,y:7}],'rgba(245,234,195,.81)',2);
+      }
+      const flow=clamp(Number.isFinite(t.localFlow)?t.localFlow:health,0,1);
+      for(let i=0;i<3;i++){
+        const phase=(s.elapsed*(.18+flow*.40)+i/3)%1,x=-r*1.3+phase*r*2.6,y=-x*.22-3;
+        oval(c,x,y,5.8,2.8,'rgba(167,100,78,'+(.22+flow*.40)+')',-.22);
+      }
+      // Inhabited windows show the same measured perfusion as the tissue. They
+      // have no independent animation or recovery clock, so repair relights them.
+      const lampColor='rgb('+Math.round(111+flow*130)+','+Math.round(123+flow*83)+','+Math.round(107+flow*25)+')';
+      for(let i=0;i<3;i++){
+        const x=r+20+i*14,y=21-(i===1?9:0);
+        if(flow>0)glow(c,x,y-7,18,'rgba(244,202,115,'+(flow*.29)+')');
+        round(c,x-6,y-17,12,19,4);c.fillStyle='#b0b697';c.fill();c.strokeStyle='#819177';c.lineWidth=1.2;c.stroke();
+        round(c,x-3.5,y-13,7,10,2);c.fillStyle=lampColor;c.fill();
+        if(flow>.1)line(c,[{x:x-1.5,y:y-11},{x:x-1.5,y:y-6}],'rgba(255,239,187,'+(flow*.75)+')',1.2);
+      }
+      if(t.attached){
+        const loose=clamp(Number(t.attachmentProgress)||0,0,1);
+        glow(c,0,0,48,'rgba(204,172,105,.17)');
+        for(let i=0;i<7;i++){
+          const x=(i-3)*6,y=(i%2?1:-1)*loose*11;
+          shape(c,p=>{p.moveTo(x-19,y-22);p.bezierCurveTo(x+18,y-8,x-17,y+8,x+16,y+23);},null,'rgba(174,144,86,'+(.88-loose*.42)+')',3.5-loose*1.7);
+          shape(c,p=>{p.moveTo(-27,y+x*.33);p.quadraticCurveTo(0,y+13,28,y-x*.3);},null,'rgba(241,218,159,'+(.76-loose*.30)+')',1.6);
+        }
+        if(loose>0)progressRing(c,0,0,r+11,loose,'#739d71');
+      }
+      if(repairing){
+        glow(c,0,0,51,'rgba(193,231,172,.43)');
+        for(let i=0;i<4;i++){
+          const y=-14+i*9;
+          line(c,[{x:-10,y:y-4},{x:10,y:y+4}],'#dbe9ba',2.8);
+          oval(c,-10,y-4,2,2,'#6e9d7c');oval(c,10,y+4,2,2,'#6e9d7c');
+        }
+      }
+      if(damage>.01||s.scanner||attacked){
+        if(!repairAimed&&(!t.attached||!(t.attachmentProgress>0)))progressRing(c,0,0,r+9,health,color);
+        if(attacked)oval(c,0,0,r+17,r+17,null,0,'rgba(176,102,72,.64)',1.5);
+      }
+      c.restore();
+      if(!hideLabels&&(near||s.scanner||attacked||t.hitFlash>0||aimed||defending)){
+        const value=Math.ceil(t.integrity)+'/'+(t.maxIntegrity||50);
+        const title=t.attached?damage>.01?'覆盖下有裂口 · 1 可直接修补':'组织已修复 · 2 可清理覆盖物':damage>.01?'组织裂口 · 1 精准封合':'灌流组织 · 暂无损伤';
+        if(!repairAimed)worldBadge(labels,title,t.x,t.y,0,-58,color,12);
+        if(s.scanner||damage>.01||defending)worldBadge(labels,(t.label||'灌流组织')+' '+value,t.x,t.y,0,55,color,11);
+      }
+    });
+  }
+  function supplyCapsule(c,x,y,color,tool,scale) {
     c.save();c.translate(x,y);c.scale(scale||1,scale||1);
-    oval(c,0,15,25,9,'rgba(64,87,65,.17)');
-    round(c,-20,-16,40,32,6);c.fillStyle=open?'#e6ddbb':'#e6e5c8';c.fill();c.strokeStyle=color;c.lineWidth=2;c.stroke();
-    round(c,-23,open?-25:-19,46,9,3);c.fillStyle=open?'#c4caae':'#b7ccb0';c.fill();c.stroke();
-    line(c,[{x:-12,y:-8},{x:-12,y:11}],color,2);line(c,[{x:12,y:-8},{x:12,y:11}],color,2);
-    medicalCross(c,0,-1,13,color);c.restore();
+    oval(c,0,15,30,9,'rgba(64,87,65,.17)');
+    round(c,-29,-15,58,30,15);c.fillStyle='rgba(241,241,215,.82)';c.fill();c.strokeStyle=color;c.lineWidth=2;c.stroke();
+    round(c,-19,-10,38,20,8);c.fillStyle='rgba(194,217,184,.53)';c.fill();
+    [-1,1].forEach(side=>{oval(c,side*22,0,5,12,'#b1c9a8',0,color,1.5);});
+    if(tool==='probe')line(c,[{x:-10,y:0},{x:-3,y:0},{x:0,y:-6},{x:4,y:6},{x:7,y:0},{x:12,y:0}],color,2.5);
+    else{medicalCross(c,-2,0,12,color);[-1,0,1].forEach(k=>oval(c,9+k*3,-4+k*3,1.6,1.6,color));}
+    line(c,[{x:-13,y:-10},{x:12,y:-10}],'rgba(255,255,230,.85)',2);c.restore();
   }
   function supplies(c,s,hideLabels,labels) {
-    const chest=s.chest;
-    if(chest&&chest.room===s.room) {
-      supplyCrate(c,chest.x,chest.y,chest.claimed?'#8a997b':'#8b7b47',!!chest.claimed,1.04);
-      if(!hideLabels&&!chest.claimed&&(s.scanner||Math.hypot(s.player.x-chest.x,s.player.y-chest.y)<180))worldBadge(labels,'E · 可选医疗补给',chest.x,chest.y,0,47,'#867442',12);
-    }
     (s.supplies||[]).filter(item=>item.room===s.room&&['transit','ready'].includes(item.state)).forEach(item=>{
       const ready=item.state==='ready',color=item.tool==='probe'?'#aa8b48':'#4f917c';
       if(!ready&&item.route&&item.route.length>1){c.save();c.setLineDash([5,10]);line(c,item.route,'rgba(93,143,116,.34)',2);c.restore();}
       glow(c,item.x,item.y,ready?62:39,ready?'rgba(231,210,144,.32)':'rgba(167,212,176,.26)');
-      supplyCrate(c,item.x,item.y,color,false,.86);
+      supplyCapsule(c,item.x,item.y,color,item.tool,.93);
       if(!ready){
         leaf(c,item.x-25,item.y+5,18,-.9,'#9db58b');leaf(c,item.x+25,item.y+5,18,.9,'#9db58b');
         progressRing(c,item.x,item.y,31,clamp(Number(item.progress)||0,0,1),color);
       }
-      if(!hideLabels)worldBadge(labels,ready?'E · 领取'+(item.label||'医疗工具'):'血流运输 · '+(item.label||'医疗补给'),item.x,item.y,0,s.room==='heart'?-49:49,color,12);
+      if(!hideLabels)worldBadge(labels,(ready?'E 领取 · ':'血流运输 · ')+(item.tool==='probe'?'3 传导探针':'2 裂解喷头'),item.x,item.y,0,s.room==='heart'?-49:49,color,12);
     });
   }
   function conduction(c,s,hideLabels,labels,reduced) {
     if(s.room!=='heart'||!s.conductionSignal)return;
     const signal=s.conductionSignal,points=signal.points||[],fault=s.fault;
+    if(s.heartSectors&&s.heartSectors.length){
+      const core=s.syncCore||{x:1300,y:500},end=(signal.samples||[]).find(n=>n.id==='C3')||points[points.length-1];
+      if(end){
+        line(c,[core,end],'rgba(118,132,97,.19)',16);
+        line(c,[core,end],s.heartStable?'#cfb36c':'#a9b391',5);
+        line(c,[core,end],'rgba(247,229,170,.72)',1.6);
+      }
+      (signal.pulses||[]).forEach(pulse=>{
+        if(!Number.isFinite(pulse.x)||!Number.isFinite(pulse.y))return;
+        glow(c,pulse.x,pulse.y,reduced?24:38,'rgba(244,210,115,.46)');
+        oval(c,pulse.x,pulse.y,8,8,'#f7d58a',0,'#fff4c3',2);
+      });
+      synchronizationCore(c,s,reduced);return;
+    }
     if(points.length>1){
       line(c,points,'rgba(89,111,91,.18)',13);
       const stop=signal.faultPosition||fault;
@@ -431,7 +718,7 @@
         [-1,1].forEach(side=>oval(c,side*21,-side*15,7,7,'#d7cc8c',0,'#7c9874',1.7));
       }
       c.restore();
-      if(!hideLabels&&(s.scanner||fault.scanned||done))worldBadge(labels,done?'传导桥已修复':fault.scanned?'输入有 / 输出无 · 探针修复':'传导出现中断',fault.x,fault.y,0,53,done?'#7b8749':'#946c80',12);
+      if(!hideLabels&&(s.scanner||fault.scanned||done||Math.hypot(s.player.x-fault.x,s.player.y-fault.y)<235))worldBadge(labels,done?'传导桥已修复':fault.scanned?'输入有 / 输出无 · 3 探针接通':'脉冲在此中断 · Q 检查',fault.x,fault.y,0,53,done?'#7b8749':'#946c80',12);
     }
     if(!hideLabels&&signal.repaired&&['conduction','recovery'].includes(s.stage)) {
       const end=points[points.length-1];
@@ -495,7 +782,7 @@
         }else{
           for(let k=0;k<3;k++)line(c,[{x:p.x-22,y:p.y-10+k*10},{x:p.x+22,y:p.y+5+k*6}],'#c4b487',4);
         }
-        if(!hideLabels&&(s.scanner||exposed))worldBadge(labels,done?'核心已软化':exposed?'暴露核心 · 精准治疗':'核心仍被纤维保护',p.x,p.y,0,44,color,12);
+        if(!hideLabels&&(s.scanner||exposed))worldBadge(labels,done?'核心已软化':exposed?'核心已暴露 · 1 精准处理':'纤维挡住核心 · 先用 2 裂解',p.x,p.y,0,44,color,12);
         return;
       }
       if(p.kind==='fiber') {
@@ -506,7 +793,7 @@
         }
         if(p.complete)line(c,[{x:p.x-8,y:p.y},{x:p.x-1,y:p.y+6},{x:p.x+10,y:p.y-9}],'#7e905e',3);
         else if(progress>0)progressRing(c,p.x,p.y,28,progress,'#d0a357');
-        if(!hideLabels&&(s.scanner||p.scanned||progress>0)&&!(s.precision&&s.toolPreview&&s.toolPreview.targetId===p.id))worldBadge(labels,p.complete?'纤维已裂解':(p.label||'纤维外层')+' · 喷雾裂解',p.x,p.y,0,-44,color,12);
+        if(!hideLabels&&(s.scanner||p.scanned||progress>0||Math.hypot(s.player.x-p.x,s.player.y-p.y)<220)&&!(s.precision&&s.toolPreview&&s.toolPreview.targetId===p.id))worldBadge(labels,p.complete?'纤维已裂解':'纤维包裹层 · 2 喷头裂解',p.x,p.y,0,-44,color,12);
         return;
       }
       if(!p.scanned&&!p.complete)return;
@@ -517,9 +804,11 @@
     });
     if(!hideLabels&&s.scanner)worldBadge(labels,fibers.length?'血栓外层 · '+fibers.filter(p=>p.complete).length+'/2 已裂解':'纤维性血栓 · '+Math.round(soft*100)+'% 已软化',a.x,a.y,0,-r-39,'#735f43');
   }
-  function hunter(c,e,s,hideLabels,labels) {
+  function diseaseCell(c,e,s,hideLabels,labels) {
     if(e.hp<=0)return;
-    const purify=clamp(e.purifyProgress||0,0,1);
+    const purify=clamp(e.purifyProgress||0,0,1),weaver=e.type==='weaver';
+    const committing=['telegraph','lunge','cast'].includes(e.state),tissueTarget=e.targetKind==='tissue';
+    const direction=e.target?Math.atan2(e.target.y-e.y,e.target.x-e.x):0;
     c.save();c.globalAlpha=1-purify*.90;
     if(purify>0){
       glow(c,e.x,e.y,48+purify*45,'rgba(255,223,148,'+(.40*purify)+')');
@@ -528,19 +817,110 @@
         oval(c,e.x+Math.cos(a)*dist,e.y+Math.sin(a)*dist,2.6*(1-purify)+.8,4*(1-purify)+1,'rgba(240,205,125,.85)',a);
       }
     }
-    if(!purify&&e.target&&(e.state==='telegraph'||e.state==='lunge')) {
-      c.save();c.setLineDash([7,7]);line(c,[e,e.target],e.state==='lunge'?'rgba(178,80,72,.75)':'rgba(175,101,81,.65)',3);c.setLineDash([]);
-      oval(c,e.target.x,e.target.y,34,34,'rgba(180,87,72,.11)',0,'#ae715c',2);c.restore();
+    if(!purify&&e.target&&committing) {
+      const color=tissueTarget?'#b5744d':'#a96e59',progress=clamp(Number(e.telegraph)||0,0,1);
+      c.save();c.setLineDash(weaver?[3,8]:[8,7]);
+      line(c,[e,e.target],tissueTarget?'rgba(171,102,62,.65)':'rgba(163,103,83,.49)',weaver?1.8:2.4);c.setLineDash([]);
+      const radius=tissueTarget?43:32;
+      oval(c,e.target.x,e.target.y,radius,radius,'rgba(187,113,68,.08)',0,color,1.5);
+      shape(c,p=>p.arc(e.target.x,e.target.y,radius,-Math.PI/2,-Math.PI/2+TAU*progress),null,color,3);
+      if(tissueTarget){
+        [-1,1].forEach(side=>line(c,[{x:e.target.x+side*36,y:e.target.y-36},{x:e.target.x+side*28,y:e.target.y-36},{x:e.target.x+side*28,y:e.target.y-28}],color,2));
+      }
+      c.restore();
     }
-    const squeeze=e.state==='telegraph'?1-e.telegraph*.20:1;
-    oval(c,e.x,e.y+17,28,10,'rgba(77,65,76,.19)');
-    glow(c,e.x,e.y,44,e.hitFlash?'rgba(248,221,154,.6)':'rgba(158,123,161,.20)');
-    oval(c,e.x,e.y,25*squeeze,25/squeeze,e.hitFlash?'#e7c29e':'#b2a0b1',0,'#817188',2);
-    for(let i=0;i<7;i++){const a=i*TAU/7;oval(c,e.x+Math.cos(a)*23,e.y+Math.sin(a)*23,4,7,'#9f8ca2',a);}
-    oval(c,e.x+5,e.y-3,8,10,'#806b8c');
-    if(s.scanner&&e.weakpoint&&e.weakpoint.exposed!==false){const w=e.weakpoint;glow(c,w.x,w.y,20,'rgba(255,209,113,.6)');oval(c,w.x,w.y,w.radius||11,w.radius||11,'#f0cb7e',0,'#fff0b5',1.8);}
-    if(!hideLabels&&!purify&&e.state==='telegraph')worldBadge(labels,'扑击预警',e.x,e.y,0,-38,'#a16450');
+    oval(c,e.x,e.y+18,weaver?30:31,weaver?9:12,'rgba(91,82,61,.19)');
+    glow(c,e.x,e.y,43,e.hitFlash?'rgba(248,221,154,.58)':weaver?'rgba(187,165,108,.19)':'rgba(185,128,90,.17)');
+    c.save();c.translate(e.x,e.y);c.rotate(direction);
+    if(weaver){
+      const spread=committing?1.12:1;
+      for(let i=0;i<6;i++){
+        const side=i%2?1:-1,rootX=-17+(i>>1)*15,endX=rootX-9;
+        shape(c,p=>{p.moveTo(rootX,side*8);p.bezierCurveTo(rootX-13,side*19*spread,endX+7,side*29*spread,endX,side*33*spread);},null,'#9c865d',2.7);
+        oval(c,endX,side*33*spread,3,2.1,'#bd9e6b',-.3);
+      }
+      shape(c,p=>{p.moveTo(27,0);p.quadraticCurveTo(9,-21,-17,-13);p.quadraticCurveTo(-30,0,-17,13);p.quadraticCurveTo(9,21,27,0);p.closePath();},e.hitFlash?'#e3cf9a':'#c4ae7b','#927b54',2);
+      for(let i=0;i<6;i++){
+        const x=-16+i*6;
+        shape(c,p=>{p.moveTo(x-4,-11);p.quadraticCurveTo(x+12,0,x-4,11);},null,'#ecdbac',1.7);
+      }
+      oval(c,5,0,7.5,9,'#9e875a',0,'#e8d19a',1.3);
+      [-1,1].forEach(side=>line(c,[{x:20,y:side*5},{x:30,y:side*8},{x:35,y:side*4}],'#a78d5d',2.4));
+      if(committing)glow(c,30,0,20,'rgba(241,208,124,.58)');
+    }else{
+      const squeeze=e.state==='telegraph'?1-clamp(e.telegraph||0,0,1)*.18:1;
+      c.scale(1/squeeze,squeeze);
+      for(let i=0;i<7;i++){
+        const a=i*TAU/7,radial=8+(i%3)*3;
+        oval(c,Math.cos(a)*radial+2,Math.sin(a)*radial,16+(i%3),13+(i%2),e.hitFlash?'#e4bc8b':i%2?'#bb8e6d':'#c8a07a',a*.45,'#926f52',1.5);
+      }
+      for(let i=0;i<5;i++){
+        const a=i*TAU/5;
+        line(c,[{x:Math.cos(a)*8,y:Math.sin(a)*8},{x:Math.cos(a+.17)*23,y:Math.sin(a+.17)*23}],'#e6c99a',2.2);
+      }
+      oval(c,2,0,9,10,e.state==='recover'?'#d9b66e':'#9d7654',0,'#f0d7a6',1.3);
+    }
     c.restore();
+    if(e.weakpoint&&e.weakpoint.exposed!==false){
+      const w=e.weakpoint;glow(c,w.x,w.y,23,'rgba(255,209,113,.65)');
+      oval(c,w.x,w.y,w.radius||11,w.radius||11,'#f0cb7e',0,'#fff0b5',2);
+      [-1,1].forEach(side=>{
+        line(c,[{x:w.x+side*18,y:w.y-6},{x:w.x+side*14,y:w.y-6},{x:w.x+side*14,y:w.y-11}],'#b48b38',1.7);
+        line(c,[{x:w.x+side*18,y:w.y+6},{x:w.x+side*14,y:w.y+6},{x:w.x+side*14,y:w.y+11}],'#b48b38',1.7);
+      });
+    }
+    if(!hideLabels&&!purify&&(s.scanner||committing||Math.hypot(s.player.x-e.x,s.player.y-e.y)<230)){
+      const text=committing?(tissueTarget?(weaver?'纤维即将附着组织':'凝集体即将撞击组织'):(weaver?'纤维投射预警':'凝集体冲撞预警')):weaver?'纤维织体 · 远距投射附着物':'凝集体 · 冲撞后用 1 命中弱点';
+      worldBadge(labels,text,e.x,e.y,0,weaver?-52:-45,weaver?'#957b4c':'#a17250',12);
+    }
+    c.restore();
+  }
+  function diseaseSource(c,s,hideLabels,labels,reduced) {
+    // Heart sectors own both their lesion and source silhouette. A second
+    // generic fiber nest would cover the cleared relay and disguise east's clot.
+    if(s.room==='heart'&&s.heartSectors&&s.heartSectors.length)return;
+    if(s.sources&&s.sources.length){
+      s.sources.filter(source=>!source.room||source.room===s.room).forEach(source=>{
+        diseaseSource(c,{...s,sources:null,defense:{...s.defense,source,closed:!!source.closed,active:!!(s.defense&&s.defense.active)&&!source.closed}},hideLabels,labels,reduced);
+      });return;
+    }
+    const defense=s.defense,source=defense&&defense.source;if(!source)return;
+    if(source.room&&source.room!==s.room)return;
+    const active=!!defense.active&&!defense.closed,phase=reduced?0:(s.elapsed*.32)%1;
+    if(s.room==='main'&&s.clot&&!s.clot.removed){
+      if(active)oval(c,source.x,source.y,134+phase*17,115+phase*14,null,0,'rgba(163,119,65,'+(.38*(1-phase))+')',2);
+      if(!hideLabels&&s.scanner)worldBadge(labels,'主血栓 · 凝集病变来源',source.x,source.y,0,-159,'#94724b',12);
+      return;
+    }
+    c.save();c.translate(source.x,source.y);
+    oval(c,0,9,52,23,'rgba(102,100,69,.14)',-.1);
+    oval(c,0,0,47,25,active?'rgba(186,158,111,.56)':'rgba(170,188,145,.47)',-.12,active?'#b59a6d':'#9eae89',1.4);
+    for(let i=0;i<9;i++){
+      const x=(i-4)*9,y=Math.sin(i*2.1)*7;
+      shape(c,p=>{p.moveTo(x-14,y-24);p.bezierCurveTo(x+14,y-8,x-14,y+9,x+13,y+23);},null,active?'#baa174':'#a5b48d',3);
+      shape(c,p=>{p.moveTo(-43,y+x*.25);p.quadraticCurveTo(0,y+13,43,y-x*.26);},null,active?'#e5ce97':'#d3d9ae',1.5);
+    }
+    [-1,1].forEach(side=>line(c,[{x:side*34,y:5},{x:side*49,y:17},{x:side*58,y:14}],active?'#b39a70':'#a1b28a',2));
+    if(active){
+      oval(c,0,0,41+phase*23,28+phase*16,null,0,'rgba(160,112,66,'+(.46*(1-phase))+')',1.8);
+      glow(c,0,0,55,'rgba(199,154,90,.17)');
+    }
+    c.restore();
+    if(!hideLabels&&(s.scanner||active&&Math.hypot(s.player.x-source.x,s.player.y-source.y)<330))worldBadge(labels,defense.closed?'病变源已稳定':active?'病变持续脱落 · 根治本区后停止增援':'纤维病灶 · 尚未清除',source.x,source.y,0,-63,defense.closed?'#6f8b69':'#9a774c',12);
+  }
+  function fiberProjectiles(c,s) {
+    (s.projectiles||[]).filter(p=>!p.room||p.room===s.room).forEach(p=>{
+      if(!Number.isFinite(p.x)||!Number.isFinite(p.y))return;
+      const dx=Number(p.vx)||p.direction&&p.direction.x||p.target&&p.target.x-p.x||1;
+      const dy=Number(p.vy)||p.direction&&p.direction.y||p.target&&p.target.y-p.y||0;
+      const angle=Math.atan2(dy,dx);
+      c.save();c.translate(p.x,p.y);c.rotate(angle);
+      glow(c,0,0,17,'rgba(211,179,104,.27)');
+      [-1,0,1].forEach(k=>{
+        shape(c,q=>{q.moveTo(-15,k*3);q.quadraticCurveTo(-6,k*7,6,k*2);},null,k===0?'#a88751':'#d3b77f',k===0?3:1.6);
+      });
+      oval(c,3,0,5,3.7,'#c6a363',0,'#957b4b',1.2);c.restore();
+    });
   }
   function spawnTelegraphs(c,s,hideLabels,labels,reduced) {
     (s.spawnTelegraphs||[]).forEach(w=>{
@@ -556,7 +936,11 @@
         oval(c,x,y,3,7,'#b28b8d',angle);
       }
       label(c,'!',w.x,w.y,18,'#92634e',700);
-      if(!hideLabels)worldBadge(labels,'异常信号 · 即将出现',w.x,w.y,0,-55,'#94664f',12);
+      const source=(s.sources||[]).find(source=>source.id===w.sourceId)||(s.defense&&s.defense.source);
+      if(source&&(!source.room||source.room===s.room)){
+        c.setLineDash([3,10]);line(c,[source,w],'rgba(163,121,75,.34)',1.4);c.setLineDash([]);
+      }
+      if(!hideLabels)worldBadge(labels,w.type==='weaver'?'纤维病变脱落 · 即将出现':w.type==='coagulator'?'凝集病变脱落 · 即将出现':'病灶正在脱落 · 增援即将抵达',w.x,w.y,0,-55,'#94664f',12);
       c.restore();
     });
   }
@@ -580,10 +964,6 @@
     const motionAngle=moving?Math.atan2(velocity.y,velocity.x)+Math.PI/2:rotation;
     c.save();
     if(s.scanner){const r=90+s.beat.phase*50;oval(c,p.x,p.y,r,r,null,0,'rgba(66,137,111,'+(.28-s.beat.phase*.16)+')',1.5);}
-    if(s.shield>0) {
-      oval(c,p.x,p.y,31,34,null,0,'rgba(177,165,94,.64)',2.3);
-      if(!hideLabels)worldBadge(labels,'护膜 '+Math.round(s.shield),p.x,p.y,0,55,'#97834b',11);
-    }
     if(p.dashing&&!reduced)for(let i=1;i<=5;i++)oval(c,p.x-Math.cos(a)*i*12,p.y-Math.sin(a)*i*12,16-i*2,11-i,'rgba(240,201,112,'+(.35-i*.05)+')',a);
     glow(c,p.x,p.y,43,'rgba(255,242,183,.48)');oval(c,p.x,p.y+16,25,11,'rgba(48,80,64,.24)');
     c.translate(p.x,p.y);if(p.invulnerable)c.globalAlpha=reduced?.78:Math.floor(time*12)%2?.58:1;
@@ -673,29 +1053,20 @@
       [-1,1].forEach(k=>{line(c,[{x:aim.x+k*17,y:aim.y},{x:aim.x+k*8,y:aim.y}],'#457b66',1.4);line(c,[{x:aim.x,y:aim.y+k*17},{x:aim.x,y:aim.y+k*8}],'#457b66',1.4);});
     }
   }
-  function barrier(c,o,s,hideLabels,labels) {
-    const unlocked=s.dashUnlocked;
-    c.save();c.setLineDash(unlocked?[9,9]:[]);
-    round(c,o.x,o.y,o.w,o.h,14);c.fillStyle=unlocked?'rgba(220,199,128,.16)':'rgba(119,151,112,.45)';c.fill();c.strokeStyle=unlocked?'#b39650':'#79966e';c.lineWidth=2;c.stroke();c.setLineDash([]);
-    for(let i=0;i<o.w/58;i++){const x=o.x+25+i*58;if(unlocked)line(c,[{x:x-5,y:o.y+o.h/2+5},{x,y:o.y+o.h/2-5},{x:x+5,y:o.y+o.h/2+5}],'#a58a47',2);else leaf(c,x,o.y+o.h,42,-.15,'#98b08a');}
-    if(!hideLabels)worldBadge(labels,unlocked?'Space · 循环冲刺':'尚未苏醒的循环屏障',o.x+o.w/2,o.y+o.h/2,0,-29,unlocked?'#987a39':INK);c.restore();
-  }
-  function growth(c,g,s,hideLabels,labels) {
-    if(!g)return;
-    const state=g.state||'dormant',suppressed=state==='suppressed',regrowing=state==='regrowing';
-    const r=(g.radius||24)*(suppressed?.35:regrowing?.75+.25*s.beat.pulse:1),x=g.x,y=g.y;
-    glow(c,x,y,68,suppressed?'rgba(183,209,152,.25)':'rgba(174,124,165,.24)');
-    for(let i=0;i<6;i++){const a=i*TAU/6;oval(c,x+Math.cos(a)*r*.6,y+Math.sin(a)*r*.6,r*.6,r*.5,suppressed?'#a7b498':'#a28ca1',a,'#89788c',1.3);}
-    oval(c,x,y,r*.52,r*.52,suppressed?'#c9c6a2':'#816a8c');
-    if(g.progress>0&&!suppressed&&!regrowing)shape(c,p=>p.arc(x,y,r+9,-Math.PI/2,-Math.PI/2+TAU*g.progress),null,'#edce81',4);
-    if(!hideLabels&&(s.scanner||g.scanned||s.stage==='ending'))worldBadge(labels,regrowing?'同一组织 · 再次生长':suppressed?'已暂时压制':g.scanned?'异常组织 · 特征未知':'未知生物信号',x,y,0,44,regrowing?'#8b5f83':INK);
+  function stabilizationBarrier(c,o,s,hideLabels,labels) {
+    if(s.heartStable)return;
+    c.save();
+    round(c,o.x,o.y,o.w,o.h,Math.min(14,o.h/2));c.fillStyle='rgba(127,153,116,.39)';c.fill();c.strokeStyle='#7e9871';c.lineWidth=2;c.stroke();
+    for(let i=0;i<o.w/58;i++)leaf(c,o.x+25+i*58,o.y+o.h,38,-.15,'#9fb68b');
+    if(!hideLabels)worldBadge(labels,'循环尚未稳定 · 完成治疗与三拍复测后开启',o.x+o.w/2,o.y+o.h/2,0,-31,'#748b62',12);
+    c.restore();
   }
   function toolPalette(result) {
-    if(result.tool==='probe')return { color:'#aa8b45',light:'#fff0b5',shape:result.blocked?'wall':result.hitType==='treatment'?'probe':['hunter','ineffective','healthy'].includes(result.hitType)?'unknown':'none' };
+    if(result.tool==='probe')return { color:'#aa8b45',light:'#fff0b5',shape:result.blocked?'wall':result.hitType==='treatment'?'probe':['hunter','enemy','ineffective','healthy'].includes(result.hitType)?'unknown':'none' };
     if(result.weakpoint)return { color:'#b88a32',light:'#fff0b2',shape:'weakpoint' };
     if(result.hitType==='treatment'||result.kind==='treatment')return { color:'#428c77',light:'#dff0c2',shape:'treatment' };
     if(result.blocked||result.hitType==='wall'||result.hitType==='clot'||result.kind==='blocked')return { color:'#968568',light:'#ead8ac',shape:'wall' };
-    if(result.hitType==='hunter')return { color:'#b4745a',light:'#f8d7ab',shape:'hunter' };
+    if(['hunter','enemy'].includes(result.hitType))return { color:'#b4745a',light:'#f8d7ab',shape:'hunter' };
     if(result.hitType==='undiagnosed'||result.kind==='warning')return { color:'#9b7b57',light:'#f1ddb1',shape:'unknown' };
     return { color:'#72917f',light:'#e5eac7',shape:'none' };
   }
@@ -761,6 +1132,14 @@
       const r=preview?10:14;
       shape(c,q=>{q.moveTo(p.x,p.y-r);q.lineTo(p.x+r,p.y);q.lineTo(p.x,p.y+r);q.lineTo(p.x-r,p.y);q.closePath();},null,palette.color,2);
       oval(c,p.x,p.y,3.5,3.5,palette.light,0,palette.color,1);
+      if(!preview){
+        const age=clamp(Number(result.age)||0,0,.2),burst=19+age*95;
+        oval(c,p.x,p.y,burst,burst,null,0,'rgba(249,220,137,'+(.85-age*3)+')',3);
+        for(let k=0;k<6;k++){
+          const a=k*TAU/6;line(c,[{x:p.x+Math.cos(a)*(burst+3),y:p.y+Math.sin(a)*(burst+3)},
+            {x:p.x+Math.cos(a)*(burst+9),y:p.y+Math.sin(a)*(burst+9)}],palette.color,2.4);
+        }
+      }
     } else if(palette.shape==='treatment') {
       oval(c,p.x,p.y,preview?9:13,preview?9:13,null,0,palette.color,2);
       line(c,[{x:p.x-5,y:p.y},{x:p.x+5,y:p.y}],palette.color,2);
@@ -778,9 +1157,33 @@
     c.restore();
   }
   function preview(c,s,hideLabels,labels) {
-    const result=s.precision&&s.toolPreview;if(!result)return;
-    toolRay(c,result,true);
-    if(!hideLabels&&result.label)worldBadge(labels,result.label,result.to.x,result.to.y,0,result.tool==='sprayer'?-40:-29,toolPalette(result).color,13);
+    const result=s.toolPreview;if(!result)return;
+    // The ray always retains its real first impact, even when the cursor is
+    // diagnosing a repair point behind it. The hint never becomes a beam target.
+    if(s.precision)toolRay(c,result,true);
+    const hint=result.repairHint;
+    if(hint){
+      const tissue=(s.tissues||[]).find(t=>t.id===hint.targetId),target=tissue||hint.target;
+      if(target&&Number.isFinite(target.x)&&Number.isFinite(target.y)){
+        const area=tissue&&tissue.hitArea||{rx:60,ry:30},color=hint.reason==='ready'?'#3f8c70':hint.reason==='healthy'?'#80937c':'#ac8344';
+        const rx=Math.max(1,Number(area.rx)||60),ry=Math.max(1,Number(area.ry)||30);
+        c.save();c.lineCap='round';
+        oval(c,target.x,target.y,rx,ry,null,0,'rgba(251,247,226,.88)',4);
+        oval(c,target.x,target.y,rx,ry,null,0,color,1.8);
+        // A small, open cross locates the repair centre without painting over
+        // the crack; the outline is the controller's actual elliptical hit area.
+        for(const side of [-1,1]){
+          line(c,[{x:target.x+side*3,y:target.y},{x:target.x+side*8,y:target.y}],'rgba(251,247,226,.95)',3.8);
+          line(c,[{x:target.x,y:target.y+side*3},{x:target.x,y:target.y+side*8}],'rgba(251,247,226,.95)',3.8);
+          line(c,[{x:target.x+side*3,y:target.y},{x:target.x+side*8,y:target.y}],color,1.7);
+          line(c,[{x:target.x,y:target.y+side*3},{x:target.x,y:target.y+side*8}],color,1.7);
+        }
+        c.restore();
+        if(!hideLabels&&hint.text)worldBadge(labels,hint.text,target.x,target.y,0,-58,color,13);
+        return;
+      }
+    }
+    if(!hideLabels&&s.precision&&result.label)worldBadge(labels,result.label,result.to.x,result.to.y,0,result.tool==='sprayer'?-40:-29,toolPalette(result).color,13);
   }
   function edgeGuidance(c,s,v) {
     const guidance=s.guidance;if(!guidance||!guidance.target)return;
@@ -796,18 +1199,12 @@
     c.translate(x,y);c.rotate(angle);
     shape(c,q=>{q.moveTo(8,0);q.lineTo(-5,-6);q.lineTo(-2,0);q.lineTo(-5,6);q.closePath();},color);
     c.restore();
-    const text=t.label||guidance.label||'下一连接端',size=14;
-    c.font='600 '+size+'px '+FONT;
-    const half=Math.max(19,c.measureText(text).width/2+11);
-    let bx=x-Math.cos(angle)*(half+30),by=y-Math.sin(angle)*34;
-    bx=clamp(bx,p.x+half+8,p.x+p.w-half-8);by=clamp(by,p.y+24,p.y+p.h-24);
-    badge(c,text,bx,by,color,size);
   }
   function worldEffects(c,s,time) {
     if(s.shot&&s.shot.age<.2){c.save();c.globalAlpha=1-s.shot.age/.2;toolRay(c,s.shot,false);c.restore();}
-    if(s.stage==='burst')for(let i=0;i<35;i++){const x=800+Math.sin(i*2.7)*90,y=1000-((i*43+s.burst*520)%1050);line(c,[{x,y:y+40},{x:x+4,y:y-25}],'rgba(255,231,166,.77)',i%3?3:6);}
-    if(s.stage==='recovery') {const t=s.recovery;if(t>.65){const r=(t-.65)*240;oval(c,900,700,r,r*.65,null,0,'rgba(255,221,139,'+Math.max(0,.6-t*.07)+')',5);glow(c,900,700,220+s.beat.pulse*70,'rgba(255,221,133,.20)');}}
-    if(s.heartConnected)for(let i=0;i<22;i++){const x=180+(i*137)%1450,y=1080-((i*97+time*17)%980);oval(c,x,y,i%3?1.8:3,i%3?1.8:3,'rgba(231,180,78,.55)');}
+    if(s.stage==='burst')for(let i=0;i<35;i++){const center=s.clot||{x:1100},height=s.worldSize&&s.worldSize.height||1400,x=center.x+Math.sin(i*2.7)*90,y=height-((i*43+s.burst*520)%(height+50));line(c,[{x,y:y+40},{x:x+4,y:y-25}],'rgba(255,231,166,.77)',i%3?3:6);}
+    if(s.stage==='recovery'||s.heartStable){const core=s.syncCore||{x:900,y:700};glow(c,core.x,core.y,150+s.beat.pulse*55,'rgba(255,221,133,.14)');}
+    if(s.heartStable||s.stage==='recovery')for(let i=0;i<28;i++){const size=s.worldSize||{width:2600,height:1700},x=180+(i*137)%(size.width-360),y=size.height-120-((i*97+time*17)%(size.height-240));oval(c,x,y,i%3?1.8:3,i%3?1.8:3,'rgba(231,180,78,.55)');}
   }
   function recoveryCaptions(c,p,time) {
     const first=time<2?'山谷间，传来一次深长的呼吸':time<4?'胸口的微光，重新合上平稳的心跳':time<6?'林梢轻动，沉睡的村落重新亮起灯火':'心脏已稳定 · 肺部仍在等待巡诊';
@@ -833,31 +1230,32 @@
   }
   function draw(c,s,time,view) {
     if(!s||!s.player)return;
-    const size=s.worldSize||{width:s.room==='heart'?1800:1600,height:s.room==='heart'?1200:1000};
+    const size=s.worldSize||{width:s.room==='heart'?2600:s.room==='main'?2200:2000,height:s.room==='heart'?1700:s.room==='main'?1400:1250};
     const v=view||{viewport:{x:24,y:84,w:1232,h:552},camera:{x:size.width/2,y:size.height/2,zoom:.65}};
-    const p=v.viewport,cam=v.camera,hide=!!v.hideLabels,labels=[];
+    const p=v.viewport,cam=v.camera,hide=!!v.hideLabels,objectHide=true,labels=[];
     const reduced=!!(s.reducedMotion||v.reducedMotion),simulationTime=Number.isFinite(s.elapsed)?s.elapsed:time;
     if(s.endingScene==='exterior'){exterior(c,s,v);return;}
     c.save();round(c,p.x,p.y,p.w,p.h,16);c.clip();
     c.translate(p.x+p.w/2,p.y+p.h/2);c.scale(cam.zoom,cam.zoom);c.translate(-cam.x,-cam.y);
-    drawBackground(c,s,reduced?0:simulationTime);links(c,s);conduction(c,s,hide,labels,reduced);
-    (s.portals||[]).forEach(a=>portal(c,a,s,hide,labels));
-    (s.nodes||[]).filter(a=>!(s.branches||[]).some(branch=>branch.nodeId===a.id)).forEach(a=>node(c,a,s,hide,labels));
-    (s.valves||[]).forEach(a=>valve(c,a,s,hide,labels));clot(c,s,hide,labels);
-    branchLesions(c,s,hide,labels);supplies(c,s,hide,labels);scans(c,s,hide,labels);
-    (s.obstacles||[]).filter(a=>a.kind==='dashBarrier').forEach(a=>barrier(c,a,s,hide,labels));
-    if(s.room==='heart'&&(s.dashUnlocked||s.stage==='ending'))growth(c,s.growth,s,hide,labels);
-    spawnTelegraphs(c,s,hide,labels,reduced);
-    (s.enemies||[]).forEach(a=>hunter(c,a,s,hide,labels));preview(c,s,hide,labels);player(c,s,simulationTime,reduced,hide,labels);worldEffects(c,s,reduced?0:simulationTime);
+    drawBackground(c,s,reduced?0:simulationTime,reduced);links(c,s);conduction(c,s,objectHide,labels,reduced);
+    (s.portals||[]).forEach(a=>portal(c,a,s,objectHide,labels));
+    (s.nodes||[]).filter(a=>!(s.branches||[]).some(branch=>branch.nodeId===a.id)&&!(s.room==='entry'&&s.entryLesion&&a.id==='pressure')).forEach(a=>node(c,a,s,objectHide,labels));
+    (s.valves||[]).forEach(a=>valve(c,a,s,objectHide,labels));clot(c,s,objectHide,labels);
+    entryLesion(c,s,objectHide,labels);branchLesions(c,s,objectHide,labels);
+    maintenanceTissues(c,s,objectHide,labels,reduced);supplies(c,s,objectHide,labels);scans(c,s,objectHide,labels);
+    (s.obstacles||[]).filter(a=>['dashBarrier','recoveryBarrier','heartBarrier'].includes(a.kind)).forEach(a=>stabilizationBarrier(c,a,s,objectHide,labels));
+    diseaseSource(c,s,objectHide,labels,reduced);
+    spawnTelegraphs(c,s,objectHide,labels,reduced);
+    (s.enemies||[]).forEach(a=>diseaseCell(c,a,s,objectHide,labels));fiberProjectiles(c,s);
+    preview(c,s,objectHide,labels);player(c,s,simulationTime,reduced,objectHide,labels);worldEffects(c,s,reduced?0:simulationTime);
+    if(!hide)focusLabels(s,labels);
     // Soft perimeter foreground establishes depth without hiding interactive objects.
     c.save();c.globalAlpha=.65;
     [0,1].forEach(side=>{for(let i=0;i<9;i++)leaf(c,side?size.width+10:-10,100+i*130,100+i%3*35,side?-.6:.6,'#7b997a');});c.restore();
     c.restore();
     c.save();round(c,p.x,p.y,p.w,p.h,16);c.strokeStyle='#b7c9ad';c.lineWidth=1;c.stroke();
-    if(!hide) {drawWorldLabels(c,labels,v);edgeGuidance(c,s,v);}
+    if(!hide) {drawWorldLabels(c,labels,v,s);edgeGuidance(c,s,v);}
     if(s.damageFlash>0){round(c,p.x,p.y,p.w,p.h,16);c.fillStyle='rgba(173,77,62,'+Math.min(.18,s.damageFlash*.3)+')';c.fill();}
-    if(!hide&&s.stage==='burst')badge(c,'主血流重新奔涌',p.x+p.w/2,p.y+40,'#8f713e',20);
-    if(!hide&&s.stage==='recovery'&&s.recovery>.65)badge(c,'一颗心，重新有了光',p.x+p.w/2,p.y+40,INK,20);
     c.restore();
   }
   window.GiantCureJourneyArt={draw};

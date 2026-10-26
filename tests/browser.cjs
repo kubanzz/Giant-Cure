@@ -18,9 +18,13 @@ async function setup(context, storage) {
     if (mode === 'malformed') { localStorage.setItem('giant-cure-journey-v1', '{invalid'); localStorage.setItem('giant-cure-journey-v2', '{invalid'); }
     if (mode === 'journey-v1') localStorage.setItem('giant-cure-journey-v1', JSON.stringify({ wins: 4, bestSeconds: 120 }));
     if (mode === 'journey-v2') { localStorage.setItem('giant-cure-journey-v1', JSON.stringify({ wins: 9, bestSeconds: 100 })); localStorage.setItem('giant-cure-journey-v2', JSON.stringify({ wins: 2, bestSeconds: 420 })); }
+    if (mode === 'journey-v3') { localStorage.setItem('giant-cure-journey-v2', JSON.stringify({ wins: 9, bestSeconds: 100 })); localStorage.setItem('giant-cure-journey-v3', JSON.stringify({ wins: 3, bestSeconds: 310 })); }
+    if (mode === 'journey-v4') { localStorage.setItem('giant-cure-journey-v3', JSON.stringify({ wins: 9, bestSeconds: 100 })); localStorage.setItem('giant-cure-journey-v4', JSON.stringify({ wins: 2, bestSeconds: 360, bestGrade: 'A', medals: ['steady'] })); }
     if (mode === 'unavailable') for (const method of ['getItem', 'setItem']) Object.defineProperty(Storage.prototype, method, { configurable: true, value() { throw new DOMException('Unavailable', 'SecurityError'); } });
   }, storage);
-  return h.setup(context, errors, requests);
+  const p = await h.setup(context, errors, requests);
+  await p.evaluate(async () => { try { await window.GiantCureAssets.clinicReady; } catch {} });
+  return p;
 }
 async function mark(name, action) {
   await action(); checks.push(name); console.log('PASS ' + name);
@@ -56,7 +60,7 @@ async function assertPaintedScene(p) {
     if (Math.abs(pixels[i] - 247) + Math.abs(pixels[i + 1] - 246) + Math.abs(pixels[i + 2] - 237) > 45) illustrated++;
   }
   assert(painted > 48 * 48 * .9, 'paper-backed scene has no blank transparent areas');
-  assert(illustrated > 48 * 48 * .04, 'giant scene contains visible drawing on its paper background');
+  assert(illustrated > 48 * 48 * .35, 'the forest giant illustration occupies the scene instead of leaving a sparse placeholder');
   assert.equal(await p.locator('#clinic-scene').evaluate(el => Number(getComputedStyle(el).opacity)), 1, 'report retains the giant scene');
 }
 async function assertArtworkAnchor(p) {
@@ -64,14 +68,15 @@ async function assertArtworkAnchor(p) {
     const s = window.GiantCure.snapshot(), art = window.GiantCureClinicArt;
     const images = window.GiantCureAssets.images, clinic = { ...s.clinic, reducedMotion: s.reducedMotion };
     const frame = art.getFrame ? art.getFrame(clinic, clinic.elapsed, images) : (() => {
-      const scratch = document.createElement('canvas'); scratch.width = 1248; scratch.height = 1140;
+      const scratch = document.createElement('canvas'); scratch.width = 2464; scratch.height = 1104;
       return art.draw(scratch.getContext('2d'), clinic, clinic.elapsed, images);
     })();
     const canvas = document.querySelector('#clinic-scene').getBoundingClientRect();
     const anchor = document.querySelector('#diagnosis-heart-anchor').getBoundingClientRect();
-    return { heart: frame.heart, expected: { x: canvas.x + frame.heart.x / 624 * canvas.width, y: canvas.y + frame.heart.y / 570 * canvas.height }, actual: { x: anchor.x + anchor.width / 2, y: anchor.y + anchor.height / 2 } };
+    return { heart: frame.heart, scene: frame.scene, expected: { x: canvas.x + frame.heart.x / frame.scene.width * canvas.width, y: canvas.y + frame.heart.y / frame.scene.height * canvas.height }, actual: { x: anchor.x + anchor.width / 2, y: anchor.y + anchor.height / 2 } };
   });
   assert(Number.isFinite(alignment.heart.x) && Number.isFinite(alignment.heart.y), 'renderer publishes its projected heart location');
+  assert(alignment.scene.width > alignment.scene.height, 'clinic renderer publishes landscape scene dimensions');
   assert(Math.abs(alignment.expected.x - alignment.actual.x) < 1 && Math.abs(alignment.expected.y - alignment.actual.y) < 1, 'DOM heart anchor follows the same painted-scene camera transform: ' + JSON.stringify(alignment));
 }
 async function assertGhostAnchor(p) {
@@ -80,12 +85,14 @@ async function assertGhostAnchor(p) {
     const frame = window.GiantCureClinicArt.getFrame(clinic, clinic.elapsed, window.GiantCureAssets.images);
     const canvas = document.querySelector('#entry-transition-ghost canvas').getBoundingClientRect();
     const anchor = document.querySelector('#entry-ghost-diagnosis-heart-anchor').getBoundingClientRect();
-    return { expected: { x: canvas.x + frame.heart.x / 624 * canvas.width, y: canvas.y + frame.heart.y / 570 * canvas.height }, actual: { x: anchor.x + anchor.width / 2, y: anchor.y + anchor.height / 2 } };
+    return { expected: { x: canvas.x + frame.heart.x / frame.scene.width * canvas.width, y: canvas.y + frame.heart.y / frame.scene.height * canvas.height }, actual: { x: anchor.x + anchor.width / 2, y: anchor.y + anchor.height / 2 } };
   });
   assert(Math.abs(alignment.expected.x - alignment.actual.x) < 1 && Math.abs(alignment.expected.y - alignment.actual.y) < 1, 'capsule scene and entry heart anchor stay registered: ' + JSON.stringify(alignment));
 }
 async function freshClinic(p) {
-  await p.reload(); await ready(p); await click(p, '#begin');
+  await p.reload(); await ready(p);
+  await p.evaluate(async () => { await window.GiantCureAssets.clinicReady; });
+  await click(p, '#begin');
 }
 async function report(p) {
   if ((await snapshot(p)).screen === 'home') await click(p, '#begin');
@@ -100,6 +107,9 @@ async function assertPresentation(p, phase) {
   assert.equal(await p.locator('#diagnosis-action').isDisabled(), phase !== 'ready');
   assert.equal(await p.locator('#case-archive').isDisabled(), phase !== 'ready');
   assert.equal(await p.locator('#diagnosis-panel').getAttribute('data-clinic-phase'), phase);
+  const stage = ['report', 'ready'].includes(phase) ? 'location' : 'scan';
+  assert.equal(await p.locator('#diagnosis-panel').getAttribute('data-clinic-stage'), stage);
+  assert.equal(await p.locator('#clinic-phase-nav [aria-current="step"]').getAttribute('data-clinic-stage'), stage, 'the visible stage navigation follows examination state');
   return s;
 }
 async function assertReport(p) {
@@ -108,11 +118,16 @@ async function assertReport(p) {
   assert.equal(await p.locator('#diagnosis-report').isVisible(), true);
   assert.equal(await p.locator('#diagnosis-finding').innerText(), '心区血流信号减弱');
   assert.equal(await p.locator('#diagnosis-detail').innerText(), '具体病因待近距离确认');
-  assert.equal(await p.locator('#diagnosis-action-label').innerText(), '将医疗兵送入心区');
-  const anchor = await p.locator('#diagnosis-heart-anchor').boundingBox();
-  const ring = await p.locator('#diagnosis-target > circle:first-child').boundingBox();
-  assert(anchor && ring); assert(Math.abs(anchor.x + anchor.width / 2 - ring.x - ring.width / 2) < 1);
-  assert(Math.abs(anchor.y + anchor.height / 2 - ring.y - ring.height / 2) < 1);
+  assert.equal(await p.locator('#diagnosis-action-label').innerText(), '确认并进入诊断');
+  assert.equal(await p.locator('#diagnosis-panel').getAttribute('data-clinic-stage'), 'location');
+  assert.equal(Number(await p.locator('#clinic-progress').getAttribute('aria-valuenow')), 100);
+  assert.equal(await p.locator('#clinic-progress-value').innerText(), '100%');
+  const target = await p.evaluate(() => {
+    const anchor = document.querySelector('#diagnosis-heart-anchor'), ring = document.querySelector('#diagnosis-target');
+    const matrix = ring.transform.baseVal.consolidate().matrix;
+    return { anchor: { x: anchor.cx.baseVal.value, y: anchor.cy.baseVal.value }, ring: { x: matrix.e, y: matrix.f } };
+  });
+  assert.deepEqual(target.ring, target.anchor, 'the compatibility SVG target shares the same heart coordinates as the rendered canvas reticle');
   await assertArtworkAnchor(p); await assertPaintedScene(p);
   assert.doesNotMatch(await p.locator('#cases').innerText(), /纤维性血栓|A\s*→\s*B|传导中断/);
   await inspectFit(p); return s;
@@ -165,24 +180,40 @@ async function withContext(options, action, storage) {
   const launch = { headless: true }; if (process.env.CHROME_PATH) launch.executablePath = process.env.CHROME_PATH;
   browser = await chromium.launch(launch);
   const context = await browser.newContext({ viewport: { width: 1100, height: 1000 } }); page = await setup(context);
-  await mark('offline startup decodes only three chapter plates and retains help and sound controls', async () => {
+  await mark('offline startup decodes three chapter plates and a landscape scan giant, retaining help and sound controls', async () => {
     assert.equal((await snapshot(page)).screen, 'home');
     assert.equal(await page.locator('#sound').getAttribute('aria-pressed'), 'false');
     await click(page, '#sound'); assert.equal(await page.locator('#sound').getAttribute('aria-pressed'), 'true'); await click(page, '#sound');
     await click(page, '#help'); assert(await page.locator('#modal').isVisible()); await primary(page);
     const assets = await page.evaluate(() => Object.entries(window.GiantCureAssets.images).map(([name, image]) => ({ name, valid: image.complete && image.naturalWidth > 0 })));
-    assert.deepEqual(assets.map(a => a.name).sort(), ['entry', 'heart', 'main']);
-    for (const name of ['entry', 'heart', 'main']) assert(assets.some(a => a.name === name && a.valid), 'required local illustration is decoded: ' + name);
-    assert(assets.every(a => a.valid)); await inspectFit(page);
+    await page.evaluate(async () => { await window.GiantCureAssets.clinicReady; });
+    const scanAsset = await page.evaluate(() => { const image = window.GiantCureAssets.images.scanGiant; return { name: 'scanGiant', valid: !!image && image.complete && image.naturalWidth > 0, width: image?.naturalWidth, height: image?.naturalHeight }; });
+    const decoded = [...assets.filter(a => a.name !== 'scanGiant'), scanAsset];
+    assert.deepEqual(decoded.map(a => a.name).sort(), ['entry', 'heart', 'main', 'scanGiant']);
+    for (const name of ['entry', 'heart', 'main', 'scanGiant']) assert(decoded.some(a => a.name === name && a.valid), 'required local illustration is decoded: ' + name);
+    assert(scanAsset.width > scanAsset.height, 'the overhead forest giant source is landscape');
+    assert(decoded.every(a => a.valid)); await inspectFit(page);
   });
-  await mark('giant reveal, heart diagnosis and report form a three-second clinic without starting gameplay', async () => {
+  await mark('automatic landscape scan advances to localization in three seconds without starting gameplay', async () => {
     await freshClinic(page); await tick(page, 200); await assertPresentation(page, 'arriving'); await capture(page, 'arrival'); await captureScene(page, 'arrival');
     await page.keyboard.press('KeyQ'); await page.keyboard.press('KeyR');
-    await tick(page, 700); await assertPresentation(page, 'examining'); await capture(page, 'diagnosing'); await captureScene(page, 'heart-diagnosis');
+    await tick(page, 700); await assertPresentation(page, 'examining'); await capture(page, 'scanning'); await captureScene(page, 'scanning');
+    assert.deepEqual((await snapshot(page)).logicalSize, { width: 1280, height: 720 });
+    assert.equal(await page.locator('#diagnosis-panel').getAttribute('data-clinic-stage'), 'scan');
+    const scanHints = await page.locator('.clinic-key-hints').innerText();
+    assert.match(scanHints, /自动/); assert.doesNotMatch(scanHints, /W\s*A\s*S\s*D|按住\s*Q|移动扫描范围/, 'automatic scanning does not advertise unavailable manual controls');
+    const progress = Number(await page.locator('#clinic-progress').getAttribute('aria-valuenow'));
+    assert(progress > 0 && progress < 100, 'automatic examination has visible partial progress');
+    const scanPixels = await scenePixels(page);
+    const sceneBox = await page.locator('#clinic-scene').boundingBox();
+    assert(sceneBox.width > sceneBox.height * 2, 'the whole-body scan uses a wide scene instead of the portrait report layout');
+    await assertPaintedScene(page); await inspectFit(page);
     await tick(page, 1000); await assertPresentation(page, 'examining'); await assertArtworkAnchor(page);
+    assert(Number(await page.locator('#clinic-progress').getAttribute('aria-valuenow')) > progress, 'automatic scanning progresses without a held input');
+    assert.notDeepEqual(await scenePixels(page), scanPixels, 'the rendered scan band moves with automatic examination');
     await tick(page, 650); await assertPresentation(page, 'report'); await capture(page, 'report-reveal');
     await tick(page, 550); const s = await assertReport(page); assert(s.clinic.elapsed >= 3 && s.clinic.elapsed < 3.1);
-    await tick(page, 3000); assert.equal((await snapshot(page)).phase, 'idle'); await capture(page, 'report'); await captureScene(page, 'report');
+    await tick(page, 3000); assert.equal((await snapshot(page)).phase, 'idle'); await capture(page, 'localized'); await captureScene(page, 'localized');
   });
   await mark('help freezes an examination and requires explicit continuation without elapsed-time jumps', async () => {
     await freshClinic(page); await tick(page, 900); await click(page, '#help');
@@ -194,6 +225,20 @@ async function withContext(options, action, storage) {
     await primary(page);
     await tick(page, 500); const resumed = (await snapshot(page)).clinic.elapsed;
     assert(resumed > before.clinic.elapsed && resumed < before.clinic.elapsed + .65); await report(page);
+  });
+  await mark('visible scan pause freezes the band and progress, then resumes on the same automatic clock', async () => {
+    await freshClinic(page); await tick(page, 900); await click(page, '#clinic-pause');
+    const before = (await snapshot(page)).clinic, pixels = await scenePixels(page);
+    const progress = await page.locator('#clinic-progress').getAttribute('aria-valuenow');
+    assert(before.paused); assert.equal(await page.locator('#clinic-pause').getAttribute('aria-pressed'), 'true');
+    await tick(page, 10000);
+    assert.deepEqual((await snapshot(page)).clinic, before); assert.deepEqual(await scenePixels(page), pixels);
+    assert.equal(await page.locator('#clinic-progress').getAttribute('aria-valuenow'), progress);
+    await click(page, '#clinic-pause'); await tick(page, 300);
+    const resumed = (await snapshot(page)).clinic;
+    assert(!resumed.paused); assert(resumed.elapsed > before.elapsed && resumed.elapsed < before.elapsed + .5);
+    assert.equal(await page.locator('#clinic-pause').getAttribute('aria-pressed'), 'false');
+    await report(page); assert(await page.locator('#clinic-pause').isDisabled());
   });
   for (const reason of ['blur', 'hidden']) await mark(reason + ' freezes arrival until Continue, while Escape leaves without late callbacks', async () => {
     await freshClinic(page); await tick(page, 200); await cancel(page, reason);
@@ -207,7 +252,7 @@ async function withContext(options, action, storage) {
     await freshClinic(page); await report(page); const before = (await snapshot(page)).clinic;
     await page.keyboard.press('KeyE'); await tick(page, 500); assert.deepEqual((await snapshot(page)).clinic, before);
     assert.equal((await snapshot(page)).game, null); assert.equal(await page.locator('#clinic-skip').isHidden(), true);
-    assert.equal(await page.locator('#diagnosis-body .giant-outline, #diagnosis-body [class^="anatomy-"]').count(), 0, 'full-body anatomy linework has been removed');
+    assert.equal(await page.locator('#diagnosis-panel').getAttribute('data-clinic-stage'), 'location', 'skip arrives at the same localized anomaly as the automatic scan');
     await assertPaintedScene(page);
   });
   await mark('capsule delivery shares the giant heart anchor and returns immutable scene metadata', async () => {
@@ -216,7 +261,7 @@ async function withContext(options, action, storage) {
     const delivery = await page.evaluate(() => {
       const art = window.GiantCureClinicArt, clinic = window.GiantCure.snapshot().clinic;
       const frame = art.getFrame(clinic, clinic.elapsed, window.GiantCureAssets.images);
-      const scratch = document.createElement('canvas'); scratch.width = 1248; scratch.height = 1140;
+      const scratch = document.createElement('canvas'); scratch.width = frame.scene.width * 2; scratch.height = frame.scene.height * 2;
       const samples = [0, .2, .6, 1].map(progress => {
         const result = art.drawPreparation(scratch.getContext('2d'), progress, false);
         return { ...result, frozen: Object.isFrozen(result) && Object.isFrozen(result.heart) && Object.isFrozen(result.capsule) };
@@ -335,27 +380,52 @@ async function withContext(options, action, storage) {
     await click(page, '[data-case="heartJourney"]', 0); const began = await page.evaluate(() => performance.now()); await playing(page);
     assert(await page.evaluate(() => performance.now()) - began <= 300);
   });
-  await mark('storybook diagnosis renders without any image assets and resumes with the same heart composition', async () => {
-    await freshClinic(page); await tick(page, 900); await cancel(page, 'blur');
-    const before = await scenePixels(page);
-    const drawing = await page.evaluate(() => {
-      const assets = window.GiantCureAssets, s = window.GiantCure.snapshot();
-      const clinic = { ...s.clinic, reducedMotion: s.reducedMotion }, art = window.GiantCureClinicArt;
-      const original = assets.images, expected = art.getFrame(clinic, clinic.elapsed, original);
-      assets.images = {};
+  await mark('scan giant decode failure blocks examination and supports a real image retry or return', async () => {
+    const embedded = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8').match(/"scanGiant":"(data:image\/png;base64,[^"]+)"/);
+    assert(embedded, 'the tested offline entry embeds its scan giant source');
+    const source = embedded[1];
+    for (const retry of [true, false]) {
+      const context = await browser.newContext({ viewport: { width: 1366, height: 768 } });
       try {
-        const scratch = document.createElement('canvas'); scratch.width = 1248; scratch.height = 1140;
-        const actual = art.draw(scratch.getContext('2d'), clinic, clinic.elapsed, {});
-        const sample = document.createElement('canvas'); sample.width = sample.height = 48;
-        const c = sample.getContext('2d'); c.drawImage(scratch, 0, 0, 48, 48);
-        return { heart: actual.heart, expectedHeart: expected.heart, pixels: [...c.getImageData(0, 0, 48, 48).data], clinicError: assets.clinicError, recoveryError: assets.recoveryError };
-      } finally { assets.images = original; }
-    });
-    assert.deepEqual(drawing.heart, drawing.expectedHeart);
-    assert.deepEqual(drawing.pixels, before, 'the same paper giant renders when all image assets are absent');
-    assert.equal(drawing.clinicError, null); assert.equal(drawing.recoveryError, null);
-    await click(page, '#clinic-continue'); await tick(page, 300); await assertPresentation(page, 'examining'); await assertArtworkAnchor(page);
-    await report(page); await captureScene(page, 'procedural-report');
+        await context.addInitScript(scanSource => {
+          const original = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+          window.__scanDecodeFailures = 0;
+          Object.defineProperty(HTMLImageElement.prototype, 'src', { ...original, set(value) {
+            if (value === scanSource && window.__scanDecodeFailures === 0) {
+              window.__scanDecodeFailures++;
+              original.set.call(this, 'data:image/png;base64,invalid');
+            } else original.set.call(this, value);
+          } });
+        }, source);
+        const p = await setup(context);
+        await p.evaluate(async () => { try { await window.GiantCureAssets.clinicReady; } catch {} });
+        await click(p, '#begin');
+        const before = await snapshot(p);
+        assert.equal(before.game, null); assert.equal(before.elapsed, 0); assert.equal(before.activeTime, 0);
+        assert.equal(await p.evaluate(() => window.__scanDecodeFailures), 1, 'only the scanner plate decode is forced to fail');
+        const failure = await p.evaluate(() => ({ clinicError: String(window.GiantCureAssets.clinicError), roomError: window.GiantCureAssets.error, images: Object.keys(window.GiantCureAssets.images).sort() }));
+        assert.match(failure.clinicError, /scanGiant|扫描/); assert.equal(failure.roomError, null);
+        assert.deepEqual(failure.images, ['entry', 'heart', 'main'], 'chapter resources survive the separate scan image failure');
+        assert(await p.locator('#modal').isVisible()); assert(await p.locator('#clinic-retry').isVisible());
+        await tick(p, 5000);
+        assert.equal((await snapshot(p)).clinic.elapsed, before.clinic.elapsed, 'examination does not progress with a missing giant image');
+        assert.equal((await snapshot(p)).game, null);
+        await capture(p, 'scan-image-failed');
+        if (retry) {
+          await click(p, '#clinic-retry', 0);
+          await p.evaluate(async () => { await window.GiantCureAssets.clinicReady; });
+          await tick(p, 48);
+          assert.equal(await p.locator('#modal').isHidden(), true);
+          const assets = await p.evaluate(() => { const image = window.GiantCureAssets.images.scanGiant; return { error: window.GiantCureAssets.clinicError, decoded: !!image && image.complete && image.naturalWidth > 0 }; });
+          assert.equal(assets.error, null); assert(assets.decoded, 'retry decodes the real local scan giant');
+          const resumed = await snapshot(p); assert(resumed.clinic.elapsed < .2, 'retry starts a fresh examination');
+          await tick(p, 3100); await assertReport(p); await capture(p, 'scan-image-retried');
+        } else {
+          await click(p, '#dialog-actions .secondary-button');
+          assert.equal((await snapshot(p)).screen, 'home'); assert.equal((await snapshot(p)).game, null);
+        }
+      } finally { await context.close(); }
+    }
   });
   await mark('reduced motion uses static clinic keyframes and a 200ms entry without camera travel', async () => {
     await withContext({ reducedMotion: 'reduce' }, async p => {
@@ -395,19 +465,29 @@ async function withContext(options, action, storage) {
       await click(p, '#diagnosis-action'); await click(p, '#entry-transition-skip'); await playing(p);
     }, mode);
   });
-  await mark('V2 retains V1 completion counts without importing incomparable best times', async () => {
+  await mark('V4 migrates historical completions, resets old times and retains current grades', async () => {
     await withContext({}, async p => {
       await report(p); await click(p, '#case-archive'); assert.match(await p.locator('#record-summary').innerText(), /1\s*\/\s*1/);
       assert.equal(await p.locator('[data-case="heartJourney"] .option-state').innerText(), '再次巡诊');
       assert.doesNotMatch(await p.locator('[data-case="heartJourney"] .case-mechanic').innerText(), /最佳.*120/);
-      const records = await p.evaluate(() => ({ old: JSON.parse(localStorage.getItem('giant-cure-journey-v1')), current: JSON.parse(localStorage.getItem('giant-cure-journey-v2')) }));
-      assert.deepEqual(records.old, { wins: 4, bestSeconds: 120 }); assert.deepEqual(records.current, { wins: 4, bestSeconds: null });
+      const records = await p.evaluate(() => ({ old: JSON.parse(localStorage.getItem('giant-cure-journey-v1')), current: JSON.parse(localStorage.getItem('giant-cure-journey-v4')) }));
+      assert.deepEqual(records.old, { wins: 4, bestSeconds: 120 }); assert.deepEqual(records.current, { wins: 4, bestSeconds: null, bestGrade: null, medals: [] });
       await primary(p); await h.start(p);
     }, 'journey-v1');
     await withContext({}, async p => {
-      await report(p); await click(p, '#case-archive'); assert.match(await p.locator('[data-case="heartJourney"] .case-mechanic').innerText(), /新版最佳.*420/);
+      await report(p); await click(p, '#case-archive'); assert.doesNotMatch(await p.locator('[data-case="heartJourney"] .case-mechanic').innerText(), /最佳.*420/);
+      assert.deepEqual(await p.evaluate(() => JSON.parse(localStorage.getItem('giant-cure-journey-v4'))), { wins: 2, bestSeconds: null, bestGrade: null, medals: [] });
       assert.deepEqual(await p.evaluate(() => JSON.parse(localStorage.getItem('giant-cure-journey-v2'))), { wins: 2, bestSeconds: 420 });
     }, 'journey-v2');
+    await withContext({}, async p => {
+      assert.deepEqual(await p.evaluate(() => JSON.parse(localStorage.getItem('giant-cure-journey-v4'))), { wins: 3, bestSeconds: null, bestGrade: null, medals: [] });
+      assert.deepEqual(await p.evaluate(() => JSON.parse(localStorage.getItem('giant-cure-journey-v3'))), { wins: 3, bestSeconds: 310 });
+    }, 'journey-v3');
+    await withContext({}, async p => {
+      await report(p); await click(p, '#case-archive');
+      assert.match(await p.locator('[data-case="heartJourney"] .case-mechanic').innerText(), /最佳.*360/);
+      assert.deepEqual(await p.evaluate(() => JSON.parse(localStorage.getItem('giant-cure-journey-v4'))), { wins: 2, bestSeconds: 360, bestGrade: 'A', medals: ['steady'] });
+    }, 'journey-v4');
   });
   assert.deepEqual(errors, []); assert.deepEqual(requests, [], 'standalone game makes no external requests');
   assert.equal(entryHash(), testedEntry, 'tested entry stays identical throughout the suite');

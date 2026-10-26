@@ -29,7 +29,7 @@ function capture(game, name, title, camera) {
   context.font = '12px "Microsoft YaHei"'; context.fillStyle = '#76846b';
   context.fillText(`工具 ${snapshot.tool} · 耐久 ${snapshot.integrity} · 药剂 ${snapshot.ammo}/24 · 扫描 ${snapshot.scanner ? '开' : '关'} · 本图仅验证世界绘制`, 28, 695);
   assert.equal(JSON.stringify(state(game)), before, 'rendering leaves the simulation unchanged');
-  const file = path.join(destination, 'v2-' + name + '.png'); fs.writeFileSync(file, image.toBuffer('image/png'));
+  const file = path.join(destination, 'v3-' + name + '.png'); fs.writeFileSync(file, image.toBuffer('image/png'));
   const summary = { name, file, stage: snapshot.stage, tool: snapshot.tool, elapsed: Number(snapshot.elapsed.toFixed(2)), failed: snapshot.failed };
   assert(!snapshot.failed, 'visual route survives: ' + name); captures.push(summary); console.log(JSON.stringify(summary));
 }
@@ -40,43 +40,60 @@ async function main() {
   const font = 'C:/Windows/Fonts/msyh.ttc'; if (fs.existsSync(font)) GlobalFonts.registerFromPath(font, 'Microsoft YaHei');
   const images = Object.fromEntries(await Promise.all(['entry', 'main', 'heart'].map(async name => [name, await loadImage(path.join(root, 'assets', 'heart-journey', name + '.png'))])));
   sandbox.window.GiantCureAssets = { images };
-  const { game } = fresh();
+  const entry=fresh().game;
+  const lesion=state(entry).entryLesion,entryCamera={x:lesion.x-70,y:lesion.y+10,zoom:1.1};
+  capture(entry,'entry-rescue','入口救治：先查明局部供血不足的原因',entryCamera);
+  moveTo(entry,node(entry,'pressure'));scan(entry);advance(entry,.6);
+  capture(entry,'entry-scan','Q 只读取当前病例，诊断结果进入暂停报告',entryCamera);
+  route.acknowledgeDiagnosis(entry);scan(entry,false);equip(entry,'precision');moveTo(entry,{x:lesion.x,y:lesion.y+90});entry.pointerDown({...lesion,button:0});advance(entry,.6);
+  capture(entry,'entry-treatment','精准枪解除凝块：治疗进度与组织反应一致',entryCamera);advance(entry,1.1);entry.clearInput();assert(state(entry).entryLesion.complete);
+  capture(entry,'entry-restored','局部灌流恢复，深处高压仍需继续追查',entryCamera);
 
-  moveTo(game, { x: state(game).chest.x + 55, y: state(game).chest.y + 20 });
-  capture(game, 'medical-chest', '可选医疗箱：不领取也可继续主流程', { x: 650, y: 600, zoom: 1.1 });
-  moveTo(game, node(game, 'pressure')); scan(game); advance(game, .6);
-  assert(state(game).scanTargets.some(target => target.id === 'pressure' && target.progress > 0 && !target.complete));
-  capture(game, 'entry-scan', '静态扫描：读取中的范围与进度', { x: 1030, y: 620, zoom: 1.1 });
-  diagnose(game, false); capture(game, 'branches', '局部堵塞：左右侧支可选，左侧有组织掩体', { x: 800, y: 450, zoom: .78 });
-  clearInterference(game); equip(game, 'precision'); scan(game, false); readyCartridge(game);
-  let target = branch(game, 'left'); moveTo(game, { x: target.x, y: target.y + 90 }); game.pointerDown({ ...target, button: 0 }); advance(game, 1.2);
-  capture(game, 'branch-treatment', '精准治疗：侧支堵塞正在缩小', { x: 480, y: 340, zoom: 1.1 });
-  advance(game, target.duration + .1); game.pointerUp(); assert(branch(game, 'left').complete);
-  advance(game, .8); assert.equal(supply(game, 'lysis').state, 'transit');
-  capture(game, 'supply-transit', '外部支援：补给沿实际恢复的侧支运输', { x: 440, y: 500, zoom: .9 });
-  for(let frame=0;frame<300&&supply(game,'lysis').state!=='ready';frame++)game.update(1/60);
-  assert.equal(supply(game,'lysis').state,'ready');
-  capture(game, 'supply-ready', '运输抵达：可见胶囊等待领取', { x: 480, y: 340, zoom: 1.1 });
-  collectSupply(game, 'lysis'); capture(game, 'supply-collected', '裂解工具已领取，侧支保持贯通', { x: 480, y: 340, zoom: 1.1 });
-  clearInterference(game); equip(game, 'sprayer'); readyCartridge(game);
-  target = state(game).weakpoints.find(item => item.id === 'W1'); moveTo(game, weakpointPosition(game, target.id));
-  game.pointerDown({ ...target, button: 2 }); game.pointerDown({ ...target, button: 0 }); advance(game, .9);
-  assert(state(game).toolPreview.fanPoints.length >= 9); assert(state(game).weakpoints.find(item => item.id === 'W1').progress > 0);
-  capture(game, 'spray-fiber', '喷雾裂解：扇形轮廓来自同一遮挡查询', { x: 800, y: 380, zoom: 1.1 }); game.clearInput();
-  soften(game, 'W1'); soften(game, 'W2'); target = state(game).weakpoints.find(item => item.id === 'W3'); assert(target.exposed);
-  equip(game, 'precision'); moveTo(game, weakpointPosition(game, target.id)); readyCartridge(game); game.pointerDown({ ...target, button: 2 }); game.pointerDown({ ...target, button: 0 }); advance(game, .7);
-  capture(game, 'core-exposed', '两层已裂解：核心暴露并接受精准治疗', { x: 800, y: 420, zoom: 1.1 }); game.clearInput();
-  soften(game, 'W3'); route.interact(game, node(game, 'release')); advance(game, 4.1); enterHeart(game); clearInterference(game);
-  moveTo(game, { x: state(game).fault.x, y: state(game).fault.y + 90 }); scan(game); advance(game, 1.4);
-  assert(state(game).fault.scanned); advance(game, 1.1);
-  capture(game, 'conduction-before', '被动采样：上游有脉冲，故障后方无输出', { x: 920, y: 700, zoom: .92 });
-  collectSupply(game, 'probe'); equip(game, 'probe'); moveTo(game, { x: state(game).fault.x, y: state(game).fault.y + 90 }); scan(game, false); readyCartridge(game);
-  game.pointerDown({ ...state(game).fault, button: 2 }); game.pointerDown({ ...state(game).fault, button: 0 }); advance(game, .8);
-  capture(game, 'conduction-repair', '修复探针：处理中断段，不连接采样点', { x: 1040, y: 670, zoom: 1.1 });
-  advance(game, state(game).fault.duration + .1); game.clearInput(); assert(state(game).fault.complete);
-  for (let frame = 0; frame < 480 && state(game).conductionSignal.verifiedBeats < 1; frame++) game.update(1 / 60);
-  assert(state(game).conductionSignal.verifiedBeats >= 1); assert(!state(game).dashUnlocked);
-  capture(game, 'conduction-restored', '实际脉冲抵达下游：复苏中进行三拍复测', { x: 900, y: 680, zoom: .92 });
+  const branchGame=fresh().game;diagnose(branchGame);capture(branchGame,'branches','选择一条侧支，同时准备保护两处灌流组织',{x:1100,y:730,zoom:.6});
+  readyCartridge(branchGame);let target=branch(branchGame,'left');moveTo(branchGame,{x:target.x,y:target.y+90});scan(branchGame,false);branchGame.pointerDown({...target,button:0});advance(branchGame,1.2);
+  capture(branchGame,'branch-treatment','治疗开始：病灶激活，先警示保护目标',{x:target.x+160,y:target.y+100,zoom:1.1});advance(branchGame,3);branchGame.pointerUp();assert(branch(branchGame,'left').complete);
+  advance(branchGame,.6);capture(branchGame,'supply-transit','恢复的侧支运来裂解工具',{...supply(branchGame,'lysis'),zoom:.9});
+  while(supply(branchGame,'lysis').state!=='ready')branchGame.update(1/60);
+  capture(branchGame,'supply-ready','医疗胶囊抵达，靠近按 E 领取',{...supply(branchGame,'lysis'),zoom:1.1});collectSupply(branchGame,'lysis');
+  assert.equal(state(branchGame).tool,'precision');capture(branchGame,'supply-collected','新工具已入库，保留当前枪械等待玩家主动选择',{...state(branchGame).player,zoom:1.1});
+
+  const treatment=fresh().game;diagnose(treatment);route.connectBypasses(treatment);clearInterference(treatment);route.repairTissues(treatment,70);
+  target=state(treatment).weakpoints.find(p=>p.id==='W1');equip(treatment,'sprayer');moveTo(treatment,weakpointPosition(treatment,'W1'));scan(treatment,false);treatment.pointerDown({...target,button:0});
+  for(let frame=0;frame<240&&state(treatment).weakpoints.find(p=>p.id==='W1').progress<.25;frame++)treatment.update(1/60);
+  assert(state(treatment).weakpoints.find(p=>p.id==='W1').progress>0);capture(treatment,'spray-fiber','2 裂解纤维：扇形范围读取真实遮挡',{...state(treatment).clot,zoom:1.1});treatment.clearInput();
+
+  const core=fresh().game;diagnose(core);route.connectBypasses(core);soften(core,'W1');soften(core,'W2');
+  target=state(core).weakpoints.find(p=>p.id==='W3');assert(target.exposed);equip(core,'precision');moveTo(core,weakpointPosition(core,'W3'));core.pointerDown({...target,button:0});advance(core,.6);
+  capture(core,'core-exposed','外层剥落：换 1 精准枪治疗暴露核心',{...state(core).clot,zoom:1.1});core.clearInput();
+
+  const damaged=fresh().game;diagnose(damaged);route.connectBypasses(damaged,'right');
+  for(let frame=0;frame<900&&state(damaged).organStability>=90;frame++)damaged.update(1/60);
+  assert(state(damaged).organStability<100);capture(damaged,'tissue-damaged','组织实际受损：裂口、漏流、灯窗与稳定度共同变化',{x:1100,y:1000,zoom:1});
+
+  const game=route.toFlow().game;capture(game,'flow-restored','主流冲走病灶与余敌，组织恢复稳定',{x:1100,y:730,zoom:.6});enterHeart(game);
+  capture(game,'heart-districts','西区纤维与东区凝块：自主决定先救哪一区',{x:1300,y:1010,zoom:.64});
+  const west=state(game).heartSectors.find(s=>s.id==='heart-west');route.discover(game,west);collectSupply(game,'probe');
+  capture(game,'conduction-before','两区病因不同，清除病灶后接通传导',{x:west.x,y:west.y+80,zoom:1});
+  route.treatHeartSector(game,'heart-west');
+  assert(state(game).heartSectors.find(s=>s.id==='heart-west').complete);
+  assert(!state(game).heartSectors.find(s=>s.id==='heart-east').complete);
+  capture(game,'conduction-repair','西区先复苏：局部来源停止，金色传导与居民灯火恢复',{x:west.x,y:west.y+80,zoom:1});
+  route.treatHeartSector(game,'heart-east');
+  if(state(game).stage!=='recovery')route.repairTissues(game,80);
+  advance(game,.02);assert.equal(state(game).stage,'recovery');
+  capture(game,'conduction-restored','双区恢复后，由玩家主动发出三次验证脉冲',{x:1300,y:700,zoom:.85});
+  const sync=state(game).syncCore;equip(game,'probe');scan(game,false);moveTo(game,{x:sync.x,y:sync.y+110});readyCartridge(game);
+  for(let beat=0;beat<3;beat++){
+    const before=state(game).conductionSignal.verifiedBeats;
+    game.pointerDown({...sync,button:0});advance(game,.02);game.pointerUp();
+    if(beat===0)capture(game,'sync-pulse-travel','点击核心发出真实脉冲，抵达前不计为验证成功',{...sync,zoom:1.1});
+    for(let frame=0;frame<240&&state(game).conductionSignal.verifiedBeats===before;frame++)game.update(1/60);
+    assert.equal(state(game).conductionSignal.verifiedBeats,before+1);
+    if(beat===0)capture(game,'sync-first-verified','第一拍真实抵达下游，点亮一枚确认标记',{...sync,zoom:1.1});
+    advance(game,.24);
+  }
+  for(let frame=0;frame<300&&!state(game).heartStable;frame++)game.update(1/60);
+  assert(state(game).heartStable);capture(game,'heart-stable','三拍复测通过，心腔全部亮起，撤离通道开放',{x:1300,y:680,zoom:.85});
   console.log(`Standalone Canvas visual route rendered ${captures.length} images. No DOM/browser or human playtest was performed.`);
 }
 

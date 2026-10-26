@@ -142,21 +142,25 @@ button:active{transform:translateY(2px)}
 .result-medallion>i:last-child{top:auto;bottom:4px;right:auto;left:-28px;font-size:21px;color:#96ae7c}
 .result-heading{position:absolute;top:584px;width:100%;text-align:center}
 .result-stars{font-size:23px;color:#bd9e63;letter-spacing:12px;padding-left:12px}
-.result-heading h2{font:42px var(--serif);letter-spacing:3px;margin-top:25px}
-.result-heading>p{font:18px var(--serif);letter-spacing:1px;line-height:1.9;color:#84947c;margin:20px 50px 0}
-.result-note{position:absolute;left:48px;right:48px;top:783px;background:#ebf0e3;border:1px solid #d7dfcc;border-radius:12px;padding:22px 25px}
+.result-heading h2{font:42px var(--serif);letter-spacing:3px;margin-top:18px}
+.result-heading>p{font:21px var(--serif);letter-spacing:1px;line-height:1.65;color:#84947c;margin:12px 50px 0}
+.result-note{position:absolute;left:48px;right:48px;top:783px;background:#ebf0e3;border:1px solid #d7dfcc;border-radius:12px;padding:20px 25px}
 .result-note-label{display:flex;justify-content:space-between;font-size:13px;color:#8a997c;letter-spacing:1px}
 #result-stamp{font-size:12px;color:#78946a;letter-spacing:2px}
-.result-numbers{display:flex;text-align:center;justify-content:space-between;margin-top:24px}
+.result-numbers{display:flex;text-align:center;justify-content:space-between;margin-top:18px}
 .result-numbers>div{width:33.33%;display:flex;align-items:center;flex-direction:column;border-right:1px solid #d5dfc9}
 .result-numbers>div:last-child{border:0}
 .result-numbers strong{font:37px Georgia,serif;font-variant-numeric:tabular-nums}
 .result-numbers strong span{font:15px var(--sans)}
 .result-numbers>div>span{font-size:12px;letter-spacing:1px;color:#8c9b7d;margin-top:8px}
 .result-note>p{margin-top:23px;padding-top:18px;border-top:1px solid #d7e0cb;font:15px var(--serif);color:#8b9a7d;text-align:center;letter-spacing:1px}
+.result-medals{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:14px}
+.result-medals span{padding:6px 10px;border:1px solid #cdd9bc;border-radius:6px;font-size:22px;line-height:28px;letter-spacing:.3px;color:#77866c;background:#e6ebdd}
+.result-medals .earned{border-color:#bda86f;color:#806d39;background:#f2ecd6}
+.result-medals:not([hidden])+p{margin-top:10px;padding-top:10px}
 .result-actions{position:absolute;left:48px;right:48px;top:1048px}
 .result-actions>div{display:flex;justify-content:space-between;margin-top:13px}
-.result-footnote{position:absolute;top:1195px;width:100%;text-align:center;font-size:12px;letter-spacing:2px;color:#a4af95}
+.result-footnote{position:absolute;top:1214px;width:100%;text-align:center;font-size:12px;letter-spacing:2px;color:#a4af95}
 .modal-layer{position:absolute;inset:0;background:#23483f55;backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;z-index:8;pointer-events:auto}
 .dialog{width:592px;padding:42px 38px;background:#f7f6ed;border:1px solid #ffffff;border-radius:22px;box-shadow:0 20px 90px #163a3733;max-height:1080px;overflow:auto}
 .dialog h2{font:35px var(--serif);letter-spacing:2px;margin:22px 0}
@@ -220,6 +224,8 @@ body{padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
 .journey-toolbelt button{flex:1;min-width:0;border:1px solid #c5d3b8;border-radius:6px;background:#f2f4e8;color:#627e65;font:13px var(--sans);letter-spacing:0;white-space:nowrap}
 .journey-toolbelt button[aria-pressed=true]{background:#d8e6cf;border-color:#668e71;color:#285e4d;box-shadow:inset 0 -2px #668e71}
 .journey-toolbelt button:disabled{opacity:.48;background:#edf0e5;cursor:default}
+.journey-toolbelt button[data-new=true]{position:relative;border-color:#af8b3b;background:#f5edd5;box-shadow:inset 0 0 0 1px #c9ab68}
+.journey-toolbelt button[data-new=true]:after{content:"新";position:absolute;right:2px;top:1px;width:12px;height:12px;border-radius:3px;background:#aa8339;color:#fff9e9;font:8px/12px var(--sans);text-align:center}
 .journey-toolbelt button:focus-visible{outline:2px solid #a88137;outline-offset:2px}
 .journey-toolbelt kbd{font-size:10px;margin-right:3px;padding:0 3px}
 kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px 5px;color:#79906e;background:#f3f5e9;display:inline-block;line-height:1.3;letter-spacing:0}
@@ -229,7 +235,7 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 .journey-keys p{display:flex;gap:7px;align-items:center;margin:0 0 9px}
 .journey-keys p>span:last-child{margin-left:auto}
 .journey-mode .game-feedback{font-size:18px}
-.result-stars.journey-status{font-size:12px;letter-spacing:4px}
+.result-stars.journey-status{font-size:26px;line-height:34px;letter-spacing:4px}
 
 /* A wide treatment window sits inside the portrait casebook. */
 .landscape-treatment .desktop-note{display:none}
@@ -249,24 +255,32 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 .journey-mode .treatment-heading>p:last-child{display:none}
 .journey-mode .small-back{left:850px;right:auto;top:0;min-width:76px;min-height:40px;padding:7px 9px;font-size:15px;border-radius:8px;letter-spacing:0}
 .journey-mode .small-back span{font-size:12px;margin-left:3px}
-.journey-mode .treatment-stats{left:432px;right:auto;top:19px;width:239px;height:36px}
+.journey-mode .treatment-stats{left:414px;right:auto;top:19px;width:204px;height:36px}
 .journey-mode .progress-label,.journey-mode .time-label{gap:7px}
 .journey-mode .progress-label>span,.journey-mode .time-label>span{font-size:11px;letter-spacing:0}
 .journey-mode .progress-label strong,.journey-mode .time-label strong{font-size:20px}
 .journey-mode .progress-label strong span{font-size:12px}
 .journey-mode .progress-track{height:3px}
 .journey-mode .journey-hud{position:static;border:0;padding:0}
-.journey-mode .journey-vitals{position:absolute;left:704px;right:228px;top:17px;font-size:11px;align-items:flex-start;gap:18px}
+.journey-mode .journey-vitals{position:absolute;left:684px;right:auto;top:17px;width:256px;font-size:11px;align-items:flex-start;justify-content:flex-start;gap:26px}
 .journey-mode .journey-vitals>span{white-space:nowrap}
+.journey-mode .journey-vitals>span:first-child{width:96px;flex:none}
+.journey-mode .journey-vitals #journey-magazine{width:134px;flex:none}
 .journey-mode .journey-vitals strong{font-size:20px;margin-left:5px}
-.journey-mode .journey-vitals small{display:block;font-size:10px;margin:3px 0 0;text-align:right}
-.journey-mode .journey-vitals #journey-equipment{text-align:left;color:#6d856a}
-.journey-mode #journey-equipment[data-equipment=gel]{color:#438d8b}
-.journey-mode #journey-equipment[data-equipment=steady]{color:#9a7e40}
+.journey-mode .journey-vitals small{display:block;font-size:10px;margin:3px 0 0;text-align:right;overflow:hidden;text-overflow:ellipsis}
+.journey-mode .journey-organ{position:absolute;left:960px;top:17px;width:96px;color:#4f7b60;font-size:10px}
+.journey-organ strong{font-size:18px;margin-left:3px}
+.organ-track{display:block;background:#dce5d1;height:3px;margin-top:4px;border-radius:3px;overflow:hidden}
+.organ-track>i{display:block;width:100%;height:100%;background:#6a9a72}
+.journey-organ small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;margin-top:4px;line-height:12px}
+.journey-organ[data-state=warning]{color:#9b7942}
+.journey-organ[data-state=warning] .organ-track>i{background:#bb9559}
+.journey-organ[data-state=critical]{color:#ac5b4e}
+.journey-organ[data-state=critical] .organ-track>i{background:#bc6658}
 .journey-mode .integrity-track{display:block;width:96px;height:3px;margin:4px 0 0}
-.journey-mode .journey-tools{position:absolute;right:24px;top:646px;width:326px;gap:8px;margin:0}
-.journey-mode .journey-tools button{height:34px;font-size:12px;letter-spacing:0;flex:none;padding:0 9px}
-.journey-mode .journey-tools button:nth-child(2){flex:1}
+.journey-mode .journey-tools{position:absolute;right:24px;top:646px;width:326px;gap:6px;margin:0}
+.journey-mode .journey-tools button{height:34px;font-size:12px;letter-spacing:0;flex:1;padding:0 6px;white-space:nowrap}
+.journey-mode .journey-tools #journey-report{flex:1.2}
 .journey-mode .journey-tools kbd{font-size:11px;margin-right:3px;padding:1px 3px}
 .journey-mode .journey-toolbelt{position:absolute;right:24px;top:685px;width:326px;height:28px}
 .journey-mode #journey-checkpoint{position:absolute;right:25px;top:64px;font-size:10px;letter-spacing:0;margin:0;color:#8b9a80}
@@ -292,8 +306,31 @@ kbd{font:12px var(--sans);border:1px solid #cbd5bf;border-radius:4px;padding:2px
 .journey-mode .dialog .primary-button{height:49px;font-size:18px;margin-top:15px}
 .journey-mode .dialog .secondary-button{height:42px;font-size:15px;margin-top:9px}
 .journey-mode .dialog .text-button{font-size:14px;min-height:38px;margin-top:5px}
+.journey-mode .dialog.diagnosis-report-dialog{width:570px;max-height:570px;padding:27px 34px;border:1px solid #c2c9aa;background:#f9f7eb}
+.diagnosis-report-dialog #dialog-kicker{color:#9b8754;font-size:11px;letter-spacing:1.4px}
+.journey-mode .diagnosis-report-dialog h2{font-size:27px;line-height:1.4;margin:13px 0 21px}
+.field-diagnosis section{padding:14px 0;border-top:1px solid #dce1ce}
+.field-diagnosis h3{font:12px var(--sans);letter-spacing:2px;color:#8b977c;margin:0 0 9px}
+.journey-mode .field-diagnosis section p{font-size:20px;line-height:1.5;color:#456f57;margin:0}
+.field-diagnosis ol{margin:0;padding-left:22px;color:#587653;font-size:17px;line-height:1.7}
+.field-diagnosis li+li{margin-top:5px}
+.journey-mode .field-diagnosis .diagnosis-readback{font-size:12px;letter-spacing:.5px;color:#8c987f;margin:10px 0 0}
+.journey-mode .dialog.tool-selector-dialog{width:870px;max-height:540px;padding:27px 30px}
+.tool-selector-dialog .tool-selector-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:19px}
+.tool-selector-card{display:flex;flex-direction:column;align-items:flex-start;gap:13px;min-height:225px;padding:19px 16px;border:1px solid #c5d2bb;border-radius:12px;background:#edf1e4;color:#53705b;text-align:left;letter-spacing:0;cursor:pointer}
+.tool-selector-card strong{font-size:18px;line-height:1.4}
+.tool-selector-card>span:not(.tool-selector-number){font-size:14px;line-height:1.6}
+.tool-selector-card small{font-size:12px;line-height:1.5;margin-top:auto}
+.tool-selector-number{display:grid;place-items:center;width:37px;height:37px;border:1px solid #bcc9ae;border-radius:9px;font:23px Georgia;background:#f8f6e9;color:#8c7d45}
+.tool-selector-heading{display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px}
+.tool-selector-heading svg{width:116px;height:48px;flex:none;color:#567b65}
+.tool-selector-card[aria-pressed=true]{border:2px solid #5d8964;padding:18px 15px;background:#e0ebd6;box-shadow:0 0 0 3px #71986c22}
+.tool-selector-card:focus-visible{outline:3px solid #b59b58;outline-offset:4px}
+.tool-selector-card:disabled{opacity:.5;cursor:default}
+.journey-mode .dialog .tool-selector-tip{font-size:16px;color:#607a60}
+.journey-mode .dialog .tool-selector-cancel{font-size:13px;text-align:right;color:#7b8a71;margin-top:17px}
 .journey-mode #toast{left:auto;right:35px;bottom:108px;max-width:430px;padding:12px 22px;font-size:14px}
-.journey-mode.journey-exterior .journey-vitals,.journey-mode.journey-exterior .journey-tools,.journey-mode.journey-exterior .journey-toolbelt,.journey-mode.journey-exterior .journey-telemetry,.journey-mode.journey-exterior #journey-checkpoint,.journey-mode.journey-exterior .journey-keys,.journey-mode.journey-exterior .treatment-stats,.journey-mode.journey-exterior .journey-task,.journey-mode.journey-exterior .game-feedback,.journey-mode.journey-exterior .brand,.journey-mode.journey-exterior #help,.journey-mode.journey-exterior .treatment-heading>p,.journey-mode.journey-exterior .treatment-heading h2{visibility:hidden;pointer-events:none}
+.journey-mode.journey-exterior .journey-vitals,.journey-mode.journey-exterior .journey-organ,.journey-mode.journey-exterior .journey-tools,.journey-mode.journey-exterior .journey-toolbelt,.journey-mode.journey-exterior .journey-telemetry,.journey-mode.journey-exterior #journey-checkpoint,.journey-mode.journey-exterior .journey-keys,.journey-mode.journey-exterior .treatment-stats,.journey-mode.journey-exterior .journey-task,.journey-mode.journey-exterior .game-feedback,.journey-mode.journey-exterior .brand,.journey-mode.journey-exterior #help,.journey-mode.journey-exterior .treatment-heading>p,.journey-mode.journey-exterior .treatment-heading h2{visibility:hidden;pointer-events:none}
 .exterior-skip{position:absolute;right:38px;bottom:29px;min-height:44px;padding:10px 18px;border:1px solid #b6c7ab;border-radius:9px;background:#f7f6edf2;color:#3c705c;font-size:16px;line-height:22px;letter-spacing:.5px;box-shadow:0 3px 15px #244d3510;transition:none}
 .exterior-skip span{margin-left:12px;color:#a08a56}
 .exterior-skip:hover{background:#e8efdf;border-color:#8fae85}
@@ -331,3 +368,111 @@ body.entry-in-progress #clinic-step,body.entry-in-progress #clinic-caption,body.
 body.entry-in-progress .app-header,body.entry-in-progress .page-folio,body.entry-in-progress #treatment .treatment-heading,body.entry-in-progress #treatment .treatment-stats,body.entry-in-progress #treatment .journey-telemetry,body.entry-in-progress #treatment .journey-task,body.entry-in-progress #treatment .game-feedback,body.entry-in-progress #treatment .journey-hud,body.entry-in-progress #treatment .journey-toolbelt,body.entry-in-progress #treatment .journey-keys{opacity:var(--entry-hud-opacity,0);pointer-events:none}
 body.entry-in-progress .app-header button,body.entry-in-progress .app-header nav,body.entry-in-progress #treatment button{pointer-events:none}
 body.entry-in-progress #cases .diagnosis-heading,body.entry-in-progress #cases .diagnosis-status,body.entry-in-progress #cases .diagnosis-report-space,body.entry-in-progress #cases .diagnosis-action,body.entry-in-progress #cases .case-archive,body.entry-in-progress #cases .case-back{opacity:var(--entry-source-opacity,1);pointer-events:none}
+
+/* A single illustrated spread follows the scan, location and diagnosis. */
+.clinic-phase-nav,.clinic-pause,.clinic-progress-group,.clinic-key-hints,.clinic-rotate-hint,.journey-diagnosis-intro{display:none}
+.landscape-clinic .desktop-note{display:none}
+.clinic-mode{border:1px solid #789182;box-shadow:0 20px 75px #29544715}
+.clinic-mode .app-header{left:24px;right:24px;top:15px;height:44px;pointer-events:none}
+.clinic-mode .app-header button,.clinic-mode .app-header nav{pointer-events:auto}
+.clinic-mode .brand{gap:11px}
+.clinic-mode .brand-mark{width:42px;height:42px;background:#e8eddd}
+.clinic-mode .brand-mark svg{width:31px}
+.clinic-mode .brand>span:last-child{font-size:25px;letter-spacing:4px}
+.clinic-mode .brand small{font-size:8px;letter-spacing:2px;margin-top:2px}
+.clinic-mode .icon-button{width:44px;height:44px;font-size:24px}
+.clinic-mode .icon-button:after{inset:3px;border-color:#bdcbb5}
+.clinic-mode .sound-slash{left:22px;top:11px;height:24px}
+.clinic-mode .page-folio{display:none}
+.clinic-mode .clinic-top-title{left:205px;right:700px;top:20px;white-space:nowrap}
+.clinic-mode .clinic-top-title .eyebrow,.clinic-mode #clinic-step{display:none}
+.clinic-mode .clinic-top-title h2{font:25px/35px var(--serif);font-weight:500;letter-spacing:2px;margin:0}
+.clinic-mode .clinic-phase-nav,.journey-diagnosis-entry .clinic-phase-nav{position:absolute;top:20px;right:236px;display:flex;align-items:center;gap:21px;height:36px;font:17px var(--serif);color:#84977e;white-space:nowrap}
+.clinic-phase-nav i{font-style:normal;font-size:15px;color:#8b9e84}
+.clinic-phase-nav>span{position:relative;line-height:34px;letter-spacing:1px}
+.clinic-phase-nav>span[aria-current=step]{color:#2f6c56;font-weight:600}
+.clinic-phase-nav>span[aria-current=step]:after{content:"";position:absolute;bottom:0;left:-6px;right:-6px;height:2px;background:#3c8060}
+.clinic-mode:has(#diagnosis-panel[data-clinic-stage=location]) #clinic-phase-nav>span[data-clinic-stage=scan]{color:#84977e;font-weight:400}
+.clinic-mode:has(#diagnosis-panel[data-clinic-stage=location]) #clinic-phase-nav>span[data-clinic-stage=scan]:after{display:none}
+.clinic-mode:has(#diagnosis-panel[data-clinic-stage=location]) #clinic-phase-nav>span[data-clinic-stage=location]{color:#2f6c56;font-weight:600}
+.clinic-mode:has(#diagnosis-panel[data-clinic-stage=location]) #clinic-phase-nav>span[data-clinic-stage=location]:after{content:"";position:absolute;bottom:0;left:-6px;right:-6px;height:2px;background:#3c8060}
+.clinic-mode .clinic-pause{display:block;position:absolute;right:132px;top:17px;min-width:80px;height:40px;padding:6px 12px;border:1px solid #bfccb5;border-radius:8px;background:#e9eddf88;color:#527c62;font:17px var(--serif);letter-spacing:2px}
+.clinic-pause span{font:13px var(--sans);letter-spacing:1px;margin-left:5px}
+.clinic-pause[aria-pressed=true]{background:#d9e6d0;border-color:#6c9678}
+.clinic-mode .diagnosis-panel{top:84px;left:24px;right:24px;height:612px}
+.clinic-mode .diagnosis-monitor{inset:0 0 auto;height:552px;border:1px solid #a8b294;border-radius:11px;background:#e9dfc6}
+.clinic-mode .clinic-scene{border-radius:10px}
+.clinic-mode .diagnosis-body{z-index:3}
+.clinic-mode .diagnosis-target{display:none}
+.clinic-mode .diagnosis-target{stroke:#f0e0b0;stroke-width:1.4;filter:drop-shadow(0 1px 2px #3c6b5266)}
+.clinic-mode .diagnosis-target>circle:nth-child(2){fill:#f5ddb3aa}
+.clinic-mode .diagnosis-target text{font-size:14px;fill:#f7efd7;letter-spacing:2px}
+.clinic-mode .diagnosis-report-space{left:492px;right:auto;top:90px;width:228px;height:115px;border:0;z-index:4;pointer-events:none}
+.clinic-mode .diagnosis-placeholder{display:none}
+.clinic-mode .diagnosis-report{padding:14px 17px;border:1px solid #829176;border-radius:15px;background:#faf6e7ed;box-shadow:0 3px 10px #3c4d2514;opacity:var(--clinic-report-progress,1)}
+.clinic-mode .diagnosis-report h3{margin:0 0 8px;font:600 21px/24px var(--serif);letter-spacing:1px;color:#a35d3e}
+.clinic-mode .diagnosis-report #diagnosis-finding{font:17px/23px var(--serif);letter-spacing:0;color:#6c735c;white-space:nowrap}
+.clinic-mode .diagnosis-report #diagnosis-detail{position:static;font:13px/20px var(--sans);color:#8a8e77;margin-top:5px;letter-spacing:0}
+.clinic-mode .diagnosis-status{top:565px;left:10px;right:auto;width:205px;font:600 17px/26px var(--serif);text-align:left;letter-spacing:1px;white-space:nowrap;color:#326b53}
+.clinic-mode .clinic-progress-group{position:absolute;display:flex;align-items:center;gap:24px;left:220px;top:567px;height:24px;color:#3d725c}
+.clinic-progress{width:180px;height:10px;border:1px solid #92aa87;border-radius:8px;background:#e0e7d5;overflow:hidden}
+.clinic-progress>span{display:block;width:calc(var(--scan-progress,0)*100%);height:100%;border-radius:7px;background:linear-gradient(90deg,#a5bb91,#6f997b);box-shadow:inset 0 0 0 1px #5e8969}
+.clinic-progress-caption{font:16px var(--serif);white-space:nowrap;letter-spacing:1px}
+.clinic-progress-caption strong{display:inline-block;margin-left:9px;min-width:54px;font:25px Georgia,serif;font-weight:400;letter-spacing:0}
+.clinic-mode .clinic-key-hints{position:absolute;display:flex;align-items:center;gap:15px;right:2px;top:564px;height:28px;font:15px var(--serif);color:#53775e;white-space:nowrap}
+.clinic-key-hints>span{display:flex;align-items:center;gap:4px}
+.clinic-key-hints>i{height:19px;width:1px;background:#d2dcc6}
+.clinic-key-hints kbd{font-size:13px;line-height:19px;padding:0 4px;border-color:#a3b69a;color:#527b61;background:#f7f7ec}
+.clinic-key-hints>span:last-child kbd{font-size:18px;line-height:26px;padding:0 8px;margin:0 4px}
+.clinic-mode .clinic-caption{top:607px;left:370px;right:180px;font:13px/21px var(--serif);text-align:center;letter-spacing:.5px;color:#8b987f;white-space:nowrap}
+.clinic-mode .diagnosis-action{top:490px;left:464px;right:auto;width:304px;height:49px;padding:0 20px;font:600 20px var(--serif);letter-spacing:2px;border:2px solid #c1d0b6;border-radius:13px;background:#3d8465;box-shadow:0 3px 0 #f4f3eacc,0 0 0 3px #f6f4e7d9;z-index:5;justify-content:center;gap:18px}
+.clinic-mode .diagnosis-action>span:last-child{font-size:22px}
+.clinic-mode .diagnosis-action:hover{background:#306f55}
+.clinic-mode .clinic-controls{top:598px;left:164px;right:auto;width:200px;text-align:left}
+.clinic-mode .clinic-controls .text-button{min-height:34px;border:0;background:transparent;padding:5px 8px;font:13px var(--serif);letter-spacing:0;color:#809174}
+.clinic-mode .clinic-controls .text-button span{margin-left:6px;color:#a79765}
+.clinic-mode .clinic-controls .primary-button{width:165px;height:35px;padding:0 12px;font:14px var(--serif);letter-spacing:1px;border-radius:7px;box-shadow:none}
+.clinic-mode .clinic-controls .primary-button span{font-size:18px}
+.clinic-mode .case-back,.clinic-mode .case-archive{top:682px;bottom:auto;min-height:31px;padding:3px 8px;font:13px/25px var(--serif);letter-spacing:.5px}
+.clinic-mode .case-back{left:26px;right:auto}
+.clinic-mode .case-archive{right:25px;left:auto}
+.clinic-mode .case-archive span{margin-left:8px}
+.clinic-mode .dialog{width:620px;max-height:640px;padding:26px 34px;border-radius:15px}
+.clinic-mode .dialog h2{font-size:28px;margin:13px 0}
+.clinic-mode .dialog p{font-size:16px;line-height:1.7;margin:10px 0}
+.clinic-mode .dialog .dialog-tip{font-size:15px;padding:11px 14px}
+.clinic-mode .dialog .primary-button{height:48px;font-size:18px;margin-top:15px}
+.clinic-mode .dialog .secondary-button{height:40px;font-size:15px;margin-top:8px}
+.clinic-mode .dialog .text-button{min-height:38px;font-size:14px;margin-top:4px}
+.clinic-mode #toast{left:50%;bottom:100px;max-width:600px;padding:12px 20px;font-size:15px}
+.clinic-mode #diagnosis-panel[data-clinic-loading=true] .clinic-progress-group{opacity:.5}
+.clinic-mode #diagnosis-panel[data-clinic-error=true] .diagnosis-monitor{border-color:#b28b67}
+
+/* The chapter keeps this light introduction only until its first real diagnosis. */
+.journey-mode.journey-diagnosis-entry .journey-diagnosis-intro{display:block;position:absolute;inset:0;pointer-events:none;z-index:3}
+.journey-diagnosis-intro h2{position:absolute;left:218px;top:21px;font:25px/32px var(--serif);font-weight:500;letter-spacing:1px;color:#2f6754}
+.journey-diagnosis-intro h2>span{font:24px Georgia,serif;margin-right:11px}
+.journey-diagnosis-entry .journey-diagnosis-intro .clinic-phase-nav{top:19px;right:236px}
+.journey-mode.journey-diagnosis-entry .treatment-heading>p,.journey-mode.journey-diagnosis-entry .treatment-heading>h2,.journey-mode.journey-diagnosis-entry .treatment-stats,.journey-mode.journey-diagnosis-entry .journey-vitals,.journey-mode.journey-diagnosis-entry .journey-organ,.journey-mode.journey-diagnosis-entry .journey-telemetry,.journey-mode.journey-diagnosis-entry .journey-toolbelt,.journey-mode.journey-diagnosis-entry #journey-checkpoint,.journey-mode.journey-diagnosis-entry .journey-keys,.journey-mode.journey-diagnosis-entry .journey-task,.journey-mode.journey-diagnosis-entry .game-feedback{visibility:hidden}
+.journey-mode.journey-diagnosis-entry .journey-tools{top:659px;right:38px;width:98px}
+.journey-mode.journey-diagnosis-entry .journey-tools button:not(#journey-scan){display:none}
+.journey-mode.journey-diagnosis-entry .journey-tools #journey-scan{height:39px;font-size:14px;background:#f5f4e7;border-color:#a6bb9a}
+.journey-mode.journey-diagnosis-entry .journey-tools #journey-scan[aria-pressed=true]{background:#d9e8ce;color:#315f4c}
+.journey-diagnosis-minimap{position:absolute;right:41px;top:100px;width:110px;height:152px;padding:8px 22px 21px;border:1px solid #a4ac8d;border-radius:16px;background:#f7f3dfdf;box-shadow:0 2px 7px #5c6d3b0d}
+.journey-diagnosis-minimap svg{display:block;width:64px;height:120px}
+.journey-diagnosis-minimap>span{position:absolute;bottom:7px;left:0;right:0;text-align:center;font:11px var(--serif);letter-spacing:2px;color:#8e9879}
+.journey-diagnosis-intro .journey-diagnosis-prompt{position:absolute;left:240px;right:240px;top:662px;text-align:center;font:19px/28px var(--serif);letter-spacing:1px;color:#3c7058}
+.journey-diagnosis-prompt kbd{margin:0 6px;padding:2px 8px;font-size:19px;border-color:#a1b795;background:#f7f6ed;color:#4e7a5e}
+body.entry-in-progress .clinic-progress-group,body.entry-in-progress .clinic-key-hints,body.entry-in-progress #clinic-phase-nav,body.entry-in-progress #clinic-pause,body.entry-in-progress .clinic-rotate-hint{opacity:var(--entry-source-opacity,0);pointer-events:none}
+body.entry-in-progress .clinic-mode .clinic-top-title,body.entry-in-progress .clinic-mode #clinic-phase-nav,body.entry-in-progress .clinic-mode #clinic-pause{opacity:0;pointer-events:none}
+@media(max-width:700px) and (orientation:portrait){
+  body.landscape-clinic .clinic-rotate-hint{display:block;position:fixed;left:16px;right:16px;top:calc(50% + 28.125vw + 16px);margin:0;text-align:center;font:13px/22px var(--serif);letter-spacing:.5px;color:#6f896f;pointer-events:none}
+  .clinic-mode .clinic-top-title{left:200px;right:auto}
+  .clinic-mode .clinic-controls .text-button{font-size:24px;min-height:50px;padding:6px 9px}
+  .clinic-mode .clinic-controls{left:182px;top:592px;width:310px}
+  .clinic-mode .clinic-controls .primary-button{width:235px;height:50px;font-size:23px}
+  .clinic-mode .case-back,.clinic-mode .case-archive{font-size:22px;min-height:50px;top:672px}
+  .clinic-mode .clinic-caption{display:none}
+  .clinic-mode .diagnosis-action{left:380px;width:472px;height:70px;top:467px;font-size:29px}
+  .clinic-mode .diagnosis-action>span:last-child{font-size:30px}
+}
